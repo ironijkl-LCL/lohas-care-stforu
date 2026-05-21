@@ -77,22 +77,13 @@
 <div id="modal-container" class="modal"><div class="modal-content" id="modal-body"></div></div>
 
 <script>
-    // --- 1. 連動 MongoDB 個案資料庫 ---
-    const usersData = {
-        "B5678": { pw: "56789", name: "Allen", gold: 150 },
-        "A1234": { pw: "12345", name: "Bonnie", gold: 100 },
-        "C13579": { pw: "13579", name: "Cathy", gold: 0 },
-        "D2468": { pw: "24680", name: "Dan", gold: 50 },
-        "E0001": { pw: "E1234", name: "Eva", gold: 20 },
-        "F0001": { pw: "F1234", name: "Flower", gold: 30 },
-        "G0001": { pw: "G1234", name: "Gin", gold: 350 },
-        "H0001": { pw: "H1234", name: "Henry", gold: 400 }
-    };
+    // --- 1. 雲端動態同步個案資料庫 ---
+    let usersData = {}; // 移除本地寫死名單，改為自動向雲端獲取最新名單
     let currentUser = null, goldCount = 0, vCodeStr = "";
     let targetVal = 10, cameraStream = null, aiTimer = null, audioCtx = null, analyser = null;
     
-    // Google Sheets API 同步設定 (新增追蹤欄位)
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzP0aXpxzQn5sz0zF15nSKx73QbxDl9xp83-653X-hcE2MuzUmzxAf1cuJeJZN70S3N/exec";
+    // 🎯 已完美更新為你最新的 Google Sheets API 網址
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjzTSM9D_CGHDYRUBJxuFJ4xgOxsOgrbRWzHSoTL2NO3-C0TZJny_vXz2UORbpCbM7kQ/exec";
     let currentTrainingType = "未分類訓練";
     let lastGoldEarned = 0;
 
@@ -100,20 +91,35 @@
     const recognizer = SpeechRec ? new SpeechRec() : null;
     if(recognizer) { recognizer.lang = 'zh-HK'; recognizer.continuous = false; }
 
+    // 🚀 自動連線雲端試算表下載長者名單 (個案編號與密碼)
+    function loadUsersFromCloud() {
+        console.log("🔄 正在連線雲端下載最新長者名單...");
+        fetch(GOOGLE_SCRIPT_URL)
+            .then(response => response.json())
+            .then(data => {
+                usersData = data;
+                console.log("✅ 雲端名單同步成功！目前可登入個案數量：", Object.keys(usersData).length);
+            })
+            .catch(err => {
+                console.error("❌ 無法讀取雲端個案名單，請確認網路連線或 GAS 權限設定。", err);
+            });
+    }
+
     function refreshV() { vCodeStr = Math.floor(1000+Math.random()*9000).toString(); document.getElementById('v-box').innerText = vCodeStr; }
     function checkAuth() {
         const id = document.getElementById('case-id').value;
         const pw = document.getElementById('case-pw').value;
         const vin = document.getElementById('v-in').value;
+        
         if(usersData[id] && usersData[id].pw === pw && vin === vCodeStr) {
             currentUser = usersData[id];
-            goldCount = currentUser.gold; // 接續進度 
+            goldCount = currentUser.gold; // 接續雲端設定的初始/累計進度 
             document.getElementById('u-name').innerText = currentUser.name;
             document.getElementById('gold-val').innerText = goldCount;
             document.getElementById('login-screen').style.display='none';
             document.getElementById('app-content').style.display='flex';
             speak("身份驗證成功，歡迎進入系統。");
-        } else { alert("登入失敗，請檢查編號或密碼。"); refreshV(); }
+        } else { alert("登入失敗，請檢查編號、密碼或驗證碼。"); refreshV(); }
     }
 
     // --- 2. AI 口肌視覺 (MediaPipe 影像追蹤) ---
@@ -151,8 +157,8 @@
         const m = mouthData[idx];
         let timeLeft = targetVal;
         aiTimer = setInterval(() => {
-            let isInside = Math.random() > 0.2; // 模擬紅圈判定
-            let isCorrect = Math.random() > 0.5; // 模擬表情係數判定
+            let isInside = Math.random() > 0.2; 
+            let isCorrect = Math.random() > 0.5; 
             if(isInside && isCorrect) {
                 timeLeft--; document.getElementById('timer-disp').innerText = `保持中：${timeLeft} 秒`;
                 document.getElementById('ai-stat').innerText = "✅ 動作正確！持續保持";
@@ -172,7 +178,7 @@
         }, 1000);
     }
 
-    // --- 3. AI 認知訓練 (四步漸進流程) ---
+    // --- 3. AI 認知訓練 ---
     const cogData = [
         {t:"水果", i:[{n:"蘋果", p:"🍎", u:"紅紅甜甜醫生遠離我", s:"蘋"},{n:"香蕉", p:"🍌", u:"黃色長條猴子愛食", s:"香"},{n:"西瓜", p:"🍉", u:"消暑必備綠皮紅肉", s:"西"},{n:"橙", p:"🍊", u:"橙色圓形維他命C", s:"橙"},{n:"葡萄", p:"🍇", u:"紫色圓形一串串", s:"葡"}]},
         {t:"交通", i:[{n:"巴士", p:"🚌", u:"大車有司機載客", s:"巴"},{n:"地鐵", p:"🚇", u:"地下火車", s:"地"},{n:"的士", p:"🚕", u:"紅色的車跳錶計錢", s:"的"},{n:"飛機", p:"✈️", u:"在天空中飛", s:"飛"},{n:"單車", p:"🚲", u:"用腳踏兩個圈", s:"單"}]},
@@ -210,7 +216,7 @@
         document.getElementById('hint-btn').onclick = () => {
             hStep++;
             setTimeout(() => {
-                if(hStep === 1) { // 聽提示
+                if(hStep === 1) { 
                     if(step==1) speak("呢件係咩物件？");
                     else if(step==2) speak("提示呢件物件用途係..." + item.u);
                     else if(step==3) speak("首字提示係..." + item.s);
@@ -228,7 +234,7 @@
                     speak("正確！獲得金幣獎勵。");
                     addGold(30); 
                     document.getElementById('disp-area').innerText = item.n;
-                    document.getElementById('hint-btn').style.visibility = "hidden"; // 移除提示鈕
+                    document.getElementById('hint-btn').style.visibility = "hidden"; 
                     syncMongoDB();
                 } else { speak("讀音不正確，請再試一次。"); }
             };
@@ -266,7 +272,7 @@
             <button class="sub-btn" style="background:var(--ts-red);" onclick="runScenePuzzle(${(idx+1)%10})">下一題</button></div>`);
     }
 
-    function tapPuzzle(btn, t) { speak(t); document.getElementById('p-res').innerHTML += `<div style="font-size:38px; margin:12px;"><b>(${pCount++})</b> ${t}</div>`; btn.style.opacity = "0.3"; btn.disabled = true; } // 序號標記 
+    function tapPuzzle(btn, t) { speak(t); document.getElementById('p-res').innerHTML += `<div style="font-size:38px; margin:12px;"><b>(${pCount++})</b> ${t}</div>`; btn.style.opacity = "0.3"; btn.disabled = true; } 
     function recScene(correct, idx) {
         const s = sceneData[idx];
         speak("請朗讀正確對話全句");
@@ -283,7 +289,7 @@
         };
     }
 
-    // --- 5. AI 聲控與氣量 (狀態鎖 isLoud & 雙重濾波器) ---
+    // --- 5. AI 聲控與氣量 ---
     function showGameUI(type) {
         setModal(`<h2>${type=='voice'?'🎵 聲控開花 (呀~)':'🎈 氣量脹大 (吹氣)'}</h2><p style="font-size:32px;">設定目標次數：</p>
         <div style="margin-bottom:20px;">${[10,20,30].map(v => `<button class="sub-btn" style="width:140px; background:${targetVal==v?'var(--wa-green)':'#aaa'};" onclick="targetVal=${v};showGameUI('${type}')">${v}次</button>`).join('')}</div>
@@ -309,7 +315,7 @@
             let level = Math.min(100, data.reduce((a,b)=>a+b,0)/450);
             document.getElementById('sound-bar-fill').style.width = level + "%";
             document.getElementById('sound-val-text').innerText = Math.round(level);
-            // isLoud 狀態鎖：80 觸發，40 解鎖 
+            
             if(level > 80 && canTrigger) {
                 count++;
                 canTrigger = false;
@@ -334,13 +340,13 @@
     function setModal(h) { document.getElementById('modal-container').style.display='flex'; document.getElementById('modal-body').innerHTML=h; }
     function closeAll() { 
         document.getElementById('modal-container').style.display='none'; 
-        if(cameraStream) { cameraStream.getTracks().forEach(t=>t.stop()); cameraStream = null; } // 關閉鏡頭
+        if(cameraStream) { cameraStream.getTracks().forEach(t=>t.stop()); cameraStream = null; } 
         clearInterval(aiTimer); window.speechSynthesis.cancel();
     }
     function addGold(n) { goldCount += n; document.getElementById('gold-val').innerText = goldCount; }
     function speak(t) { window.speechSynthesis.cancel(); let s = new SpeechSynthesisUtterance(t); s.lang='zh-HK'; window.speechSynthesis.speak(s); }
     
-    // 改寫為「MongoDB 提示 + 異步 Google Sheets 雙傳輸」函數
+    // 雙向同步核心邏輯：本地控制台模擬 MongoDB 提示 + 送出 Fetch POST 請求給新 Google Sheets API
     function syncMongoDB() { 
         console.log("📊 系統提示：訓練紀錄已自動同步至 MongoDB。"); 
 
@@ -365,16 +371,20 @@
             body: JSON.stringify(payload)
         })
         .then(() => {
-            console.log("📈 Google Sheets 自動同步完成！資料已寫入雲端。");
+            console.log("📈 Google Sheets 雲端寫入完成！資料已同步。");
             lastGoldEarned = 0; 
         })
         .catch(err => {
-            console.error("❌ Google Sheets 同步發生錯誤:", err);
+            console.error("❌ Google Sheets 同步錯誤:", err);
         });
     }
 
-    setInterval(()=>document.getElementById('time').innerText=new Date().toTimeString().slice(0,5), 1000);
-    refreshV();
+    // 系統初始化網頁載入觸發
+    window.onload = function() {
+        refreshV();
+        loadUsersFromCloud(); // 🚀 網頁開機時，立即連線你的新 API 下載最新長者名單
+        setInterval(()=>document.getElementById('time').innerText=new Date().toTimeString().slice(0,5), 1000);
+    };
 </script>
 </body>
 </html>
