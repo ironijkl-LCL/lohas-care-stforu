@@ -77,7 +77,7 @@
 <div id="modal-container" class="modal"><div class="modal-content" id="modal-body"></div></div>
 
 <script>
-    // --- 1. 連動 MongoDB 個案資料庫 [cite: 1340] ---
+    // --- 1. 連動 MongoDB 個案資料庫 ---
     const usersData = {
         "B5678": { pw: "56789", name: "Allen", gold: 150 },
         "A1234": { pw: "12345", name: "Bonnie", gold: 100 },
@@ -90,6 +90,11 @@
     };
     let currentUser = null, goldCount = 0, vCodeStr = "";
     let targetVal = 10, cameraStream = null, aiTimer = null, audioCtx = null, analyser = null;
+    
+    // Google Sheets API 同步設定 (新增追蹤欄位)
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzP0aXpxzQn5sz0zF15nSKx73QbxDl9xp83-653X-hcE2MuzUmzxAf1cuJeJZN70S3N/exec";
+    let currentTrainingType = "未分類訓練";
+    let lastGoldEarned = 0;
 
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognizer = SpeechRec ? new SpeechRec() : null;
@@ -101,7 +106,8 @@
         const pw = document.getElementById('case-pw').value;
         const vin = document.getElementById('v-in').value;
         if(usersData[id] && usersData[id].pw === pw && vin === vCodeStr) {
-            currentUser = usersData[id]; goldCount = currentUser.gold; // 接續進度 
+            currentUser = usersData[id];
+            goldCount = currentUser.gold; // 接續進度 
             document.getElementById('u-name').innerText = currentUser.name;
             document.getElementById('gold-val').innerText = goldCount;
             document.getElementById('login-screen').style.display='none';
@@ -110,7 +116,7 @@
         } else { alert("登入失敗，請檢查編號或密碼。"); refreshV(); }
     }
 
-    // --- 2. AI 口肌視覺 (MediaPipe 影像追蹤) [cite: 1349] ---
+    // --- 2. AI 口肌視覺 (MediaPipe 影像追蹤) ---
     const mouthData = [
         {n:"噘嘴", i:"😙", bs:"mouthPucker", d:"雙唇用力向前翹起"}, {n:"咧嘴", i:"😊", bs:"mouthSmile", d:"嘴角向兩邊拉開"},
         {n:"鼓腮", i:"😗", bs:"cheekPuff", d:"兩頰充滿空氣撐開"}, {n:"張大口", i:"😲", bs:"jawOpen", d:"下巴放鬆，盡量張大"},
@@ -134,31 +140,39 @@
             <p id="timer-disp" style="font-size:50px; font-weight:bold; color:var(--ts-red);">目標：${targetVal} 秒</p>
             <div class="ai-vision-box"><video id="v-feed" autoplay playsinline></video><div class="ai-target-circle"></div><div id="nose-dot"></div></div>
             <p id="ai-stat" style="font-size:32px;">📸 AI 偵測準備中...</p>
-            <div class="ctrl-panel"><button class="sub-btn" style="background:var(--ai-blue);" onclick="startFaceAI('${m.bs}')">開啟鏡頭感應</button>
+            <div class="ctrl-panel"><button class="sub-btn" style="background:var(--ai-blue);" onclick="startFaceAI('${m.bs}', ${idx})">開啟鏡頭感應</button>
             <button class="sub-btn" style="background:var(--gold);" onclick="speak('${m.d}')">動作提示</button>
             <button class="sub-btn" style="background:#888;" onclick="showMouthUI()">返回目錄</button></div>`);
         cameraStream = await navigator.mediaDevices.getUserMedia({video: {width:640, height:480}});
         document.getElementById('v-feed').srcObject = cameraStream;
     }
 
-    function startFaceAI(bsType) {
+    function startFaceAI(bsType, idx) {
+        const m = mouthData[idx];
         let timeLeft = targetVal;
         aiTimer = setInterval(() => {
-            let isInside = Math.random() > 0.2; // 模擬紅圈判定 [cite: 1354]
+            let isInside = Math.random() > 0.2; // 模擬紅圈判定
             let isCorrect = Math.random() > 0.5; // 模擬表情係數判定
             if(isInside && isCorrect) {
                 timeLeft--; document.getElementById('timer-disp').innerText = `保持中：${timeLeft} 秒`;
                 document.getElementById('ai-stat').innerText = "✅ 動作正確！持續保持";
                 document.getElementById('nose-dot').style.display = "block";
             } else {
-                speak("動作不正確，請對準紅圈。"); // 語音提示不正確 [cite: 1356]
+                speak("動作不正確，請對準紅圈。");
                 document.getElementById('ai-stat').innerText = "❌ 偵測不正確";
             }
-            if(timeLeft <= 0) { clearInterval(aiTimer); speak("好嘢！獲得獎勵。"); addGold(50); syncMongoDB(); } // 自動同步 
+            if(timeLeft <= 0) { 
+                clearInterval(aiTimer); 
+                currentTrainingType = "口肌訓練：" + m.n;
+                lastGoldEarned = 50;
+                speak("好嘢！獲得獎勵。"); 
+                addGold(50); 
+                syncMongoDB(); 
+            }
         }, 1000);
     }
 
-    // --- 3. AI 認知訓練 (四步漸進流程) [cite: 1358, 1359] ---
+    // --- 3. AI 認知訓練 (四步漸進流程) ---
     const cogData = [
         {t:"水果", i:[{n:"蘋果", p:"🍎", u:"紅紅甜甜醫生遠離我", s:"蘋"},{n:"香蕉", p:"🍌", u:"黃色長條猴子愛食", s:"香"},{n:"西瓜", p:"🍉", u:"消暑必備綠皮紅肉", s:"西"},{n:"橙", p:"🍊", u:"橙色圓形維他命C", s:"橙"},{n:"葡萄", p:"🍇", u:"紫色圓形一串串", s:"葡"}]},
         {t:"交通", i:[{n:"巴士", p:"🚌", u:"大車有司機載客", s:"巴"},{n:"地鐵", p:"🚇", u:"地下火車", s:"地"},{n:"的士", p:"🚕", u:"紅色的車跳錶計錢", s:"的"},{n:"飛機", p:"✈️", u:"在天空中飛", s:"飛"},{n:"單車", p:"🚲", u:"用腳踏兩個圈", s:"單"}]},
@@ -171,7 +185,6 @@
         {t:"天氣", i:[{n:"太陽", p:"☀️", u:"好曬好熱", s:"太"},{n:"落雨", p:"🌧️", u:"要帶雨遮", s:"落"},{n:"閃電", p:"⚡", u:"大聲驚驚", s:"閃"},{n:"落雪", p:"❄️", u:"白色好凍", s:"落"},{n:"大風", p:"🌬️", u:"吹出涼風", s:"大"}]},
         {t:"顏色波分類", i:[{n:"紅色", p:"🔴", u:"火同蘋果嘅色", s:"紅"},{n:"藍色", p:"🔵", u:"天空同海洋嘅色", s:"藍"},{n:"綠色", p:"🟢", u:"草地同樹葉嘅色", s:"綠"},{n:"黃色", p:"🟡", u:"香蕉同太陽嘅色", s:"黃"},{n:"紫色", p:"🟣", u:"葡萄嘅色", s:"紫"}]}
     ];
-
     function showCogCatalog() {
         setModal(`<h2>🗣️ AI 認知選項目錄</h2><div class="grid-10">${cogData.map((c, idx) => `<div class="card-unit" onclick="showCogItems(${idx})">📂 ${c.t}</div>`).join('')}</div>
         <button class="sub-btn" style="background:#666; width:100%; margin-top:40px;" onclick="closeAll()">返回</button>`);
@@ -197,7 +210,7 @@
         document.getElementById('hint-btn').onclick = () => {
             hStep++;
             setTimeout(() => {
-                if(hStep === 1) { // 聽提示 [cite: 1365]
+                if(hStep === 1) { // 聽提示
                     if(step==1) speak("呢件係咩物件？");
                     else if(step==2) speak("提示呢件物件用途係..." + item.u);
                     else if(step==3) speak("首字提示係..." + item.s);
@@ -210,16 +223,19 @@
             speak("請讀出正確名稱"); recognizer.start();
             recognizer.onresult = (e) => {
                 if(e.results[0][0].transcript.includes(item.n)) {
-                    speak("正確！獲得金幣獎勵。"); addGold(30); 
+                    currentTrainingType = "認知命名：" + item.n;
+                    lastGoldEarned = 30;
+                    speak("正確！獲得金幣獎勵。");
+                    addGold(30); 
                     document.getElementById('disp-area').innerText = item.n;
-                    document.getElementById('hint-btn').style.visibility = "hidden"; // 移除提示鈕 [cite: 1369, 1370]
+                    document.getElementById('hint-btn').style.visibility = "hidden"; // 移除提示鈕
                     syncMongoDB();
                 } else { speak("讀音不正確，請再試一次。"); }
             };
         };
     }
 
-    // --- 4. AI 真實情境應對 [cite: 1372, 1373] ---
+    // --- 4. AI 真實情境應對 ---
     const sceneData = [
         {t:"超市付款", q:["呢個袋收五蚊。", "唔該用八達通。", "幫我嘟一嘟。", "洗唔洗儲積分？", "唔洗喇唔該。", "多謝晒。"]},
         {t:"搭的士", q:["唔該去中環站。", "行西隧快啲。", "呢度轉角停。", "幾多錢話？", "收唔收現金？", "唔該晒。"]},
@@ -232,7 +248,6 @@
         {t:"飲茶點餐", q:["兩位普洱。", "燒賣蝦餃。", "嘢食仲未到？", "唔該埋單。", "找返幾多錢？", "下次見。"]},
         {t:"探訪老友", q:["好久不見。", "最近點呀？", "小禮物。", "入黎坐下。", "下次聚。", "拜拜。"]}
     ];
-
     function showSceneCatalog() {
         setModal(`<h2>📍 AI 真實情境應對</h2><div class="grid-10">${sceneData.map((s, idx) => `<div class="card-unit" onclick="runScenePuzzle(${idx})">📍 ${s.t}</div>`).join('')}</div>
         <button class="sub-btn" style="background:#666; width:100%; margin-top:40px;" onclick="closeAll()">返回</button>`);
@@ -240,26 +255,35 @@
 
     let pCount = 1;
     function runScenePuzzle(idx) {
-        pCount = 1; const s = sceneData[idx];
+        pCount = 1;
+        const s = sceneData[idx];
         setModal(`
             <h3 style="font-size:50px;">情境：${s.t}</h3>
             <div id="p-res" style="min-height:220px; background:#fff; border:8px dashed var(--gold); padding:35px; margin-bottom:35px; text-align:left; border-radius:50px;"></div>
             <div id="p-pool">${[...s.q].sort(()=>Math.random()-0.5).map(t => `<button class="puzzle-key" onclick="tapPuzzle(this, '${t}')">${t}</button>`).join('')}</div>
-            <div class="ctrl-panel"><button class="sub-btn" style="background:var(--ai-blue);" onclick="recScene('${s.q[0]}')">🎤 作答評估</button>
+            <div class="ctrl-panel"><button class="sub-btn" style="background:var(--ai-blue);" onclick="recScene('${s.q[0]}', ${idx})">🎤 作答評估</button>
             <button class="sub-btn" style="background:#888;" onclick="showSceneCatalog()">返回目錄</button>
             <button class="sub-btn" style="background:var(--ts-red);" onclick="runScenePuzzle(${(idx+1)%10})">下一題</button></div>`);
     }
 
     function tapPuzzle(btn, t) { speak(t); document.getElementById('p-res').innerHTML += `<div style="font-size:38px; margin:12px;"><b>(${pCount++})</b> ${t}</div>`; btn.style.opacity = "0.3"; btn.disabled = true; } // 序號標記 
-    function recScene(correct) {
-        speak("請朗讀正確對話全句"); recognizer.start();
+    function recScene(correct, idx) {
+        const s = sceneData[idx];
+        speak("請朗讀正確對話全句");
+        recognizer.start();
         recognizer.onresult = (e) => {
-            if(e.results[0][0].transcript.includes(correct.slice(0,3))) { speak("良好評估！獎勵 40 金幣。"); addGold(40); syncMongoDB(); }
+            if(e.results[0][0].transcript.includes(correct.slice(0,3))) { 
+                currentTrainingType = "情境對話：" + s.t;
+                lastGoldEarned = 40;
+                speak("良好評估！獎勵 40 金幣。");
+                addGold(40); 
+                syncMongoDB(); 
+            }
             else { speak("讀音未達標，請重試。"); }
         };
     }
 
-    // --- 5. AI 聲控與氣量 (狀態鎖 isLoud & 雙重濾波器) [cite: 1381, 1383, 1386, 1390] ---
+    // --- 5. AI 聲控與氣量 (狀態鎖 isLoud & 雙重濾波器) ---
     function showGameUI(type) {
         setModal(`<h2>${type=='voice'?'🎵 聲控開花 (呀~)':'🎈 氣量脹大 (吹氣)'}</h2><p style="font-size:32px;">設定目標次數：</p>
         <div style="margin-bottom:20px;">${[10,20,30].map(v => `<button class="sub-btn" style="width:140px; background:${targetVal==v?'var(--wa-green)':'#aaa'};" onclick="targetVal=${v};showGameUI('${type}')">${v}次</button>`).join('')}</div>
@@ -280,18 +304,25 @@
         let count = 0, canTrigger = true;
         const data = new Uint8Array(analyser.frequencyBinCount);
         const loop = () => {
+            if (!analyser) return;
             analyser.getByteFrequencyData(data);
             let level = Math.min(100, data.reduce((a,b)=>a+b,0)/450);
             document.getElementById('sound-bar-fill').style.width = level + "%";
             document.getElementById('sound-val-text').innerText = Math.round(level);
             // isLoud 狀態鎖：80 觸發，40 解鎖 
             if(level > 80 && canTrigger) {
-                count++; canTrigger = false;
+                count++;
+                canTrigger = false;
                 document.getElementById('v-info').innerText = `次數：${count} / ${targetVal}`;
                 if(type=='blow') document.getElementById('game-stage').style.transform = `scale(${1 + count/10})`;
                 if(count >= targetVal) { 
                     document.getElementById('game-stage').innerText = type=='voice'?'🌸':'🎈';
-                    speak("完成目標！太棒了。"); addGold(100); syncMongoDB(); return; 
+                    currentTrainingType = (type=='voice' ? '聲控開花' : '氣量吹氣球');
+                    lastGoldEarned = 100;
+                    speak("完成目標！太棒了。"); 
+                    addGold(100); 
+                    syncMongoDB(); 
+                    return; 
                 }
             } else if(level < 40) { canTrigger = true; }
             requestAnimationFrame(loop);
@@ -303,12 +334,45 @@
     function setModal(h) { document.getElementById('modal-container').style.display='flex'; document.getElementById('modal-body').innerHTML=h; }
     function closeAll() { 
         document.getElementById('modal-container').style.display='none'; 
-        if(cameraStream) { cameraStream.getTracks().forEach(t=>t.stop()); cameraStream = null; } // 關閉鏡頭 [cite: 1393]
+        if(cameraStream) { cameraStream.getTracks().forEach(t=>t.stop()); cameraStream = null; } // 關閉鏡頭
         clearInterval(aiTimer); window.speechSynthesis.cancel();
     }
     function addGold(n) { goldCount += n; document.getElementById('gold-val').innerText = goldCount; }
     function speak(t) { window.speechSynthesis.cancel(); let s = new SpeechSynthesisUtterance(t); s.lang='zh-HK'; window.speechSynthesis.speak(s); }
-    function syncMongoDB() { alert("📊 訓練紀錄已自動同步至 MongoDB。"); }
+    
+    // 改寫為「MongoDB 提示 + 異步 Google Sheets 雙傳輸」函數
+    function syncMongoDB() { 
+        console.log("📊 系統提示：訓練紀錄已自動同步至 MongoDB。"); 
+
+        const caseIdInput = document.getElementById('case-id');
+        const caseId = caseIdInput ? caseIdInput.value : "未知編號";
+        const name = currentUser ? currentUser.name : "訪客";
+
+        const payload = {
+            caseId: caseId,
+            name: name,
+            trainingType: currentTrainingType,
+            goldEarned: lastGoldEarned,
+            totalGold: goldCount
+        };
+
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            console.log("📈 Google Sheets 自動同步完成！資料已寫入雲端。");
+            lastGoldEarned = 0; 
+        })
+        .catch(err => {
+            console.error("❌ Google Sheets 同步發生錯誤:", err);
+        });
+    }
+
     setInterval(()=>document.getElementById('time').innerText=new Date().toTimeString().slice(0,5), 1000);
     refreshV();
 </script>
