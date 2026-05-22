@@ -78,12 +78,14 @@
 
 <script>
     // --- 1. 雲端動態同步個案資料庫 ---
-    let usersData = {}; // 移除本地寫死名單，改為自動向雲端獲取最新名單
+    let usersData = {}; 
     let currentUser = null, goldCount = 0, vCodeStr = "";
     let targetVal = 10, cameraStream = null, aiTimer = null, audioCtx = null, analyser = null;
     
-    // 🎯 已完美更新為你最新的 Google Sheets API 網址
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjzTSM9D_CGHDYRUBJxuFJ4xgOxsOgrbRWzHSoTL2NO3-C0TZJny_vXz2UORbpCbM7kQ/exec";
+    // 🎯 核心修正：將單一網址精確拆分為「提取」與「存入」兩個獨立 API 管道
+    const API_GET_URL = "https://script.google.com/macros/s/AKfycbwjzTSM9D_CGHDYRUBJxuFJ4xgOxsOgrbRWzHSoTL2NO3-C0TZJny_vXz2UORbpCbM7kQ/exec";
+    const API_POST_URL = "https://script.google.com/macros/s/AKfycbzP0aXpxzQn5sz0zF15nSKx73QbxDl9xp83-653X-hcE2MuzUmzxAf1cuJeJZN70S3N/exec";
+    
     let currentTrainingType = "未分類訓練";
     let lastGoldEarned = 0;
 
@@ -91,17 +93,17 @@
     const recognizer = SpeechRec ? new SpeechRec() : null;
     if(recognizer) { recognizer.lang = 'zh-HK'; recognizer.continuous = false; }
 
-    // 🚀 自動連線雲端試算表下載長者名單 (個案編號與密碼)
+    // 🚀 使用特定的提取資料網址 (API_GET_URL) 下載長者名單
     function loadUsersFromCloud() {
-        console.log("🔄 正在連線雲端下載最新長者名單...");
-        fetch(GOOGLE_SCRIPT_URL)
+        console.log("🔄 正在連線雲端提取最新長者名單...");
+        fetch(API_GET_URL)
             .then(response => response.json())
             .then(data => {
                 usersData = data;
-                console.log("✅ 雲端名單同步成功！目前可登入個案數量：", Object.keys(usersData).length);
+                console.log("✅ 雲端名單提取成功！目前可登入個案數量：", Object.keys(usersData).length);
             })
             .catch(err => {
-                console.error("❌ 無法讀取雲端個案名單，請確認網路連線或 GAS 權限設定。", err);
+                console.error("❌ 無法提取雲端個案名單，請確認網路連線或 GAS 權限設定。", err);
             });
     }
 
@@ -113,7 +115,7 @@
         
         if(usersData[id] && usersData[id].pw === pw && vin === vCodeStr) {
             currentUser = usersData[id];
-            goldCount = currentUser.gold; // 接續雲端設定的初始/累計進度 
+            goldCount = currentUser.gold; 
             document.getElementById('u-name').innerText = currentUser.name;
             document.getElementById('gold-val').innerText = goldCount;
             document.getElementById('login-screen').style.display='none';
@@ -346,7 +348,7 @@
     function addGold(n) { goldCount += n; document.getElementById('gold-val').innerText = goldCount; }
     function speak(t) { window.speechSynthesis.cancel(); let s = new SpeechSynthesisUtterance(t); s.lang='zh-HK'; window.speechSynthesis.speak(s); }
     
-    // 雙向同步核心邏輯：本地控制台模擬 MongoDB 提示 + 送出 Fetch POST 請求給新 Google Sheets API
+    // 🚀 使用特定的存入資料網址 (API_POST_URL) 同步訓練數據至雲端
     function syncMongoDB() { 
         console.log("📊 系統提示：訓練紀錄已自動同步至 MongoDB。"); 
 
@@ -362,7 +364,7 @@
             totalGold: goldCount
         };
 
-        fetch(GOOGLE_SCRIPT_URL, {
+        fetch(API_POST_URL, {
             method: "POST",
             mode: "no-cors",
             headers: {
@@ -371,18 +373,18 @@
             body: JSON.stringify(payload)
         })
         .then(() => {
-            console.log("📈 Google Sheets 雲端寫入完成！資料已同步。");
+            console.log("📈 Google Sheets 數據存入完成！雲端已同步更新。");
             lastGoldEarned = 0; 
         })
         .catch(err => {
-            console.error("❌ Google Sheets 同步錯誤:", err);
+            console.error("❌ Google Sheets 數據存入錯誤:", err);
         });
     }
 
     // 系統初始化網頁載入觸發
     window.onload = function() {
         refreshV();
-        loadUsersFromCloud(); // 🚀 網頁開機時，立即連線你的新 API 下載最新長者名單
+        loadUsersFromCloud(); // 開機自動觸發提取功能
         setInterval(()=>document.getElementById('time').innerText=new Date().toTimeString().slice(0,5), 1000);
     };
 </script>
