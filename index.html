@@ -249,7 +249,36 @@
             box-shadow: 0 0 12px rgba(52, 199, 89, 0.6);
         }
         
-        /* 4. 聲控與氣量阻抗專用儀錶與矩陣樣式 */
+        /* 4. 聲控與氣量阻抗專用儀錶、自訂門檻與矩陣樣式 */
+        .thresh-panel {
+            background: rgba(0,0,0,0.03);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            margin: 14px 0;
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .thresh-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #d1d1d6;
+            outline: none;
+            margin: 10px 0;
+        }
+
+        .thresh-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--apple-blue);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,113,227,0.4);
+        }
+
         .sound-meter-wrapper {
             position: relative;
             width: 100%;
@@ -284,42 +313,46 @@
             z-index: 5;
         }
 
-        .threshold-marker-80 {
+        /* 動態達標線 */
+        .threshold-marker-target {
             position: absolute;
-            left: 80%;
             top: 0;
             bottom: 0;
             width: 3px;
             background: var(--apple-red);
             z-index: 4;
+            transition: left 0.15s ease;
         }
-        .threshold-marker-80::after {
-            content: "80% 達標線";
+        .threshold-marker-target::after {
+            content: attr(data-label);
             position: absolute;
             top: -24px;
-            right: -32px;
+            right: -36px;
             font-size: 13px;
             font-weight: 700;
             color: var(--apple-red);
+            white-space: nowrap;
         }
 
-        .threshold-marker-40 {
+        /* 動態換氣重置線 */
+        .threshold-marker-reset {
             position: absolute;
-            left: 40%;
             top: 0;
             bottom: 0;
             width: 2px;
             border-left: 2px dashed rgba(0,0,0,0.35);
             z-index: 4;
+            transition: left 0.15s ease;
         }
-        .threshold-marker-40::after {
-            content: "40% 換氣重置";
+        .threshold-marker-reset::after {
+            content: attr(data-label);
             position: absolute;
             bottom: -22px;
-            left: -32px;
+            left: -36px;
             font-size: 13px;
             font-weight: 600;
             color: var(--apple-dark-gray);
+            white-space: nowrap;
         }
 
         #sound-status-pill {
@@ -456,13 +489,13 @@
         .apple-pill-btn {
             background: rgba(0,0,0,0.06);
             color: var(--apple-black);
-            padding: 12px 24px;
-            font-size: 19px;
+            padding: 10px 20px;
+            font-size: 18px;
             border-radius: 24px;
             border: none;
             font-weight: 700;
             cursor: pointer;
-            margin: 0 8px;
+            margin: 0 6px;
             transition: all 0.2s ease;
         }
 
@@ -523,9 +556,13 @@
     let currentUser = null, goldCount = 0, vCodeStr = "";
     let targetVal = 10, cameraStream = null, aiTimer = null;
     
+    // 🎯 聲控/氣量自由調整達標率設定 (預設 80% 達標，40% 換氣重置)
+    let soundTargetThreshold = 80;
+    let soundResetThreshold = 40;
+
     // Web Audio 專用變數
     let audioCtx = null, analyser = null, audioStream = null, audioLoopId = null;
-    let recordedScores = []; // 儲存 10 次達標強度原始數據
+    let recordedScores = [];
 
     // 🎯 GAS 雙向同步雲端 API 位置
     const API_GET_URL = "https://script.google.com/macros/s/AKfycbwjzTSM9D_CGHDYRUBJxuFJ4xgOxsOgrbRWzHSoTL2NO3-C0TZJny_vXz2UORbpCbM7kQ/exec";
@@ -868,11 +905,38 @@
     }
 
     // ==========================================
-    // 4. Web Audio 聲控與氣量阻抗訓練 (雙門檻 + 10次強度矩陣)
+    // 4. Web Audio 聲控與氣量阻抗訓練 (支援可自由調節門檻)
     // ==========================================
+    function setThresholdRate(rate, type) {
+        soundTargetThreshold = parseInt(rate);
+        soundResetThreshold = Math.round(soundTargetThreshold * 0.5);
+        showGameUI(type);
+    }
+
+    function updateThresholdLive(rate) {
+        soundTargetThreshold = parseInt(rate);
+        soundResetThreshold = Math.round(soundTargetThreshold * 0.5);
+        
+        const tDisp = document.getElementById('t-val-disp');
+        const rDisp = document.getElementById('r-val-disp');
+        if (tDisp) tDisp.innerText = soundTargetThreshold;
+        if (rDisp) rDisp.innerText = soundResetThreshold;
+
+        const targetMarker = document.getElementById('target-marker');
+        const resetMarker = document.getElementById('reset-marker');
+        if (targetMarker) {
+            targetMarker.style.left = soundTargetThreshold + '%';
+            targetMarker.setAttribute('data-label', `${soundTargetThreshold}% 達標線`);
+        }
+        if (resetMarker) {
+            resetMarker.style.left = soundResetThreshold + '%';
+            resetMarker.setAttribute('data-label', `${soundResetThreshold}% 換氣重置`);
+        }
+    }
+
     function showGameUI(type) {
         targetVal = 10;
-        recordedScores = []; // 重置強度記錄
+        recordedScores = []; 
 
         const matrixHTML = Array.from({length: 10}, (_, i) => `
             <div class="score-badge" id="badge-${i+1}">
@@ -882,14 +946,27 @@
         `).join('');
 
         setModal(`
-            <h2 style="font-size:36px; margin-bottom:8px;">${type === 'voice' ? '🎵 聲控開花 (大聲發「呀～」)' : '🎈 氣量阻抗 (持續吹氣)'}</h2>
-            <p style="font-size:20px; color:var(--apple-dark-gray); margin:0;">目標：累積達成 10 次有效發聲/吹氣</p>
+            <h2 style="font-size:36px; margin-bottom:6px;">${type === 'voice' ? '🎵 聲控開花 (大聲發「呀～」)' : '🎈 氣量阻抗 (持續吹氣)'}</h2>
             
-            <div id="game-stage" style="font-size:120px; margin:16px 0; transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);">${type === 'voice' ? '🌱' : '☁️'}</div>
+            <!-- 自訂達標率面板 -->
+            <div class="thresh-panel">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:20px; font-weight:700;">
+                    <span>🎯 達標門檻：<span id="t-val-disp" style="color:var(--apple-blue); font-size:24px;">${soundTargetThreshold}</span>%</span>
+                    <span style="color:var(--apple-dark-gray); font-size:16px;">（換氣重置：<span id="r-val-disp">${soundResetThreshold}</span>%）</span>
+                </div>
+                <input type="range" class="thresh-slider" min="50" max="95" step="5" value="${soundTargetThreshold}" oninput="updateThresholdLive(this.value)">
+                <div style="display:flex; justify-content:center; gap:8px;">
+                    <button class="apple-pill-btn ${soundTargetThreshold==60?'primary':''}" style="padding:4px 14px; font-size:15px;" onclick="setThresholdRate(60, '${type}')">輕鬆 60%</button>
+                    <button class="apple-pill-btn ${soundTargetThreshold==80?'primary':''}" style="padding:4px 14px; font-size:15px;" onclick="setThresholdRate(80, '${type}')">標準 80%</button>
+                    <button class="apple-pill-btn ${soundTargetThreshold==90?'primary':''}" style="padding:4px 14px; font-size:15px;" onclick="setThresholdRate(90, '${type}')">進階 90%</button>
+                </div>
+            </div>
+            
+            <div id="game-stage" style="font-size:115px; margin:10px 0; transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);">${type === 'voice' ? '🌱' : '☁️'}</div>
             
             <div class="sound-meter-wrapper">
-                <div class="threshold-marker-80"></div>
-                <div class="threshold-marker-40"></div>
+                <div id="target-marker" class="threshold-marker-target" style="left: ${soundTargetThreshold}%;" data-label="${soundTargetThreshold}% 達標線"></div>
+                <div id="reset-marker" class="threshold-marker-reset" style="left: ${soundResetThreshold}%;" data-label="${soundResetThreshold}% 換氣重置"></div>
                 <div id="sound-bar-container">
                     <div id="sound-bar-fill"></div>
                     <div id="sound-val-text">0%</div>
@@ -904,7 +981,7 @@
 
             <p id="v-info" style="font-size:26px; font-weight:800; margin:10px 0;">已達成：0 / 10 次</p>
             
-            <div style="display:flex; justify-content:center; gap:16px; margin-top:16px;">
+            <div style="display:flex; justify-content:center; gap:16px; margin-top:14px;">
                 <button class="sub-btn" style="background:var(--apple-blue); min-width:200px;" onclick="startAudioGame('${type}')">🎙️ 啟動 AI 收音</button>
                 <button class="sub-btn" style="background:var(--apple-black); min-width:140px;" onclick="closeAll();">返回</button>
             </div>
@@ -950,8 +1027,8 @@
                     currentPeak = level;
                 }
 
-                // 🎯 1. 達標判定 (>= 80% 且可觸發)
-                if (level >= 80 && canTrigger) {
+                // 🎯 1. 達標判定 (>= soundTargetThreshold 且可觸發)
+                if (level >= soundTargetThreshold && canTrigger) {
                     count++;
                     canTrigger = false; 
                     const achievedPeak = Math.max(level, currentPeak);
@@ -983,7 +1060,7 @@
                         document.getElementById('game-stage').style.transform = 'scale(1.4)';
                         if (statusPill) statusPill.innerText = "🏆 恭喜！順利完成 10 次訓練！";
                         
-                        currentTrainingType = (type === 'voice' ? '聲控發聲 (10次達標)' : '氣量阻抗 (10次達標)');
+                        currentTrainingType = (type === 'voice' ? `聲控發聲 (${soundTargetThreshold}%達標)` : `氣量阻抗 (${soundTargetThreshold}%達標)`);
                         lastGoldEarned = 100;
                         addGold(100);
                         speak("太叻喇！成功完成十次達標訓練！獲得一百金幣！");
@@ -991,8 +1068,8 @@
                         return;
                     }
                 } 
-                // 🔄 2. 換氣防抖重置 (<= 40% 且已鎖定)
-                else if (level <= 40 && !canTrigger) {
+                // 🔄 2. 換氣防抖重置 (<= soundResetThreshold 且已鎖定)
+                else if (level <= soundResetThreshold && !canTrigger) {
                     canTrigger = true;
                     currentPeak = 0; 
                     if (statusPill) {
@@ -1055,14 +1132,13 @@
             window.speechSynthesis.cancel(); 
             let s = new SpeechSynthesisUtterance(t); 
             s.lang = 'zh-HK'; 
-            s.rate = 0.9; // 語速微調，更適合長者聽覺
+            s.rate = 0.9; 
             window.speechSynthesis.speak(s); 
         } catch(e) {
             console.warn("TTS 發音失敗", e);
         }
     }
     
-    // GAS 雲端大數據試算表寫入連動 (支援 10 次達標強度陣列)
     function syncMongoDB() { 
         console.log("📊 數據傳輸核心：同步雲端試算表記錄中..."); 
         const caseIdInput = document.getElementById('case-id');
@@ -1079,9 +1155,10 @@
             trainingType: currentTrainingType,
             goldEarned: lastGoldEarned,
             totalGold: goldCount,
-            recordedScores: recordedScores,               // 傳遞原始陣列
-            scoresSummary: recordedScores.join(", "),     // 試算表直接閱讀字串
-            avgIntensity: avgScore                        // 平均發聲強度
+            recordedScores: recordedScores,
+            scoresSummary: recordedScores.join(", "),
+            avgIntensity: avgScore,
+            targetThreshold: soundTargetThreshold
         };
 
         fetch(API_POST_URL, {
