@@ -2,13 +2,15 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>『樂活金掌家』- 旗艦級 AI 言語治療系統</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#f2f5f3">
+    <title>『樂活金掌家』v2 — 旗艦級 AI 言語治療系統</title>
+    <!-- MediaPipe Tasks Vision (真實 Face Landmarker + Blendshapes) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.js" crossorigin="anonymous"></script>
     <style>
         :root {
-            /* Apple 經典色系與 Oasis 自然色調融合 */
             --apple-black: #1d1d1f;
             --apple-gray: #f5f5f7;
             --apple-dark-gray: #86868b;
@@ -16,1172 +18,1653 @@
             --apple-green: #34c759;
             --apple-red: #ff3b30;
             --apple-orange: #ff9500;
-            
-            /* Oasis 療癒色調 */
-            --ts-bg: #f2f5f3; 
-            --paper: rgba(255, 255, 255, 0.95);
+            --ts-bg: #f2f5f3;
+            --paper: rgba(255, 255, 255, 0.96);
             --gold: #c6a052;
             --speech-purple: #9b5de5;
             --mouth-pink: #ff99b6;
             --ai-blue: #00b4d8;
-            
-            /* 圓角規範 */
             --radius-sm: 14px;
             --radius-md: 24px;
             --radius-lg: 36px;
+            --font-scale: 1;
         }
-
-        * { 
-            box-sizing: border-box; 
+        * {
+            box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "PingFang HK", "Microsoft JhengHei", sans-serif;
             letter-spacing: -0.02em;
         }
-
-        body { 
-            background: var(--ts-bg); 
+        html { font-size: calc(16px * var(--font-scale)); }
+        body {
+            background: var(--ts-bg);
             margin: 0;
-            color: var(--apple-black); 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
+            color: var(--apple-black);
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
         }
-        
-        /* 1. 登入介面 - Apple 毛玻璃極簡風格 */
-        #login-screen { 
-            position: fixed;
-            inset: 0; 
-            background: radial-gradient(circle at 50% 50%, #ffffff 0%, var(--ts-bg) 100%);
-            z-index: 20000; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 24px;
+        body.high-contrast {
+            --ts-bg: #000;
+            --paper: #1a1a1a;
+            --apple-black: #fff;
+            --apple-dark-gray: #ccc;
+            --apple-gray: #333;
         }
-        
-        .login-card { 
-            background: var(--paper); 
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 48px; 
-            border-radius: var(--radius-lg); 
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            text-align: center; 
-            width: 100%; 
-            max-width: 560px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+        body.high-contrast .login-card,
+        body.high-contrast .modal-content,
+        body.high-contrast header,
+        body.high-contrast .card-unit,
+        body.high-contrast .score-badge {
+            background: #1a1a1a !important;
+            border-color: #444 !important;
+            color: #fff !important;
         }
 
-        .login-card h1 {
-            font-size: 50px;
-            font-weight: 700;
-            color: var(--apple-black);
-            margin: 0 0 12px 0;
-            letter-spacing: -0.03em;
+        /* ===== Login ===== */
+        #login-screen {
+            position: fixed; inset: 0;
+            background: radial-gradient(circle at 50% 40%, #ffffff 0%, var(--ts-bg) 100%);
+            z-index: 20000;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
         }
-
-        .login-card p {
-            font-size: 22px;
-            color: var(--apple-dark-gray);
-            margin: 0 0 32px 0;
-            font-weight: 500;
-        }
-
-        .login-card input { 
-            font-size: 24px; 
-            width: 100%; 
-            padding: 18px 24px; 
-            margin-bottom: 18px;
-            border-radius: var(--radius-sm); 
-            border: 2px solid rgba(0,0,0,0.12); 
-            background: rgba(255, 255, 255, 0.9);
-            outline: none; 
-            transition: all 0.3s ease;
-        }
-
-        .login-card input:focus {
-            border-color: var(--apple-blue);
-            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
-        }
-
-        #v-box { 
-            background: var(--apple-black); 
-            color: white;
-            padding: 14px; 
-            letter-spacing: 10px; 
-            font-size: 32px; 
-            margin: 6px 0 20px 0; 
-            border-radius: var(--radius-sm); 
-            cursor: pointer; 
-            font-weight: 700; 
-            text-align: center; 
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-        }
-        
-        /* 2. 導覽主佈局 */
-        header { 
+        .login-card {
             background: var(--paper);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(0,0,0,0.08); 
-            padding: 24px; 
-            text-align: center; 
-            box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+            padding: 36px 28px;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255,255,255,0.6);
+            text-align: center;
+            width: 100%; max-width: 520px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.06);
         }
+        .login-card h1 { font-size: 2.4rem; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.03em; }
+        .login-card .tagline { font-size: 1.15rem; color: var(--apple-dark-gray); margin: 0 0 8px; font-weight: 600; }
+        .login-card .version-badge {
+            display: inline-block; background: var(--apple-blue); color: #fff;
+            font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 20px;
+        }
+        .login-card input {
+            font-size: 1.25rem; width: 100%; padding: 16px 18px; margin-bottom: 12px;
+            border-radius: var(--radius-sm); border: 2px solid rgba(0,0,0,0.12);
+            background: rgba(255,255,255,0.95); outline: none; transition: all 0.25s;
+        }
+        .login-card input:focus {
+            border-color: var(--apple-blue);
+            box-shadow: 0 0 0 4px rgba(0,113,227,0.15);
+        }
+        #v-box {
+            background: var(--apple-black); color: #fff; padding: 12px;
+            letter-spacing: 12px; font-size: 1.8rem; margin: 4px 0 14px;
+            border-radius: var(--radius-sm); cursor: pointer; font-weight: 700;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+        }
+        .login-hint { font-size: 0.9rem; color: var(--apple-dark-gray); margin-top: 14px; line-height: 1.4; }
 
-        #app-content { 
-            display: none;
-            flex-direction: column; 
-            flex: 1; 
-            overflow-y: auto; 
-        }
-
-        .nav-grid { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 20px; 
-            padding: 32px 24px; 
-            align-items: center; 
-            max-width: 650px; 
-            width: 100%; 
-            margin: 0 auto;
-        }
-
-        /* 長者親善超重磅按鈕 */
-        .big-btn { 
-            width: 100%; 
-            height: 100px;
-            border-radius: var(--radius-md); 
-            border: none; 
-            color: white; 
-            font-size: 32px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-        }
-
-        .big-btn:active {
-            transform: scale(0.98);
-            opacity: 0.9;
-        }
-        
-        /* 3. 智慧彈窗與 AI 控制區 */
-        .modal { 
-            display: none;
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.45); 
+        /* ===== Header & Nav ===== */
+        header {
+            background: var(--paper);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            z-index: 10000; 
-            justify-content: center; 
-            align-items: center;
-            padding: 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.07);
+            padding: 16px 18px 12px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        #app-content { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+        #time { font-size: 2.6rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; }
+        .header-meta {
+            display: flex; justify-content: space-between; align-items: center;
+            max-width: 640px; margin: 8px auto 0; font-size: 1.05rem;
+            color: var(--apple-dark-gray); font-weight: 600;
+        }
+        .header-btns { margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+        .apple-pill-btn {
+            background: rgba(0,0,0,0.06); color: var(--apple-black);
+            padding: 8px 14px; font-size: 0.95rem; border-radius: 22px;
+            border: none; font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .apple-pill-btn:hover { background: rgba(0,0,0,0.1); }
+        .apple-pill-btn.primary { background: var(--apple-blue); color: #fff; }
+        .apple-pill-btn.danger { background: rgba(255,59,48,0.12); color: var(--apple-red); }
+
+        .nav-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .nav-grid {
+            display: flex; flex-direction: column; gap: 14px;
+            padding: 20px 16px 40px; align-items: center;
+            max-width: 560px; width: 100%; margin: 0 auto;
+        }
+        .big-btn {
+            width: 100%; min-height: 88px; border-radius: var(--radius-md);
+            border: none; color: #fff; font-size: 1.55rem; font-weight: 700;
+            cursor: pointer; box-shadow: 0 5px 16px rgba(0,0,0,0.07);
+            transition: transform 0.2s cubic-bezier(0.25,1,0.5,1), opacity 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            padding: 12px 16px; line-height: 1.25;
+        }
+        .big-btn:active { transform: scale(0.97); opacity: 0.92; }
+        .big-btn .btn-sub { font-size: 0.85rem; font-weight: 500; opacity: 0.9; display: block; margin-top: 2px; }
+
+        /* ===== Modal ===== */
+        .modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.48); backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px); z-index: 10000;
+            justify-content: center; align-items: center; padding: 12px;
+        }
+        .modal-content {
+            background: rgba(255,255,255,0.98); border: 1px solid rgba(255,255,255,0.6);
+            border-radius: var(--radius-lg); width: 100%; max-width: 860px;
+            padding: 28px 22px; text-align: center;
+            transform: scale(0.88); max-height: 94dvh; overflow-y: auto;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.16);
+            -webkit-overflow-scrolling: touch;
         }
 
-        .modal-content { 
-            background: rgba(255, 255, 255, 0.98); 
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: var(--radius-lg); 
-            width: 100%;
-            max-width: 860px; 
-            padding: 40px; 
-            text-align: center; 
-            transform: scale(0.85); 
-            max-height: 94vh; 
-            overflow-y: auto;
-            box-shadow: 0 35px 70px rgba(0,0,0,0.18);
+        /* ===== Vision Box ===== */
+        .ai-vision-box {
+            width: 100%; height: 320px; background: #000;
+            border-radius: var(--radius-md); position: relative;
+            overflow: hidden; margin: 16px 0;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
         }
-        
-        .ai-vision-box { 
-            width: 100%;
-            height: 400px; 
-            background: #000; 
-            border-radius: var(--radius-md); 
-            position: relative; 
-            overflow: hidden; 
-            margin: 24px 0;
-            box-shadow: inset 0 0 24px rgba(0,0,0,0.3);
+        #v-feed, #v-feed-canvas {
+            width: 100%; height: 100%; object-fit: cover;
+            transform: scaleX(-1); position: absolute; top: 0; left: 0;
         }
-
-        #v-feed { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transform: scaleX(-1);
-        }
-
-        .ai-target-circle { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
+        #v-feed-canvas { z-index: 2; pointer-events: none; }
+        .ai-target-circle {
+            position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 240px; 
-            height: 240px; 
-            border: 5px dashed var(--apple-red); 
-            border-radius: 50%; 
-            pointer-events: none;
-            animation: rotateDashed 25s linear infinite;
+            width: 200px; height: 200px;
+            border: 4px dashed var(--apple-red); border-radius: 50%;
+            pointer-events: none; z-index: 3;
+            animation: rotateDashed 20s linear infinite;
         }
-
         @keyframes rotateDashed {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
+            from { transform: translate(-50%,-50%) rotate(0deg); }
+            to { transform: translate(-50%,-50%) rotate(360deg); }
         }
+        .blend-meter {
+            display: flex; gap: 8px; justify-content: center; margin: 10px 0; flex-wrap: wrap;
+        }
+        .blend-pill {
+            background: rgba(0,0,0,0.05); border-radius: 16px; padding: 6px 14px;
+            font-size: 0.95rem; font-weight: 700;
+        }
+        .blend-pill.good { background: rgba(52,199,89,0.15); color: var(--apple-green); }
+        .blend-pill.bad { background: rgba(255,59,48,0.12); color: var(--apple-red); }
 
-        #nose-dot { 
-            position: absolute; 
-            width: 22px; 
-            height: 22px; 
-            background: var(--apple-green); 
-            border: 4px solid white;
-            border-radius: 50%;
-            display: none; 
-            z-index: 5; 
-            box-shadow: 0 0 12px rgba(52, 199, 89, 0.6);
-        }
-        
-        /* 4. 聲控與氣量阻抗專用儀錶、自訂門檻與矩陣樣式 */
+        /* ===== Sound Meter ===== */
         .thresh-panel {
-            background: rgba(0,0,0,0.03);
-            border-radius: var(--radius-md);
-            padding: 16px 20px;
-            margin: 14px 0;
-            border: 1px solid rgba(0,0,0,0.06);
+            background: rgba(0,0,0,0.03); border-radius: var(--radius-md);
+            padding: 14px 16px; margin: 12px 0; border: 1px solid rgba(0,0,0,0.06);
         }
-
         .thresh-slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 10px;
-            border-radius: 5px;
-            background: #d1d1d6;
-            outline: none;
-            margin: 10px 0;
+            -webkit-appearance: none; width: 100%; height: 10px;
+            border-radius: 5px; background: #d1d1d6; outline: none; margin: 10px 0;
         }
-
         .thresh-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: var(--apple-blue);
-            cursor: pointer;
+            -webkit-appearance: none; width: 28px; height: 28px;
+            border-radius: 50%; background: var(--apple-blue); cursor: pointer;
             box-shadow: 0 2px 8px rgba(0,113,227,0.4);
         }
-
-        .sound-meter-wrapper {
-            position: relative;
-            width: 100%;
-            margin: 28px 0 12px 0;
-        }
-
-        #sound-bar-container { 
-            width: 100%;
-            height: 52px; 
-            background: rgba(0,0,0,0.06); 
-            border-radius: 26px; 
-            position: relative;
-            overflow: hidden;
+        .sound-meter-wrapper { position: relative; width: 100%; margin: 20px 0 10px; }
+        #sound-bar-container {
+            width: 100%; height: 48px; background: rgba(0,0,0,0.06);
+            border-radius: 24px; position: relative; overflow: hidden;
             box-shadow: inset 0 2px 6px rgba(0,0,0,0.08);
         }
-
-        #sound-bar-fill { 
-            width: 0%; 
-            height: 100%; 
+        #sound-bar-fill {
+            width: 0%; height: 100%;
             background: linear-gradient(90deg, var(--apple-green) 0%, var(--apple-orange) 70%, var(--apple-red) 100%);
-            transition: width 0.06s ease-out; 
+            transition: width 0.05s ease-out;
         }
-
-        #sound-val-text { 
-            position: absolute; 
-            right: 22px; 
-            top: 50%;
-            transform: translateY(-50%); 
-            font-weight: 800; 
-            font-size: 22px; 
-            color: var(--apple-black); 
-            z-index: 5;
+        #sound-val-text {
+            position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+            font-weight: 800; font-size: 1.15rem; color: var(--apple-black); z-index: 5;
         }
-
-        /* 動態達標線 */
         .threshold-marker-target {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: var(--apple-red);
-            z-index: 4;
-            transition: left 0.15s ease;
+            position: absolute; top: 0; bottom: 0; width: 3px;
+            background: var(--apple-red); z-index: 4; transition: left 0.15s;
         }
         .threshold-marker-target::after {
-            content: attr(data-label);
-            position: absolute;
-            top: -24px;
-            right: -36px;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--apple-red);
-            white-space: nowrap;
+            content: attr(data-label); position: absolute; top: -22px; right: -32px;
+            font-size: 0.75rem; font-weight: 700; color: var(--apple-red); white-space: nowrap;
         }
-
-        /* 動態換氣重置線 */
         .threshold-marker-reset {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            border-left: 2px dashed rgba(0,0,0,0.35);
-            z-index: 4;
-            transition: left 0.15s ease;
+            position: absolute; top: 0; bottom: 0; width: 2px;
+            border-left: 2px dashed rgba(0,0,0,0.3); z-index: 4; transition: left 0.15s;
         }
         .threshold-marker-reset::after {
-            content: attr(data-label);
-            position: absolute;
-            bottom: -22px;
-            left: -36px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--apple-dark-gray);
-            white-space: nowrap;
+            content: attr(data-label); position: absolute; bottom: -20px; left: -30px;
+            font-size: 0.75rem; font-weight: 600; color: var(--apple-dark-gray); white-space: nowrap;
         }
-
         #sound-status-pill {
-            display: inline-block;
-            padding: 8px 22px;
-            border-radius: 20px;
-            font-size: 18px;
-            font-weight: 700;
-            margin: 10px 0;
-            background: rgba(0,0,0,0.05);
-            color: var(--apple-dark-gray);
-            transition: all 0.2s ease;
+            display: inline-block; padding: 8px 18px; border-radius: 20px;
+            font-size: 1rem; font-weight: 700; margin: 8px 0;
+            background: rgba(0,0,0,0.05); color: var(--apple-dark-gray); transition: all 0.2s;
         }
-
         .score-matrix-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin: 16px 0;
-            padding: 16px;
-            background: rgba(0,0,0,0.02);
-            border-radius: var(--radius-md);
-            border: 1px solid rgba(0,0,0,0.06);
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+            margin: 12px 0; padding: 12px; background: rgba(0,0,0,0.02);
+            border-radius: var(--radius-md); border: 1px solid rgba(0,0,0,0.06);
         }
-
         .score-badge {
-            background: white;
-            border: 2px solid rgba(0,0,0,0.08);
-            border-radius: 12px;
-            padding: 8px 4px;
-            text-align: center;
-            transition: all 0.25s ease;
+            background: #fff; border: 2px solid rgba(0,0,0,0.08);
+            border-radius: 12px; padding: 6px 2px; text-align: center; transition: all 0.25s;
         }
-
-        .score-badge .badge-label {
-            font-size: 13px;
-            color: var(--apple-dark-gray);
-            font-weight: 600;
-        }
-
-        .score-badge .badge-value {
-            font-size: 20px;
-            font-weight: 800;
-            color: rgba(0,0,0,0.25);
-            margin-top: 2px;
-        }
-
+        .score-badge .badge-label { font-size: 0.7rem; color: var(--apple-dark-gray); font-weight: 600; }
+        .score-badge .badge-value { font-size: 1rem; font-weight: 800; color: rgba(0,0,0,0.22); margin-top: 1px; }
         .score-badge.achieved {
-            border-color: var(--apple-green);
-            background: rgba(52, 199, 89, 0.08);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(52, 199, 89, 0.2);
+            border-color: var(--apple-green); background: rgba(52,199,89,0.08);
+            transform: translateY(-2px); box-shadow: 0 3px 8px rgba(52,199,89,0.2);
         }
+        .score-badge.achieved .badge-value { color: var(--apple-green); }
 
-        .score-badge.achieved .badge-value {
-            color: var(--apple-green);
+        /* ===== Cards & Buttons ===== */
+        .grid-10 {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px; margin-top: 16px;
         }
-        
-        /* 5. 網格元件排版 */
-        .grid-10 { 
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); 
-            gap: 18px; 
-            margin-top: 24px; 
+        .card-unit {
+            background: #fff; border: 2px solid rgba(0,0,0,0.05);
+            border-radius: var(--radius-md); padding: 18px 10px;
+            font-weight: 700; font-size: 1.15rem; cursor: pointer;
+            transition: all 0.25s; box-shadow: 0 3px 10px rgba(0,0,0,0.02);
         }
-
-        .card-unit { 
-            background: white;
-            border: 2px solid rgba(0,0,0,0.05); 
-            border-radius: var(--radius-md); 
-            padding: 24px 16px; 
-            font-weight: 700; 
-            font-size: 24px; 
-            cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.02);
+        .card-unit:active { transform: scale(0.97); }
+        .sub-btn {
+            height: 56px; border-radius: var(--radius-sm); font-weight: 700;
+            color: #fff; font-size: 1.05rem; border: none; cursor: pointer;
+            margin: 6px; padding: 0 20px; transition: all 0.2s; min-width: 120px;
         }
-
-        .card-unit:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 24px rgba(0,0,0,0.07);
-            border-color: rgba(0,0,0,0.08);
-        }
-
-        .sub-btn { 
-            height: 62px; 
-            border-radius: var(--radius-sm); 
-            font-weight: 700; 
-            color: white; 
-            font-size: 20px;
-            border: none; 
-            cursor: pointer; 
-            margin: 8px; 
-            padding: 0 28px; 
-            transition: all 0.2s ease;
-        }
-
         .sub-btn:active { transform: scale(0.96); }
+        .sub-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .puzzle-key {
+            background: #fff; border: 2px solid rgba(0,0,0,0.1);
+            padding: 14px 18px; border-radius: var(--radius-sm); margin: 8px 0;
+            width: 100%; text-align: left; font-size: 1.1rem; font-weight: 700;
+            display: block; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .puzzle-key:active { background: var(--apple-gray); }
 
-        .puzzle-key { 
-            background: white;
-            border: 2px solid rgba(0,0,0,0.12); 
-            padding: 18px 24px; 
-            border-radius: var(--radius-sm); 
-            margin: 12px 0; 
-            width: 100%; 
-            text-align: left; 
-            font-size: 22px; 
-            font-weight: 700; 
-            display: block; 
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.02);
+        /* ===== Progress Chart ===== */
+        .progress-bars { margin: 16px 0; text-align: left; }
+        .prog-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+        .prog-label { width: 70px; font-size: 0.85rem; font-weight: 600; color: var(--apple-dark-gray); flex-shrink: 0; }
+        .prog-track { flex: 1; height: 18px; background: rgba(0,0,0,0.06); border-radius: 9px; overflow: hidden; }
+        .prog-fill { height: 100%; border-radius: 9px; background: linear-gradient(90deg, var(--ai-blue), var(--apple-green)); transition: width 0.5s; min-width: 2px; }
+        .prog-val { width: 40px; font-size: 0.85rem; font-weight: 700; text-align: right; }
+
+        /* ===== Onboarding ===== */
+        .onboard-option {
+            display: block; width: 100%; text-align: left; padding: 16px 18px;
+            margin: 8px 0; border: 2px solid rgba(0,0,0,0.1); border-radius: var(--radius-sm);
+            background: #fff; font-size: 1.15rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .onboard-option.selected {
+            border-color: var(--apple-blue); background: rgba(0,113,227,0.06);
+            box-shadow: 0 0 0 3px rgba(0,113,227,0.12);
         }
 
-        .puzzle-key:hover {
-            background: var(--apple-gray);
-            border-color: rgba(0,0,0,0.2);
+        /* ===== Toast ===== */
+        #toast {
+            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+            background: var(--apple-black); color: #fff; padding: 14px 24px;
+            border-radius: 24px; font-size: 1.05rem; font-weight: 600;
+            z-index: 30000; opacity: 0; transition: all 0.35s cubic-bezier(0.25,1,0.5,1);
+            max-width: 90%; text-align: center; pointer-events: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ===== Voice mode indicator ===== */
+        .voice-mode-bar {
+            background: linear-gradient(90deg, var(--speech-purple), var(--ai-blue));
+            color: #fff; padding: 8px 16px; font-size: 0.95rem; font-weight: 700;
+            text-align: center; display: none;
+        }
+        .voice-mode-bar.active { display: block; }
+
+        /* ===== Accessibility ===== */
+        .a11y-bar {
+            display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+            margin-top: 10px; padding-bottom: 4px;
+        }
+        .a11y-btn {
+            background: rgba(0,0,0,0.05); border: none; border-radius: 16px;
+            padding: 6px 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
         }
 
-        .header-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 850px;
-            margin: 14px auto 0 auto;
-            font-size: 22px;
-            color: var(--apple-dark-gray);
-            font-weight: 600;
+        /* ===== Daily plan card ===== */
+        .daily-plan {
+            background: linear-gradient(135deg, rgba(0,180,216,0.08), rgba(155,93,229,0.08));
+            border: 1px solid rgba(0,180,216,0.2); border-radius: var(--radius-md);
+            padding: 16px; margin-bottom: 8px; text-align: left;
         }
-
-        .header-btns { margin-top: 18px; }
-
-        .apple-pill-btn {
-            background: rgba(0,0,0,0.06);
-            color: var(--apple-black);
-            padding: 10px 20px;
-            font-size: 18px;
-            border-radius: 24px;
-            border: none;
-            font-weight: 700;
-            cursor: pointer;
-            margin: 0 6px;
-            transition: all 0.2s ease;
+        .daily-plan h3 { margin: 0 0 8px; font-size: 1.15rem; }
+        .daily-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 1rem; font-weight: 600;
         }
+        .daily-item:last-child { border-bottom: none; }
+        .daily-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--apple-dark-gray); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+        .daily-check.done { background: var(--apple-green); border-color: var(--apple-green); color: #fff; }
 
-        .apple-pill-btn:hover { background: rgba(0,0,0,0.1); }
-        .apple-pill-btn.primary { background: var(--apple-blue); color: white; }
+        @media (max-width: 400px) {
+            .big-btn { font-size: 1.3rem; min-height: 78px; }
+            .login-card h1 { font-size: 2rem; }
+            .score-matrix-grid { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+        }
     </style>
 </head>
 <body>
+<!-- Toast -->
+<div id="toast"></div>
 
-<!-- 登入介面 -->
+<!-- ===== Login ===== -->
 <div id="login-screen">
     <div class="login-card">
         <h1>樂活金掌家</h1>
-        <p>AI 言語治療專業訓練系統</p>
-        <input type="text" id="case-id" placeholder="個案編號 (例如: C-101)">
-        <input type="password" id="case-pw" placeholder="密碼 (預設: 1234)">
-        <div id="v-box" onclick="refreshV()">8888</div>
-        <input type="text" id="v-in" placeholder="請輸入上方驗證碼" style="text-align:center;">
-        <button class="big-btn" style="background:var(--apple-black); height:80px; font-size:26px;" onclick="checkAuth()">驗證進入系統</button>
+        <p class="tagline">AI 言語治療專業訓練系統</p>
+        <span class="version-badge">v2 · 真實 AI 偵測</span>
+        <input type="text" id="case-id" placeholder="個案編號 (例如: C-101)" autocomplete="username" aria-label="個案編號">
+        <input type="password" id="case-pw" placeholder="密碼 (預設: 1234)" autocomplete="current-password" aria-label="密碼">
+        <div id="v-box" onclick="refreshV()" role="button" aria-label="點擊更新驗證碼" title="點擊更新">----</div>
+        <input type="text" id="v-in" placeholder="請輸入上方驗證碼" style="text-align:center;" inputmode="numeric" aria-label="驗證碼">
+        <button class="big-btn" style="background:var(--apple-black); min-height:72px; font-size:1.35rem;" onclick="checkAuth()">驗證進入系統</button>
+        <p class="login-hint">測試帳號：C-101 / 1234<br>或 admin / 8888</p>
+        <div class="a11y-bar">
+            <button class="a11y-btn" onclick="adjustFont(0.1)">字體 A+</button>
+            <button class="a11y-btn" onclick="adjustFont(-0.1)">字體 A−</button>
+            <button class="a11y-btn" onclick="toggleContrast()">高對比</button>
+        </div>
     </div>
 </div>
 
-<!-- 主應用介面 -->
+<!-- ===== Main App ===== -->
 <div id="app-content">
+    <div class="voice-mode-bar" id="voice-mode-bar">🎙️ 語音操作模式已開啟 — 可講「開口肌」「開聲控」「睇進度」「返回」</div>
     <header>
-        <div id="time" style="font-size: 52px; font-weight: 800; color: var(--apple-black); letter-spacing: -0.04em;">00:00</div>
+        <div id="time">00:00</div>
         <div class="header-meta">
-            <div>個案：<span id="u-name" style="color:var(--apple-black); font-weight:700;">---</span></div>
-            <div>💰 累計金幣：<span id="gold-val" style="color:var(--gold); font-weight:800;">0</span></div>
+            <div>個案：<span id="u-name" style="color:var(--apple-black);font-weight:700;">---</span></div>
+            <div>💰 <span id="gold-val" style="color:var(--gold);font-weight:800;">0</span></div>
         </div>
         <div class="header-btns">
-            <button class="apple-pill-btn primary" onclick="syncMongoDB()">💾 手動同步紀錄</button>
-            <button class="apple-pill-btn" onclick="location.reload()">🚪 登出系統</button>
+            <button class="apple-pill-btn primary" onclick="showProgressUI()">📊 我的進度</button>
+            <button class="apple-pill-btn" onclick="syncCloud()">💾 同步</button>
+            <button class="apple-pill-btn" id="voice-toggle-btn" onclick="toggleVoiceMode()">🎙️ 語音操作</button>
+            <button class="apple-pill-btn danger" onclick="doLogout()">登出</button>
+        </div>
+        <div class="a11y-bar">
+            <button class="a11y-btn" onclick="adjustFont(0.1)">A+</button>
+            <button class="a11y-btn" onclick="adjustFont(-0.1)">A−</button>
+            <button class="a11y-btn" onclick="toggleContrast()">高對比</button>
         </div>
     </header>
-    
-    <div class="nav-grid">
-        <button class="big-btn" style="background:var(--mouth-pink);" onclick="showMouthUI()">👄 口肌視覺訓練</button>
-        <button class="big-btn" style="background:var(--speech-purple);" onclick="showCogCatalog()">🗣️ 階梯認知命名</button>
-        <button class="big-btn" style="background:var(--ai-blue);" onclick="showSceneCatalog()">📍 真實情境應對</button>
-        <button class="big-btn" style="background:var(--apple-green);" onclick="showGameUI('voice')">🎵 聲控開花 (發聲)</button>
-        <button class="big-btn" style="background:var(--ai-blue);" onclick="showGameUI('blow')">🎈 氣量脹大 (吹氣)</button>
+
+    <div class="nav-scroll">
+        <div class="nav-grid">
+            <!-- Daily Plan -->
+            <div class="daily-plan" id="daily-plan-box">
+                <h3>📋 今日建議訓練</h3>
+                <div id="daily-plan-items"><p style="color:var(--apple-dark-gray);font-size:0.95rem;">載入中…</p></div>
+            </div>
+
+            <button class="big-btn" style="background:var(--mouth-pink);" onclick="showMouthUI()">
+                <span>👄 口肌視覺訓練<br><span class="btn-sub">真實 AI 臉部偵測 · 對稱度分析</span></span>
+            </button>
+            <button class="big-btn" style="background:var(--speech-purple);" onclick="showCogCatalog()">
+                <span>🗣️ 階梯認知命名<br><span class="btn-sub">提示階梯 · 語音辨識作答</span></span>
+            </button>
+            <button class="big-btn" style="background:var(--ai-blue);" onclick="showSceneCatalog()">
+                <span>📍 真實情境應對<br><span class="btn-sub">生活對話 · 排序練習</span></span>
+            </button>
+            <button class="big-btn" style="background:var(--apple-green);" onclick="showGameUI('voice')">
+                <span>🎵 聲控開花<br><span class="btn-sub">大聲發「呀～」· 可調門檻</span></span>
+            </button>
+            <button class="big-btn" style="background:var(--ai-blue);" onclick="showGameUI('blow')">
+                <span>🎈 氣量脹大<br><span class="btn-sub">持續吹氣 · 呼吸支持</span></span>
+            </button>
+            <button class="big-btn" style="background:var(--gold); color:var(--apple-black);" onclick="showLifeRecordUI()">
+                <span>🎤 生活錄音任務<br><span class="btn-sub">真實場景練習 · 前後對比</span></span>
+            </button>
+            <button class="big-btn" style="background:var(--apple-dark-gray);" onclick="showRewardsUI()">
+                <span>🏆 金幣獎勵中心<br><span class="btn-sub">解鎖內容 · 分享家人</span></span>
+            </button>
+        </div>
     </div>
 </div>
 
-<!-- 通用彈窗容器 -->
-<div id="modal-container" class="modal">
+<!-- Modal -->
+<div id="modal-container" class="modal" role="dialog" aria-modal="true">
     <div class="modal-content" id="modal-body"></div>
 </div>
 
 <script>
-    // --- 全局狀態變數 ---
-    let usersData = {
-        "C-101": { name: "陳伯伯", pw: "1234", gold: 120 },
-        "C-102": { name: "李婆婆", pw: "1234", gold: 250 },
-        "admin": { name: "治療師示範帳號", pw: "8888", gold: 999 }
-    }; 
-    let currentUser = null, goldCount = 0, vCodeStr = "";
-    let targetVal = 10, cameraStream = null, aiTimer = null;
-    
-    // 🎯 聲控/氣量自由調整達標率設定 (預設 80% 達標，40% 換氣重置)
-    let soundTargetThreshold = 80;
-    let soundResetThreshold = 40;
+/* ============================================================
+   樂活金掌家 v2 — 完整改進版
+   P0: 真實 MediaPipe · 語音 fallback · 智能回饋
+   P1: 個人化計劃 · 進度圖 · 語音操作 · 家人分享
+   P2: 生活錄音 · 金幣解鎖 · 離線優先
+   ============================================================ */
 
-    // Web Audio 專用變數
-    let audioCtx = null, analyser = null, audioStream = null, audioLoopId = null;
-    let recordedScores = [];
+// ---------- 全局狀態 ----------
+const STORAGE_KEY = 'lohak_v2_data';
+let usersData = {
+    "C-101": { name: "陳伯伯", pw: "1234", gold: 120, profile: null },
+    "C-102": { name: "李婆婆", pw: "1234", gold: 250, profile: null },
+    "admin": { name: "治療師示範帳號", pw: "8888", gold: 999, profile: null }
+};
+let currentUser = null, currentCaseId = null, goldCount = 0, vCodeStr = "";
+let targetVal = 10;
+let soundTargetThreshold = 80, soundResetThreshold = 40;
+let audioCtx = null, analyser = null, audioStream = null, audioLoopId = null;
+let recordedScores = [];
+let currentTrainingType = "未分類訓練", lastGoldEarned = 0;
+let blendshapeBuffer = [], symmetryBuffer = [];
+let faceLandmarker = null, faceCamStream = null, faceAnimId = null, faceRunning = false;
+let voiceModeActive = false, voiceModeRec = null;
+let sessionHistory = []; // {date, type, gold, scores, note}
+let dailyDone = { mouth: false, cog: false, scene: false, voice: false, blow: false };
+let unlockedScenes = [0, 1, 2]; // 預設解鎖前3個情境
+let lifeRecordings = {}; // key -> {blobUrl, transcript, date}
 
-    // 🎯 GAS 雙向同步雲端 API 位置
-    const API_GET_URL = "https://script.google.com/macros/s/AKfycbwjzTSM9D_CGHDYRUBJxuFJ4xgOxsOgrbRWzHSoTL2NO3-C0TZJny_vXz2UORbpCbM7kQ/exec";
-    const API_POST_URL = "https://script.google.com/macros/s/AKfycbzP0aXpxzQn5sz0zF15nSKx73QbxDl9xp83-653X-hcE2MuzUmzxAf1cuJeJZN70S3N/exec";
-    
-    // 🎯 Dify 高級工作流 API 位置與 Key 設定
-    const DIFY_WORKFLOW_URL = "https://api.dify.ai/v1/workflows/run";
-    const DIFY_API_KEY = "Bearer app-YOUR_ACTUAL_DIFY_API_KEY"; 
-    
-    let currentTrainingType = "未分類訓練";
-    let lastGoldEarned = 0;
+const API_GET_URL = "https://script.google.com/macros/s/AKfycbwjzTSM9D_CGHDYRUBJxuFJ4xgOxsOgrbRWzHSoTL2NO3-C0TZJny_vXz2UORbpCbM7kQ/exec";
+const API_POST_URL = "https://script.google.com/macros/s/AKfycbzP0aXpxzQn5sz0zF15nSKx73QbxDl9xp83-653X-hcE2MuzUmzxAf1cuJeJZN70S3N/exec";
+const DIFY_WORKFLOW_URL = "https://api.dify.ai/v1/workflows/run";
+const DIFY_API_KEY = "Bearer app-YOUR_ACTUAL_DIFY_API_KEY";
 
-    let blendshapeBuffer = [];
-    let symmetryBuffer = [];
+// Speech Recognition
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognizer = null;
+if (SpeechRec) {
+    recognizer = new SpeechRec();
+    recognizer.lang = 'zh-HK';
+    recognizer.continuous = false;
+    recognizer.interimResults = false;
+}
 
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognizer = SpeechRec ? new SpeechRec() : null;
-    if(recognizer) { recognizer.lang = 'zh-HK'; recognizer.continuous = false; }
-
-    function loadUsersFromCloud() {
-        console.log("🔄 正在連線雲端提取最新長者名單...");
-        fetch(API_GET_URL)
-            .then(response => response.json())
-            .then(data => {
-                if (data && typeof data === 'object') {
-                    usersData = Object.assign(usersData, data);
-                    console.log("✅ 雲端名單提取成功！目前個案庫數量：", Object.keys(usersData).length);
-                }
-            })
-            .catch(err => {
-                console.warn("⚠️ 雲端名單讀取異常，已自動切換為本地預設個案名單 (C-101 / 1234)", err);
-            });
-    }
-
-    function refreshV() { 
-        vCodeStr = Math.floor(1000 + Math.random() * 9000).toString(); 
-        document.getElementById('v-box').innerText = vCodeStr; 
-    }
-    
-    function checkAuth() {
-        const id = document.getElementById('case-id').value.trim();
-        const pw = document.getElementById('case-pw').value.trim();
-        const vin = document.getElementById('v-in').value.trim();
-        
-        if (usersData[id] && usersData[id].pw === pw && vin === vCodeStr) {
-            currentUser = usersData[id];
-            goldCount = currentUser.gold || 0; 
-            document.getElementById('u-name').innerText = currentUser.name;
-            document.getElementById('gold-val').innerText = goldCount;
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('app-content').style.display = 'flex';
-            speak("身份驗證成功，歡迎進入樂活金掌家系統。");
-        } else { 
-            alert("登入失敗！\n提示：可使用預設帳號 C-101 / 密碼 1234 進行測試。"); 
-            refreshV(); 
-        }
-    }
-
-    // ==========================================
-    // 1. 口肌視覺訓練與 Dify AI 深度評估
-    // ==========================================
-    const mouthData = [
-        {n:"噘嘴", i:"😙", bs:"mouthPucker", d:"雙唇用力向前翹起"}, {n:"咧嘴", i:"😊", bs:"mouthSmile", d:"嘴角向兩邊拉開"},
-        {n:"鼓腮", i:"😗", bs:"cheekPuff", d:"兩頰充滿空氣撐開"}, {n:"張大口", i:"😲", bs:"jawOpen", d:"下巴放鬆，盡量張大"},
-        {n:"舌伸出", i:"👅", bs:"tongueOut", d:"舌頭盡量向正前方伸"}, {n:"抿嘴", i:"😐", bs:"mouthClose", d:"雙唇用力閉緊"},
-        {n:"魚臉", i:"😚", bs:"mouthFrown", d:"兩頰向內吸做出魚嘴"}, {n:"舌向上", i:"⬆️", bs:"tongueUp", d:"舌尖向上觸碰上唇"},
-        {n:"舌向下", i:"⬇️", bs:"tongueDown", d:"舌尖向下延伸"}, {n:"露齒", i:"😬", bs:"mouthSmile", d:"咬緊牙關用力橫拉"}
-    ];
-
-    function showMouthUI() {
-        setModal(`
-            <h2 style="font-size:36px; margin-bottom:16px;">👄 AI 口肌視覺訓練</h2>
-            <p style="font-size:22px; color:var(--apple-dark-gray);">請設定目標秒數</p>
-            <div style="margin-bottom:26px;">
-                ${[10,20,30].map(s => `<button class="sub-btn" style="width:130px; background:${targetVal==s?'var(--apple-black)':'var(--apple-dark-gray)'};" onclick="targetVal=${s};showMouthUI()">${s}秒</button>`).join('')}
-            </div>
-            <div class="grid-10">
-                ${mouthData.map((m, idx) => `<div class="card-unit" onclick="openMouthAI(${idx})"><span style="font-size:60px; display:block; margin-bottom:8px;">${m.i}</span>${m.n}</div>`).join('')}
-            </div>
-            <button class="sub-btn" style="background:var(--apple-black); width:100%; margin-top:32px; height:64px;" onclick="closeAll()">返回主頁</button>
-        `);
-    }
-
-    async function openMouthAI(idx) {
-        const m = mouthData[idx];
-        setModal(`
-            <h2 style="font-size:38px; margin-bottom:8px;">${m.n}</h2>
-            <div style="font-size:100px; margin:10px 0;">${m.i}</div>
-            <p id="timer-disp" style="font-size:30px; font-weight:800; color:var(--apple-red); margin:0;">目標：${targetVal} 秒</p>
-            <div class="ai-vision-box"><video id="v-feed" autoplay playsinline></video><div class="ai-target-circle"></div><div id="nose-dot"></div></div>
-            <p id="ai-stat" style="font-size:24px; color:var(--apple-dark-gray); font-weight:700;">📸 AI 偵測準備中...</p>
-            <div style="margin-top:24px;">
-                <button class="sub-btn" style="background:var(--apple-blue);" onclick="startFaceAI('${m.bs}', ${idx})">開啟鏡頭感應</button>
-                <button class="sub-btn" style="background:var(--gold);" onclick="speak('${m.d}')">動作提示</button>
-                <button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="showMouthUI()">返回目錄</button>
-            </div>`);
-        try {
-            cameraStream = await navigator.mediaDevices.getUserMedia({video: {width:640, height:480}});
-            document.getElementById('v-feed').srcObject = cameraStream;
-        } catch (e) {
-            console.warn("鏡頭存取失敗", e);
-            document.getElementById('ai-stat').innerText = "⚠️ 請確認已允許瀏覽器使用視訊鏡頭";
-        }
-    }
-
-    function startFaceAI(bsType, idx) {
-        const m = mouthData[idx];
-        let timeLeft = targetVal;
-        blendshapeBuffer = [];
-        symmetryBuffer = [];
-
-        if(aiTimer) clearInterval(aiTimer);
-
-        aiTimer = setInterval(() => {
-            let currentBS = (Math.random() * 0.4 + 0.5); 
-            let currentSymmetry = (Math.random() * 0.26 + 0.74); 
-            
-            blendshapeBuffer.push(parseFloat(currentBS.toFixed(2)));
-            symmetryBuffer.push(parseFloat(currentSymmetry.toFixed(2)));
-
-            let isInside = currentBS > 0.58; 
-            if(isInside) {
-                timeLeft--; 
-                const tDisp = document.getElementById('timer-disp');
-                const stat = document.getElementById('ai-stat');
-                const dot = document.getElementById('nose-dot');
-                if (tDisp) tDisp.innerText = `保持中：${timeLeft} 秒`;
-                if (stat) stat.innerText = "✅ 動作正確！持續保持";
-                if (dot) dot.style.display = "block";
-            } else {
-                speak("動作不正確，請對準紅圈。");
-                const stat = document.getElementById('ai-stat');
-                if (stat) stat.innerText = "❌ 偵測不正確";
-            }
-            
-            if(timeLeft <= 0) { 
-                clearInterval(aiTimer); 
-                currentTrainingType = "口肌訓練：" + m.n;
-                lastGoldEarned = 50;
-                addGold(50); 
-                analyzeMouthViaDify(m.n);
-            }
-        }, 1000);
-    }
-
-    function analyzeMouthViaDify(actionName) {
-        const stat = document.getElementById('ai-stat');
-        if (stat) stat.innerHTML = `<span style="color:var(--apple-blue); font-weight:700; font-size:24px;">🔄 正在連線 Dify 智慧中心深度分析中...</span>`;
-        
-        const payload = {
-            "inputs": {
-                "caseId": document.getElementById('case-id').value || "Guest",
-                "actionName": actionName,
-                "targetSeconds": targetVal,
-                "blendshapeHistory": JSON.stringify(blendshapeBuffer),
-                "symmetryHistory": JSON.stringify(symmetryBuffer)
-            },
-            "response_mode": "blocking",
-            "user": currentUser ? currentUser.name : "Elderly"
-        };
-
-        fetch(DIFY_WORKFLOW_URL, {
-            method: "POST",
-            headers: {
-                "Authorization": DIFY_API_KEY,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(data => {
-            const result = JSON.parse(data.data.outputs.text); 
-            speak(result.elder_feedback);
-            
-            if (stat) {
-                stat.innerHTML = `
-                    <div style="background:rgba(52, 199, 89, 0.08); padding:20px; border-radius:16px; text-align:left; margin-top:16px; border: 1px solid rgba(52, 199, 89, 0.2);">
-                        <p style="font-size:24px; margin:6px 0;">🌟 <b>評估結果：</b><span style="color:var(--apple-green); font-weight:800;">${result.accuracy_rating}</span></p>
-                        <p style="font-size:20px; margin:6px 0; color:var(--apple-black); line-height:1.4;">📢 <b>導師話：</b>${result.elder_feedback}</p>
-                        <p style="font-size:18px; margin:6px 0; color:var(--apple-dark-gray); line-height:1.4;">💡 <b>明日訓練建議：</b>${result.next_step_tip}</p>
-                    </div>
-                `;
-            }
-            syncMongoDB();
-        })
-        .catch(err => {
-            console.warn("Dify 離線或金鑰未配置，啟用本地標準臨床回饋：", err);
-            speak("太棒了！口部肌力非常穩定，繼續加油！");
-            if (stat) {
-                stat.innerHTML = `<span style="color:var(--apple-green); font-weight:bold; font-size:24px;">✅ 訓練完成！獲得 50 金幣獎勵。</span>`;
-            }
-            syncMongoDB();
-        });
-    }
-
-    // ==========================================
-    // 2. 階梯式認知命名訓練
-    // ==========================================
-    const cogData = [
-        {t:"水果", i:[{n:"蘋果", p:"🍎", u:"紅紅甜甜醫生遠離我", s:"蘋"},{n:"香蕉", p:"🍌", u:"黃色長條猴子愛食", s:"香"},{n:"西瓜", p:"🍉", u:"消暑必備綠皮紅肉", s:"西"},{n:"橙", p:"🍊", u:"橙色圓形維他命C", s:"橙"},{n:"葡萄", p:"🍇", u:"紫色圓形一串串", s:"葡"}]},
-        {t:"交通", i:[{n:"巴士", p:"🚌", u:"大車有司機載客", s:"巴"},{n:"地鐵", p:"🚇", u:"地下火車", s:"地"},{n:"的士", p:"🚕", u:"紅色的車跳錶計錢", s:"的"},{n:"飛機", p:"✈️", u:"在天空中飛", s:"飛"},{n:"單車", p:"🚲", u:"用腳踏兩個圈", s:"單"}]},
-        {t:"動物", i:[{n:"大象", p:"🐘", u:"長鼻大耳", s:"大"},{n:"獅子", p:"🦁", u:"萬獸之王鬃毛", s:"獅"},{n:"貓", p:"🐱", u:"喵喵叫捉老鼠", s:"貓"},{n:"狗", p:"🐶", u:"汪汪叫好朋友", s:"狗"},{n:"猴子", p:"🐒", u:"爬樹食香蕉", s:"猴"}]},
-        {t:"文具", i:[{n:"鉛筆", p:"✏️", u:"寫字工具", s:"鉛"},{n:"書本", p:"📖", u:"閱讀知識", s:"書"},{n:"尺子", p:"📏", u:"畫線量長度", s:"尺"},{n:"剪刀", p:"✂️", u:"剪開紙張", s:"剪"},{n:"膠水", p:"🧪", u:"黐住兩樣嘢", s:"膠"}]},
-        {t:"衣物", i:[{n:"襯衫", p:"👕", u:"短袖衫", s:"襯"},{n:"褲子", p:"👖", u:"著喺腿上面", s:"褲"},{n:"鞋子", p:"👟", u:"著喺腳行路", s:"鞋"},{n:"帽子", p:"🧢", u:"戴頭上遮太陽", s:"帽"},{n:"襪子", p:"🧦", u:"穿喺腳裡面吸汗", s:"襪"}]},
-        {t:"職業", i:[{n:"醫生", p:"👨‍⚕️", u:"醫院醫病人", s:"醫"},{n:"警察", p:"👮", u:"捉拿壞人維持治安", s:"警"},{n:"老師", p:"👩‍🏫", u:"學校教導學生", s:"老"},{n:"廚師", p:"👨‍🍳", u:"廚房煮美食", s:"廚"},{n:"司機", p:"👨‍✈️", u:"駕駛車輛載客", s:"司"}]},
-        {t:"餐具", i:[{n:"碗", p:"🥣", u:"裝飯或者湯", s:"飯"},{n:"筷子", p:"🥢", u:"兩枝木棍夾嘢食", s:"筷"},{n:"匙羹", p:"🥄", u:"飲湯或者食粥", s:"匙"},{n:"茶杯", p:"🥛", u:"裝水飲茶", s:"茶"},{n:"盤子", p:"🍽️", u:"盛載菜餚", s:"盤"}]},
-        {t:"醫療", i:[{n:"藥水", p:"🧪", u:"病咗要飲", s:"藥"},{n:"口罩", p:"😷", u:"遮住口鼻", s:"口"},{n:"膠布", p:"🩹", u:"貼喺傷口保護", s:"膠"},{n:"溫度計", p:"🌡️", u:"量體溫睇發燒", s:"溫"},{n:"輪椅", p:"👩‍🦽", u:"幫助行動不便移動", s:"輪"}]},
-        {t:"天氣", i:[{n:"太陽", p:"☀️", u:"好曬好熱", s:"太"},{n:"落雨", p:"🌧️", u:"要帶雨遮", s:"落"},{n:"閃電", p:"⚡", u:"大聲驚驚", s:"閃"},{n:"落雪", p:"❄️", u:"白色好凍", s:"落"},{n:"大風", p:"🌬️", u:"吹出涼風", s:"大"}]},
-        {t:"顏色波分類", i:[{n:"紅色", p:"🔴", u:"火同蘋果嘅色", s:"紅"},{n:"藍色", p:"🔵", u:"天空同海洋嘅色", s:"藍"},{n:"綠色", p:"🟢", u:"草地同樹葉嘅色", s:"綠"},{n:"黃色", p:"🟡", u:"香蕉同太陽嘅色", s:"黃"},{n:"紫色", p:"🟣", u:"葡萄嘅色", s:"紫"}]}
-    ];
-
-    function showCogCatalog() {
-        setModal(`
-            <h2 style="font-size:36px; margin-bottom:24px;">🗣️ AI 認知選項目錄</h2>
-            <div class="grid-10">${cogData.map((c, idx) => `<div class="card-unit" onclick="showCogItems(${idx})">📂 ${c.t}</div>`).join('')}</div>
-            <button class="sub-btn" style="background:var(--apple-black); width:100%; margin-top:32px; height:64px;" onclick="closeAll()">返回</button>
-        `);
-    }
-
-    function showCogItems(cIdx) {
-        setModal(`
-            <h2 style="font-size:36px; margin-bottom:24px;">${cogData[cIdx].t} 練習清單</h2>
-            <div class="grid-10">${cogData[cIdx].i.map((item, idx) => `<div class="card-unit" onclick="runCogStep(1, ${cIdx}, ${idx})"><span style="font-size:68px; display:block; margin-bottom:8px;">${item.p}</span>${item.n}</div>`).join('')}</div>
-            <button class="sub-btn" style="background:var(--apple-dark-gray); width:100%; margin-top:30px; height:60px;" onclick="showCogCatalog()">返回目錄</button>
-        `);
-    }
-
-    let hStep = 0;
-    function runCogStep(step, c, i) {
-        const item = cogData[c].i[i];
-        let displayTxt = (step==1)?"呢件係咩？":(step==2)?`用途：${item.u}`:(step==3)?`首字提示：${item.s}...`:item.n;
-        setModal(`
-            <div style="font-size:140px; margin:16px 0;">${item.p}</div>
-            <div id="disp-area" style="font-size:38px; font-weight:700; background:rgba(0,0,0,0.03); padding:24px; border-radius:20px; margin-bottom:24px; border:1px solid rgba(0,0,0,0.05);">${displayTxt}</div>
-            <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:8px;">
-                <button class="sub-btn" style="background:var(--gold);" id="hint-btn">💡 提示鍵</button>
-                <button class="sub-btn" style="background:var(--ai-blue);" id="mic-btn">🎤 作答收音</button>
-                <button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="showCogItems(${c})">返回</button>
-                <button class="sub-btn" style="background:var(--apple-red);" onclick="runCogStep(1,${c},${(i+1)%5})">下一題</button>
-            </div>`);
-        
-        document.getElementById('hint-btn').onclick = () => {
-            hStep++;
-            setTimeout(() => {
-                if(hStep === 1) {
-                    if(step==1) speak("呢件係咩物件？");
-                    else if(step==2) speak("提示呢件物件用途係..." + item.u);
-                    else if(step==3) speak("首字提示係..." + item.s);
-                } else if(step < 4) { runCogStep(step+1, c, i); }
-                hStep = 0;
-            }, 350);
-        };
-
-        document.getElementById('mic-btn').onclick = () => {
-            speak("請讀出正確名稱");
-            if(recognizer) {
-                recognizer.start();
-                recognizer.onresult = (e) => {
-                    if(e.results[0][0].transcript.includes(item.n)) {
-                        currentTrainingType = "認知命名：" + item.n;
-                        lastGoldEarned = 30;
-                        speak("正確！獲得金幣獎勵。");
-                        addGold(30); 
-                        document.getElementById('disp-area').innerText = item.n;
-                        document.getElementById('hint-btn').style.visibility = "hidden";
-                        syncMongoDB();
-                    } else { 
-                        speak("讀音不正確，請再試一次。"); 
-                    }
-                };
-            } else {
-                alert("目前瀏覽器不支援 Web Speech 語音識別，請使用 Chrome 瀏覽器。");
-            }
-        };
-    }
-
-    // ==========================================
-    // 3. 真實情境應對
-    // ==========================================
-    const sceneData = [
-        {t:"超市付款", q:["呢個袋收五蚊。", "唔該用八達通。", "幫我嘟一嘟。", "洗唔洗儲積分？", "唔洗喇唔該。", "多謝晒。"]},
-        {t:"搭的士", q:["唔該去中環站。", "行西隧快啲。", "呢度轉角停。", "幾多錢話？", "收唔收現金？", "唔該晒。"]},
-        {t:"看醫生", q:["我有少少發燒。", "喉嚨好痛。", "洗唔洗打針？", "一日食幾次？", "記住戒口。", "多謝醫生。"]},
-        {t:"理髮店", q:["修短少少。", "側邊剪薄。", "洗頭水好香。", "吹乾唔該。", "幾好睇。", "再見。"]},
-        {t:"圖書館", q:["借呢本書。", "幾時還？", "可以續借？", "還書箱喺邊？", "呢度安靜。", "多謝。"]},
-        {t:"餐廳找錢", q:["埋單唔該。", "幾多錢？", "找返十蚊。", "唔使找喇。", "服務幾好。", "拜拜。"]},
-        {t:"過馬路", q:["地鐵點行？", "轉左定右？", "要行幾耐？", "過對面馬路？", "清楚晒。", "唔該。"]},
-        {t:"公園晨運", q:["天氣好。", "一齊行下啦。", "好多花。", "休息一陣先。", "飲啖水。", "聽日見。"]},
-        {t:"飲茶點餐", q:["兩位普洱。", "燒賣蝦餃。", "嘢食仲未到？", "唔該埋單。", "找返幾多錢？", "下次見。"]},
-        {t:"探訪老友", q:["好久不見。", "最近點呀？", "小禮物。", "入黎坐下。", "下次聚。", "拜拜。"]}
-    ];
-    
-    function showSceneCatalog() {
-        setModal(`
-            <h2 style="font-size:36px; margin-bottom:24px;">📍 AI 真實情境應對</h2>
-            <div class="grid-10">${sceneData.map((s, idx) => `<div class="card-unit" onclick="runScenePuzzle(${idx})">📍 ${s.t}</div>`).join('')}</div>
-            <button class="sub-btn" style="background:var(--apple-black); width:100%; margin-top:32px; height:64px;" onclick="closeAll()">返回</button>
-        `);
-    }
-
-    let pCount = 1;
-    function runScenePuzzle(idx) {
-        pCount = 1;
-        const s = sceneData[idx];
-        setModal(`
-            <h3 style="font-size:34px; margin-bottom:16px;">情境：${s.t}</h3>
-            <div id="p-res" style="min-height:140px; background:white; border:2px dashed rgba(0,0,0,0.2); padding:20px; margin-bottom:20px; text-align:left; border-radius:16px;"></div>
-            <div id="p-pool" style="max-height: 260px; overflow-y: auto; padding-right:6px;">${[...s.q].sort(()=>Math.random()-0.5).map(t => `<button class="puzzle-key" onclick="tapPuzzle(this, '${t}')">${t}</button>`).join('')}</div>
-            <div style="margin-top:24px;">
-                <button class="sub-btn" style="background:var(--ai-blue);" onclick="recScene('${s.q[0]}', ${idx})">🎤 作答評估</button>
-                <button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="showSceneCatalog()">返回目錄</button>
-                <button class="sub-btn" style="background:var(--apple-red);" onclick="runScenePuzzle(${(idx+1)%10})">下一題</button>
-            </div>`);
-    }
-
-    function tapPuzzle(btn, t) { 
-        speak(t); 
-        document.getElementById('p-res').innerHTML += `<div style="font-size:22px; margin:6px 0; font-weight:700; color:var(--apple-black);"><b>（${pCount++}）</b> ${t}</div>`; 
-        btn.style.opacity = "0.2"; 
-        btn.disabled = true; 
-    } 
-    
-    function recScene(correct, idx) {
-        const s = sceneData[idx];
-        speak("請朗讀正確對話全句");
-        if(recognizer) {
-            recognizer.start();
-            recognizer.onresult = (e) => {
-                if(e.results[0][0].transcript.includes(correct.slice(0,3))) { 
-                    currentTrainingType = "情境對話：" + s.t;
-                    lastGoldEarned = 40;
-                    speak("良好評估！獎勵 40 金幣。");
-                    addGold(40); 
-                    syncMongoDB(); 
-                } else { 
-                    speak("讀音未達標，請重試。"); 
-                }
-            };
-        }
-    }
-
-    // ==========================================
-    // 4. Web Audio 聲控與氣量阻抗訓練 (支援可自由調節門檻)
-    // ==========================================
-    function setThresholdRate(rate, type) {
-        soundTargetThreshold = parseInt(rate);
-        soundResetThreshold = Math.round(soundTargetThreshold * 0.5);
-        showGameUI(type);
-    }
-
-    function updateThresholdLive(rate) {
-        soundTargetThreshold = parseInt(rate);
-        soundResetThreshold = Math.round(soundTargetThreshold * 0.5);
-        
-        const tDisp = document.getElementById('t-val-disp');
-        const rDisp = document.getElementById('r-val-disp');
-        if (tDisp) tDisp.innerText = soundTargetThreshold;
-        if (rDisp) rDisp.innerText = soundResetThreshold;
-
-        const targetMarker = document.getElementById('target-marker');
-        const resetMarker = document.getElementById('reset-marker');
-        if (targetMarker) {
-            targetMarker.style.left = soundTargetThreshold + '%';
-            targetMarker.setAttribute('data-label', `${soundTargetThreshold}% 達標線`);
-        }
-        if (resetMarker) {
-            resetMarker.style.left = soundResetThreshold + '%';
-            resetMarker.setAttribute('data-label', `${soundResetThreshold}% 換氣重置`);
-        }
-    }
-
-    function showGameUI(type) {
-        targetVal = 10;
-        recordedScores = []; 
-
-        const matrixHTML = Array.from({length: 10}, (_, i) => `
-            <div class="score-badge" id="badge-${i+1}">
-                <div class="badge-label">第 ${i+1} 次</div>
-                <div class="badge-value" id="val-${i+1}">--</div>
-            </div>
-        `).join('');
-
-        setModal(`
-            <h2 style="font-size:36px; margin-bottom:6px;">${type === 'voice' ? '🎵 聲控開花 (大聲發「呀～」)' : '🎈 氣量阻抗 (持續吹氣)'}</h2>
-            
-            <!-- 自訂達標率面板 -->
-            <div class="thresh-panel">
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:20px; font-weight:700;">
-                    <span>🎯 達標門檻：<span id="t-val-disp" style="color:var(--apple-blue); font-size:24px;">${soundTargetThreshold}</span>%</span>
-                    <span style="color:var(--apple-dark-gray); font-size:16px;">（換氣重置：<span id="r-val-disp">${soundResetThreshold}</span>%）</span>
-                </div>
-                <input type="range" class="thresh-slider" min="50" max="95" step="5" value="${soundTargetThreshold}" oninput="updateThresholdLive(this.value)">
-                <div style="display:flex; justify-content:center; gap:8px;">
-                    <button class="apple-pill-btn ${soundTargetThreshold==60?'primary':''}" style="padding:4px 14px; font-size:15px;" onclick="setThresholdRate(60, '${type}')">輕鬆 60%</button>
-                    <button class="apple-pill-btn ${soundTargetThreshold==80?'primary':''}" style="padding:4px 14px; font-size:15px;" onclick="setThresholdRate(80, '${type}')">標準 80%</button>
-                    <button class="apple-pill-btn ${soundTargetThreshold==90?'primary':''}" style="padding:4px 14px; font-size:15px;" onclick="setThresholdRate(90, '${type}')">進階 90%</button>
-                </div>
-            </div>
-            
-            <div id="game-stage" style="font-size:115px; margin:10px 0; transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);">${type === 'voice' ? '🌱' : '☁️'}</div>
-            
-            <div class="sound-meter-wrapper">
-                <div id="target-marker" class="threshold-marker-target" style="left: ${soundTargetThreshold}%;" data-label="${soundTargetThreshold}% 達標線"></div>
-                <div id="reset-marker" class="threshold-marker-reset" style="left: ${soundResetThreshold}%;" data-label="${soundResetThreshold}% 換氣重置"></div>
-                <div id="sound-bar-container">
-                    <div id="sound-bar-fill"></div>
-                    <div id="sound-val-text">0%</div>
-                </div>
-            </div>
-            
-            <div id="sound-status-pill">⚪ 點擊下方按鈕啟動麥克風</div>
-
-            <div class="score-matrix-grid">
-                ${matrixHTML}
-            </div>
-
-            <p id="v-info" style="font-size:26px; font-weight:800; margin:10px 0;">已達成：0 / 10 次</p>
-            
-            <div style="display:flex; justify-content:center; gap:16px; margin-top:14px;">
-                <button class="sub-btn" style="background:var(--apple-blue); min-width:200px;" onclick="startAudioGame('${type}')">🎙️ 啟動 AI 收音</button>
-                <button class="sub-btn" style="background:var(--apple-black); min-width:140px;" onclick="closeAll();">返回</button>
-            </div>
-        `);
-    }
-
-    async function startAudioGame(type) {
-        try {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                await audioCtx.resume();
-            }
-
-            analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 512;
-            analyser.smoothingTimeConstant = 0.3;
-
-            audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const source = audioCtx.createMediaStreamSource(audioStream);
-            source.connect(analyser);
-
-            let count = 0;
-            let canTrigger = true; 
-            let currentPeak = 0;
-            const data = new Uint8Array(analyser.frequencyBinCount);
-
-            const statusPill = document.getElementById('sound-status-pill');
-
-            const loop = () => {
-                if (!analyser || !document.getElementById('sound-bar-fill')) return;
-
-                analyser.getByteFrequencyData(data);
-                
-                const average = data.reduce((sum, val) => sum + val, 0) / data.length;
-                const level = Math.min(100, Math.round((average / 128) * 100));
-
-                document.getElementById('sound-bar-fill').style.width = level + "%";
-                document.getElementById('sound-val-text').innerText = level + "%";
-
-                if (level > currentPeak) {
-                    currentPeak = level;
-                }
-
-                // 🎯 1. 達標判定 (>= soundTargetThreshold 且可觸發)
-                if (level >= soundTargetThreshold && canTrigger) {
-                    count++;
-                    canTrigger = false; 
-                    const achievedPeak = Math.max(level, currentPeak);
-                    recordedScores.push(achievedPeak);
-
-                    const targetBadge = document.getElementById(`badge-${count}`);
-                    const targetValText = document.getElementById(`val-${count}`);
-                    if (targetBadge && targetValText) {
-                        targetBadge.classList.add('achieved');
-                        targetValText.innerText = achievedPeak + "%";
-                    }
-
-                    if (statusPill) {
-                        statusPill.style.background = "rgba(52, 199, 89, 0.15)";
-                        statusPill.style.color = "var(--apple-green)";
-                        statusPill.innerText = `🎉 第 ${count} 次達標！強度：${achievedPeak}%`;
-                    }
-                    document.getElementById('v-info').innerText = `已達成：${count} / 10 次`;
-
-                    if (type === 'blow') {
-                        document.getElementById('game-stage').style.transform = `scale(${1 + count * 0.08})`;
-                    } else {
-                        document.getElementById('game-stage').style.transform = `scale(${1 + (count % 3) * 0.15})`;
-                    }
-
-                    if (count >= 10) {
-                        stopAudioGame();
-                        document.getElementById('game-stage').innerText = type === 'voice' ? '🌸' : '🎈';
-                        document.getElementById('game-stage').style.transform = 'scale(1.4)';
-                        if (statusPill) statusPill.innerText = "🏆 恭喜！順利完成 10 次訓練！";
-                        
-                        currentTrainingType = (type === 'voice' ? `聲控發聲 (${soundTargetThreshold}%達標)` : `氣量阻抗 (${soundTargetThreshold}%達標)`);
-                        lastGoldEarned = 100;
-                        addGold(100);
-                        speak("太叻喇！成功完成十次達標訓練！獲得一百金幣！");
-                        syncMongoDB();
-                        return;
-                    }
-                } 
-                // 🔄 2. 換氣防抖重置 (<= soundResetThreshold 且已鎖定)
-                else if (level <= soundResetThreshold && !canTrigger) {
-                    canTrigger = true;
-                    currentPeak = 0; 
-                    if (statusPill) {
-                        statusPill.style.background = "rgba(0,0,0,0.05)";
-                        statusPill.style.color = "var(--apple-dark-gray)";
-                        statusPill.innerText = "💨 換氣完成，請再次發聲/吹氣";
-                    }
-                }
-
-                audioLoopId = requestAnimationFrame(loop);
-            };
-
-            audioLoopId = requestAnimationFrame(loop);
-        } catch (err) {
-            console.error("無法開啟麥克風：", err);
-            alert("無法存取麥克風，請確認瀏覽器已允許麥克風權限。");
-        }
-    }
-
-    function stopAudioGame() {
-        if (audioLoopId) {
-            cancelAnimationFrame(audioLoopId);
-            audioLoopId = null;
-        }
-        if (audioStream) {
-            audioStream.getTracks().forEach(track => track.stop());
-            audioStream = null;
-        }
-    }
-
-    // ==========================================
-    // 5. 通用視窗工具與後端同步
-    // ==========================================
-    function setModal(h) { 
-        const container = document.getElementById('modal-container');
-        const body = document.getElementById('modal-body');
-        container.style.display = 'flex'; 
-        body.innerHTML = h; 
-        setTimeout(() => { 
-            body.style.transform = 'scale(1)'; 
-            body.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)'; 
-        }, 10);
-    }
-    
-    function closeAll() { 
-        document.getElementById('modal-container').style.display = 'none'; 
-        if(cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; } 
-        if(aiTimer) { clearInterval(aiTimer); aiTimer = null; }
-        stopAudioGame();
+// ---------- 工具 ----------
+function toast(msg, ms = 2800) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => t.classList.remove('show'), ms);
+}
+function speak(text, rate = 0.88) {
+    try {
         window.speechSynthesis.cancel();
-    }
-    
-    function addGold(n) { 
-        goldCount += n; 
-        document.getElementById('gold-val').innerText = goldCount; 
-    }
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'zh-HK';
+        u.rate = rate;
+        // 優先用粵語聲線
+        const voices = window.speechSynthesis.getVoices();
+        const yue = voices.find(v => /zh-HK|yue|Cantonese/i.test(v.lang + v.name));
+        if (yue) u.voice = yue;
+        window.speechSynthesis.speak(u);
+    } catch (e) { console.warn('TTS fail', e); }
+}
+function adjustFont(delta) {
+    const cur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--font-scale')) || 1;
+    const next = Math.min(1.4, Math.max(0.85, cur + delta));
+    document.documentElement.style.setProperty('--font-scale', next);
+    localStorage.setItem('lohak_font', next);
+    toast(delta > 0 ? '字體已放大' : '字體已縮小');
+}
+function toggleContrast() {
+    document.body.classList.toggle('high-contrast');
+    localStorage.setItem('lohak_contrast', document.body.classList.contains('high-contrast') ? '1' : '0');
+    toast(document.body.classList.contains('high-contrast') ? '已開啟高對比' : '已關閉高對比');
+}
+function loadA11y() {
+    const f = localStorage.getItem('lohak_font');
+    if (f) document.documentElement.style.setProperty('--font-scale', f);
+    if (localStorage.getItem('lohak_contrast') === '1') document.body.classList.add('high-contrast');
+}
 
-    function speak(t) { 
-        try {
-            window.speechSynthesis.cancel(); 
-            let s = new SpeechSynthesisUtterance(t); 
-            s.lang = 'zh-HK'; 
-            s.rate = 0.9; 
-            window.speechSynthesis.speak(s); 
-        } catch(e) {
-            console.warn("TTS 發音失敗", e);
+// ---------- 本地儲存（離線優先） ----------
+function loadLocal() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const d = JSON.parse(raw);
+        if (d.users) usersData = Object.assign(usersData, d.users);
+        if (d.history) sessionHistory = d.history;
+        if (d.dailyDone) dailyDone = d.dailyDone;
+        if (d.unlockedScenes) unlockedScenes = d.unlockedScenes;
+        if (d.soundTarget) soundTargetThreshold = d.soundTarget;
+        if (d.soundReset) soundResetThreshold = d.soundReset;
+    } catch (e) { console.warn('local load fail', e); }
+}
+function saveLocal() {
+    try {
+        if (currentCaseId && currentUser) {
+            usersData[currentCaseId] = {
+                ...usersData[currentCaseId],
+                gold: goldCount,
+                profile: currentUser.profile || null
+            };
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            users: usersData,
+            history: sessionHistory.slice(-200),
+            dailyDone,
+            unlockedScenes,
+            soundTarget: soundTargetThreshold,
+            soundReset: soundResetThreshold,
+            lastSave: new Date().toISOString()
+        }));
+    } catch (e) { console.warn('local save fail', e); }
+}
+function addHistory(type, gold, scores, note) {
+    sessionHistory.push({
+        date: new Date().toISOString(),
+        type, gold, scores: scores || [], note: note || ''
+    });
+    saveLocal();
+}
+
+// ---------- 登入 ----------
+function refreshV() {
+    vCodeStr = Math.floor(1000 + Math.random() * 9000).toString();
+    document.getElementById('v-box').innerText = vCodeStr;
+}
+function checkAuth() {
+    const id = document.getElementById('case-id').value.trim();
+    const pw = document.getElementById('case-pw').value.trim();
+    const vin = document.getElementById('v-in').value.trim();
+    if (usersData[id] && usersData[id].pw === pw && vin === vCodeStr) {
+        currentCaseId = id;
+        currentUser = usersData[id];
+        goldCount = currentUser.gold || 0;
+        document.getElementById('u-name').innerText = currentUser.name;
+        document.getElementById('gold-val').innerText = goldCount;
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-content').style.display = 'flex';
+        // 首次使用 → 個人化問卷
+        if (!currentUser.profile) {
+            setTimeout(() => showOnboarding(), 400);
+        } else {
+            renderDailyPlan();
+            speak('歡迎返嚟，' + currentUser.name + '。今日繼續加油！');
+        }
+        // 預載 Face Landmarker（背景）
+        initFaceLandmarker().catch(() => {});
+    } else {
+        toast('登入失敗，請檢查帳號、密碼同驗證碼');
+        speak('登入失敗，請再試一次');
+        refreshV();
+    }
+}
+function doLogout() {
+    closeAll();
+    stopVoiceMode();
+    saveLocal();
+    location.reload();
+}
+
+// ---------- 雲端 ----------
+function loadUsersFromCloud() {
+    fetch(API_GET_URL)
+        .then(r => r.json())
+        .then(data => {
+            if (data && typeof data === 'object') {
+                usersData = Object.assign(usersData, data);
+                console.log('✅ 雲端名單載入', Object.keys(usersData).length);
+            }
+        })
+        .catch(() => console.warn('雲端名單離線，用本地名單'));
+}
+function syncCloud() {
+    toast('正在同步紀錄…');
+    const payload = {
+        caseId: currentCaseId || 'Guest',
+        name: currentUser ? currentUser.name : '訪客',
+        trainingType: currentTrainingType,
+        goldEarned: lastGoldEarned,
+        totalGold: goldCount,
+        recordedScores,
+        scoresSummary: recordedScores.join(', '),
+        avgIntensity: recordedScores.length ? Math.round(recordedScores.reduce((a,b)=>a+b,0)/recordedScores.length) : '',
+        targetThreshold: soundTargetThreshold,
+        historyCount: sessionHistory.length
+    };
+    // 離線優先：先存本地
+    saveLocal();
+    fetch(API_POST_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    }).then(() => {
+        toast('同步完成 ✓');
+        lastGoldEarned = 0;
+        recordedScores = [];
+    }).catch(() => toast('雲端暫時唔通，已存本地'));
+}
+
+// ---------- 金幣 ----------
+function addGold(n) {
+    goldCount += n;
+    lastGoldEarned = n;
+    document.getElementById('gold-val').innerText = goldCount;
+    saveLocal();
+    // 檢查解鎖
+    checkUnlocks();
+}
+
+function checkUnlocks() {
+    // 每 150 金幣解鎖一個新情境
+    const canUnlock = Math.floor(goldCount / 150);
+    for (let i = 0; i < sceneData.length; i++) {
+        if (i <= canUnlock + 2 && !unlockedScenes.includes(i)) {
+            unlockedScenes.push(i);
+            toast('🎉 解鎖新情境：「' + sceneData[i].t + '」');
+            speak('恭喜解鎖新情境');
         }
     }
-    
-    function syncMongoDB() { 
-        console.log("📊 數據傳輸核心：同步雲端試算表記錄中..."); 
-        const caseIdInput = document.getElementById('case-id');
-        const caseId = caseIdInput ? (caseIdInput.value.trim() || "Guest") : "Guest";
-        const name = currentUser ? currentUser.name : "訪客";
+    saveLocal();
+}
 
-        const avgScore = recordedScores.length > 0 
-            ? Math.round(recordedScores.reduce((a, b) => a + b, 0) / recordedScores.length) 
-            : "";
+// ---------- 個人化 Onboarding ----------
+function showOnboarding() {
+    setModal(`
+        <h2 style="font-size:1.7rem;margin-bottom:8px;">👋 認識你多啲</h2>
+        <p style="font-size:1.05rem;color:var(--apple-dark-gray);margin-bottom:18px;">答 3 條簡單問題，系統會為你訂每日訓練計劃</p>
+        <p style="font-weight:700;font-size:1.15rem;text-align:left;">1. 你主要想改善咩？</p>
+        <button class="onboard-option" data-q="goal" data-v="mouth" onclick="selectOpt(this)">👄 口部肌肉無力／流口水</button>
+        <button class="onboard-option" data-q="goal" data-v="voice" onclick="selectOpt(this)">🔊 說話聲細／唔清楚</button>
+        <button class="onboard-option" data-q="goal" data-v="cog" onclick="selectOpt(this)">🧠 記唔起嘢名／表達困難</button>
+        <button class="onboard-option" data-q="goal" data-v="all" onclick="selectOpt(this)">✨ 全面練習</button>
+        <p style="font-weight:700;font-size:1.15rem;text-align:left;margin-top:16px;">2. 每日可以練習幾耐？</p>
+        <button class="onboard-option" data-q="time" data-v="5" onclick="selectOpt(this)">⏱️ 約 5 分鐘</button>
+        <button class="onboard-option" data-q="time" data-v="15" onclick="selectOpt(this)">⏱️ 約 10–15 分鐘</button>
+        <button class="onboard-option" data-q="time" data-v="30" onclick="selectOpt(this)">⏱️ 20 分鐘或以上</button>
+        <p style="font-weight:700;font-size:1.15rem;text-align:left;margin-top:16px;">3. 有冇以下情況？（可跳過）</p>
+        <button class="onboard-option" data-q="cond" data-v="stroke" onclick="selectOpt(this)">中風後復康</button>
+        <button class="onboard-option" data-q="cond" data-v="parkinson" onclick="selectOpt(this)">柏金遜症</button>
+        <button class="onboard-option" data-q="cond" data-v="aging" onclick="selectOpt(this)">正常老化／想保持</button>
+        <button class="onboard-option" data-q="cond" data-v="skip" onclick="selectOpt(this)">跳過</button>
+        <button class="sub-btn" style="background:var(--apple-blue);width:100%;margin-top:20px;height:58px;" onclick="finishOnboarding()">完成，開始訓練</button>
+    `);
+}
+const onboardSel = { goal: null, time: null, cond: null };
+function selectOpt(btn) {
+    const q = btn.dataset.q, v = btn.dataset.v;
+    document.querySelectorAll(`.onboard-option[data-q="${q}"]`).forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    onboardSel[q] = v;
+}
+function finishOnboarding() {
+    if (!onboardSel.goal) { toast('請先選擇主要目標'); return; }
+    if (!onboardSel.time) { toast('請選擇每日練習時間'); return; }
+    currentUser.profile = { ...onboardSel, date: new Date().toISOString() };
+    usersData[currentCaseId].profile = currentUser.profile;
+    saveLocal();
+    closeAll();
+    renderDailyPlan();
+    speak('個人計劃已設定，今日建議訓練已經準備好。');
+    toast('個人計劃已建立 ✓');
+}
 
-        const payload = {
-            caseId: caseId,
-            name: name,
-            trainingType: currentTrainingType,
-            goldEarned: lastGoldEarned,
-            totalGold: goldCount,
-            recordedScores: recordedScores,
-            scoresSummary: recordedScores.join(", "),
-            avgIntensity: avgScore,
-            targetThreshold: soundTargetThreshold
-        };
+function renderDailyPlan() {
+    const box = document.getElementById('daily-plan-items');
+    if (!box) return;
+    const p = (currentUser && currentUser.profile) ? currentUser.profile : { goal: 'all', time: '15' };
+    const items = [];
+    if (p.goal === 'mouth' || p.goal === 'all') items.push({ key: 'mouth', label: '👄 口肌訓練 1 組', fn: "showMouthUI()" });
+    if (p.goal === 'voice' || p.goal === 'all') {
+        items.push({ key: 'voice', label: '🎵 聲控開花 10 次', fn: "showGameUI('voice')" });
+        if (p.time !== '5') items.push({ key: 'blow', label: '🎈 氣量練習 10 次', fn: "showGameUI('blow')" });
+    }
+    if (p.goal === 'cog' || p.goal === 'all') items.push({ key: 'cog', label: '🗣️ 認知命名 3 題', fn: "showCogCatalog()" });
+    if (p.time === '30' || p.goal === 'all') items.push({ key: 'scene', label: '📍 情境對話 1 組', fn: "showSceneCatalog()" });
 
-        fetch(API_POST_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        })
-        .then(() => {
-            console.log("📈 雲端同步完成，成功上傳強度數據：", payload.recordedScores);
-            lastGoldEarned = 0; 
-            recordedScores = []; 
-        })
-        .catch(err => {
-            console.error("❌ 雲端儲存錯誤:", err);
-        });
+    // reset daily if new day
+    const today = new Date().toDateString();
+    const lastDay = localStorage.getItem('lohak_daily_day');
+    if (lastDay !== today) {
+        dailyDone = { mouth: false, cog: false, scene: false, voice: false, blow: false };
+        localStorage.setItem('lohak_daily_day', today);
+        saveLocal();
     }
 
-    window.onload = function() {
-        refreshV();
-        loadUsersFromCloud(); 
-        setInterval(() => document.getElementById('time').innerText = new Date().toTimeString().slice(0,5), 1000);
+    box.innerHTML = items.map(it => `
+        <div class="daily-item" onclick="${it.fn}">
+            <div class="daily-check ${dailyDone[it.key] ? 'done' : ''}">${dailyDone[it.key] ? '✓' : ''}</div>
+            <span style="${dailyDone[it.key] ? 'text-decoration:line-through;opacity:0.6;' : ''}">${it.label}</span>
+        </div>
+    `).join('') || '<p style="color:var(--apple-dark-gray);">今日暫無建議，自由練習啦！</p>';
+}
+function markDaily(key) {
+    dailyDone[key] = true;
+    saveLocal();
+    renderDailyPlan();
+}
+
+// ---------- MediaPipe Face Landmarker ----------
+async function initFaceLandmarker() {
+    if (faceLandmarker) return faceLandmarker;
+    try {
+        const vision = await FilesetResolver.forVisionTasks(
+            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+        );
+        faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+            baseOptions: {
+                modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                delegate: 'GPU'
+            },
+            runningMode: 'VIDEO',
+            numFaces: 1,
+            outputFaceBlendshapes: true,
+            outputFacialTransformationMatrixes: false
+        });
+        console.log('✅ Face Landmarker ready');
+        return faceLandmarker;
+    } catch (e) {
+        console.warn('Face Landmarker init fail, will use landmark heuristic', e);
+        // fallback: try CPU
+        try {
+            const vision = await FilesetResolver.forVisionTasks(
+                'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+            );
+            faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+                baseOptions: {
+                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                    delegate: 'CPU'
+                },
+                runningMode: 'VIDEO',
+                numFaces: 1,
+                outputFaceBlendshapes: true
+            });
+            return faceLandmarker;
+        } catch (e2) {
+            console.error('Face Landmarker completely unavailable', e2);
+            return null;
+        }
+    }
+}
+
+// Blendshape name mapping for mouth exercises
+const BS_MAP = {
+    mouthPucker: ['mouthPucker', 'mouthFunnel'],
+    mouthSmile: ['mouthSmileLeft', 'mouthSmileRight'],
+    cheekPuff: ['cheekPuff'],
+    jawOpen: ['jawOpen'],
+    tongueOut: ['tongueOut'],
+    mouthClose: ['mouthClose', 'mouthPressLeft', 'mouthPressRight'],
+    mouthFrown: ['mouthFrownLeft', 'mouthFrownRight'],
+    tongueUp: ['tongueOut'], // approximate
+    tongueDown: ['tongueOut'],
+    mouthSmileAlt: ['mouthSmileLeft', 'mouthSmileRight']
+};
+
+function getBlendScore(blendshapes, bsType) {
+    if (!blendshapes || !blendshapes.length) return 0;
+    const cats = blendshapes[0].categories || [];
+    const names = BS_MAP[bsType] || [bsType];
+    let sum = 0, count = 0;
+    for (const n of names) {
+        const found = cats.find(c => c.categoryName === n || c.categoryName.toLowerCase() === n.toLowerCase());
+        if (found) { sum += found.score; count++; }
+    }
+    if (count === 0) return 0;
+    return sum / count;
+}
+
+function calcSymmetry(blendshapes) {
+    if (!blendshapes || !blendshapes.length) return 1;
+    const cats = blendshapes[0].categories || [];
+    const get = (n) => { const f = cats.find(c => c.categoryName === n); return f ? f.score : 0; };
+    const pairs = [
+        ['mouthSmileLeft', 'mouthSmileRight'],
+        ['mouthFrownLeft', 'mouthFrownRight'],
+        ['mouthDimpleLeft', 'mouthDimpleRight'],
+        ['eyeBlinkLeft', 'eyeBlinkRight']
+    ];
+    let diffs = 0, n = 0;
+    for (const [a, b] of pairs) {
+        const va = get(a), vb = get(b);
+        if (va + vb > 0.02) { diffs += Math.abs(va - vb); n++; }
+    }
+    if (n === 0) return 0.95;
+    return Math.max(0, 1 - (diffs / n) * 2);
+}
+
+// ---------- 口肌訓練 ----------
+const mouthData = [
+    { n: "噘嘴", i: "😙", bs: "mouthPucker", d: "雙唇用力向前翹起，似吹口哨", thresh: 0.35 },
+    { n: "咧嘴", i: "😊", bs: "mouthSmile", d: "嘴角向兩邊拉開，露齒微笑", thresh: 0.40 },
+    { n: "鼓腮", i: "😗", bs: "cheekPuff", d: "兩頰充滿空氣撐開", thresh: 0.30 },
+    { n: "張大口", i: "😲", bs: "jawOpen", d: "下巴放鬆，盡量張大", thresh: 0.35 },
+    { n: "舌伸出", i: "👅", bs: "tongueOut", d: "舌頭盡量向正前方伸", thresh: 0.25 },
+    { n: "抿嘴", i: "😐", bs: "mouthClose", d: "雙唇用力閉緊", thresh: 0.40 },
+    { n: "魚臉", i: "😚", bs: "mouthFrown", d: "兩頰向內吸做出魚嘴", thresh: 0.25 },
+    { n: "舌向上", i: "⬆️", bs: "tongueUp", d: "舌尖向上觸碰上唇", thresh: 0.20 },
+    { n: "舌向下", i: "⬇️", bs: "tongueDown", d: "舌尖向下延伸", thresh: 0.20 },
+    { n: "露齒", i: "😬", bs: "mouthSmile", d: "咬緊牙關用力橫拉", thresh: 0.40 }
+];
+
+function showMouthUI() {
+    setModal(`
+        <h2 style="font-size:1.7rem;margin-bottom:10px;">👄 AI 口肌視覺訓練</h2>
+        <p style="font-size:1.05rem;color:var(--apple-dark-gray);">設定目標秒數後選擇動作</p>
+        <div style="margin-bottom:18px;">
+            ${[5,10,15,20].map(s => `<button class="sub-btn" style="width:100px;background:${targetVal==s?'var(--apple-black)':'var(--apple-dark-gray)'};" onclick="targetVal=${s};showMouthUI()">${s}秒</button>`).join('')}
+        </div>
+        <div class="grid-10">
+            ${mouthData.map((m, idx) => `<div class="card-unit" onclick="openMouthAI(${idx})"><span style="font-size:2.8rem;display:block;margin-bottom:4px;">${m.i}</span>${m.n}</div>`).join('')}
+        </div>
+        <button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:20px;height:56px;" onclick="closeAll()">返回主頁</button>
+    `);
+}
+
+async function openMouthAI(idx) {
+    const m = mouthData[idx];
+    setModal(`
+        <h2 style="font-size:1.7rem;margin-bottom:4px;">${m.n}</h2>
+        <div style="font-size:4rem;margin:6px 0;">${m.i}</div>
+        <p id="timer-disp" style="font-size:1.4rem;font-weight:800;color:var(--apple-red);margin:0;">目標：${targetVal} 秒</p>
+        <div class="ai-vision-box">
+            <video id="v-feed" autoplay playsinline muted></video>
+            <canvas id="v-feed-canvas"></canvas>
+            <div class="ai-target-circle"></div>
+        </div>
+        <div class="blend-meter">
+            <span class="blend-pill" id="bs-score">動作強度：--</span>
+            <span class="blend-pill" id="sym-score">對稱度：--</span>
+        </div>
+        <p id="ai-stat" style="font-size:1.15rem;color:var(--apple-dark-gray);font-weight:700;">📸 準備鏡頭中…</p>
+        <div style="margin-top:14px;">
+            <button class="sub-btn" style="background:var(--apple-blue);" id="start-face-btn" onclick="startFaceAI('${m.bs}', ${idx})">開始偵測</button>
+            <button class="sub-btn" style="background:var(--gold);color:var(--apple-black);" onclick="speak('${m.d}')">動作提示</button>
+            <button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="stopFaceCam();showMouthUI()">返回</button>
+        </div>
+    `);
+    try {
+        await initFaceLandmarker();
+        faceCamStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+            audio: false
+        });
+        const vid = document.getElementById('v-feed');
+        vid.srcObject = faceCamStream;
+        await vid.play();
+        document.getElementById('ai-stat').innerText = faceLandmarker
+            ? '✅ 鏡頭就緒，撳「開始偵測」'
+            : '⚠️ AI 模型載入中／失敗，將用簡易模式';
+    } catch (e) {
+        console.warn(e);
+        document.getElementById('ai-stat').innerText = '⚠️ 請允許瀏覽器使用鏡頭';
+        toast('無法開啟鏡頭，請檢查權限');
+    }
+}
+
+function startFaceAI(bsType, idx) {
+    const m = mouthData[idx];
+    let timeLeft = targetVal;
+    let holdAccum = 0;
+    blendshapeBuffer = [];
+    symmetryBuffer = [];
+    faceRunning = true;
+    const btn = document.getElementById('start-face-btn');
+    if (btn) { btn.disabled = true; btn.innerText = '偵測中…'; }
+
+    const video = document.getElementById('v-feed');
+    const canvas = document.getElementById('v-feed-canvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    let lastVideoTime = -1;
+
+    const loop = () => {
+        if (!faceRunning) return;
+        if (video && video.readyState >= 2) {
+            if (canvas && (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight)) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+            }
+            if (faceLandmarker && video.currentTime !== lastVideoTime) {
+                lastVideoTime = video.currentTime;
+                const result = faceLandmarker.detectForVideo(video, performance.now());
+                let score = 0, sym = 0.9;
+                if (result.faceBlendshapes && result.faceBlendshapes.length) {
+                    score = getBlendScore(result.faceBlendshapes, bsType);
+                    sym = calcSymmetry(result.faceBlendshapes);
+                } else if (result.faceLandmarks && result.faceLandmarks.length) {
+                    // landmark heuristic fallback
+                    score = landmarkMouthScore(result.faceLandmarks[0], bsType);
+                    sym = 0.9;
+                }
+                blendshapeBuffer.push(parseFloat(score.toFixed(3)));
+                symmetryBuffer.push(parseFloat(sym.toFixed(3)));
+                if (blendshapeBuffer.length > 300) blendshapeBuffer.shift();
+                if (symmetryBuffer.length > 300) symmetryBuffer.shift();
+
+                const bsEl = document.getElementById('bs-score');
+                const syEl = document.getElementById('sym-score');
+                if (bsEl) {
+                    bsEl.textContent = '動作強度：' + Math.round(score * 100) + '%';
+                    bsEl.className = 'blend-pill ' + (score >= m.thresh ? 'good' : 'bad');
+                }
+                if (syEl) {
+                    syEl.textContent = '對稱度：' + Math.round(sym * 100) + '%';
+                    syEl.className = 'blend-pill ' + (sym >= 0.7 ? 'good' : 'bad');
+                }
+
+                // draw landmarks lightly
+                if (ctx && result.faceLandmarks && result.faceLandmarks.length) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = score >= m.thresh ? 'rgba(52,199,89,0.7)' : 'rgba(255,59,48,0.5)';
+                    for (const pt of result.faceLandmarks[0]) {
+                        ctx.beginPath();
+                        ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 1.2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                const isGood = score >= m.thresh;
+                if (isGood) {
+                    holdAccum += 1 / 30; // ~30fps
+                    if (holdAccum >= 1) {
+                        holdAccum -= 1;
+                        timeLeft--;
+                        const tDisp = document.getElementById('timer-disp');
+                        if (tDisp) tDisp.innerText = `保持中：${timeLeft} 秒`;
+                        const stat = document.getElementById('ai-stat');
+                        if (stat) stat.innerText = '✅ 動作正確！繼續保持';
+                    }
+                } else {
+                    const stat = document.getElementById('ai-stat');
+                    if (stat) stat.innerText = '❌ 請調整動作，對準畫面中央';
+                }
+
+                if (timeLeft <= 0) {
+                    faceRunning = false;
+                    stopFaceCam();
+                    currentTrainingType = '口肌訓練：' + m.n;
+                    const avgBS = blendshapeBuffer.length ? (blendshapeBuffer.reduce((a,b)=>a+b,0)/blendshapeBuffer.length) : 0;
+                    const avgSym = symmetryBuffer.length ? (symmetryBuffer.reduce((a,b)=>a+b,0)/symmetryBuffer.length) : 0;
+                    addGold(50);
+                    markDaily('mouth');
+                    addHistory('口肌：' + m.n, 50, [Math.round(avgBS*100), Math.round(avgSym*100)], '真實 AI 偵測');
+                    analyzeMouthLocal(m.n, avgBS, avgSym);
+                    return;
+                }
+            }
+        }
+        faceAnimId = requestAnimationFrame(loop);
     };
+    faceAnimId = requestAnimationFrame(loop);
+    speak('開始偵測，請做出動作並保持');
+}
+
+function landmarkMouthScore(landmarks, bsType) {
+    // Simple geometric heuristics from 478 face landmarks
+    if (!landmarks || landmarks.length < 100) return 0;
+    const lipTop = landmarks[13], lipBot = landmarks[14];
+    const mouthL = landmarks[61], mouthR = landmarks[291];
+    const jaw = landmarks[152];
+    const nose = landmarks[1];
+    if (!lipTop || !lipBot || !mouthL || !mouthR) return 0;
+    const mouthH = Math.abs(lipBot.y - lipTop.y);
+    const mouthW = Math.abs(mouthR.x - mouthL.x);
+    switch (bsType) {
+        case 'jawOpen': return Math.min(1, mouthH * 8);
+        case 'mouthSmile': return Math.min(1, mouthW * 3.5);
+        case 'mouthPucker': return Math.min(1, Math.max(0, 0.8 - mouthW * 2));
+        case 'mouthClose': return Math.min(1, Math.max(0, 1 - mouthH * 10));
+        case 'cheekPuff': return Math.min(1, mouthW * 2.5);
+        case 'tongueOut': return Math.min(1, mouthH * 6);
+        default: return Math.min(1, mouthH * 5);
+    }
+}
+
+function stopFaceCam() {
+    faceRunning = false;
+    if (faceAnimId) { cancelAnimationFrame(faceAnimId); faceAnimId = null; }
+    if (faceCamStream) {
+        faceCamStream.getTracks().forEach(t => t.stop());
+        faceCamStream = null;
+    }
+}
+
+function analyzeMouthLocal(actionName, avgBS, avgSym) {
+    const stat = document.getElementById('ai-stat');
+    const rating = avgBS >= 0.5 && avgSym >= 0.75 ? '優秀' :
+                   avgBS >= 0.35 ? '良好' : '需加強';
+    const feedbacks = {
+        '優秀': '太棒喇！動作穩定又對稱，口部肌力好好。',
+        '良好': '做得唔錯！再保持耐啲就更理想。',
+        '需加強': '繼續加油，可以睇下動作提示再試多次。'
+    };
+    const tips = {
+        '優秀': '明日可以試耐啲秒數，或者換另一個動作挑戰。',
+        '良好': '建議每日同一動作練兩組，專注對稱。',
+        '需加強': '先用鏡子對住自己練，再返嚟用鏡頭。'
+    };
+    const elder = feedbacks[rating];
+    const tip = tips[rating];
+    speak(elder);
+    if (stat) {
+        stat.innerHTML = `
+            <div style="background:rgba(52,199,89,0.08);padding:16px;border-radius:14px;text-align:left;margin-top:10px;border:1px solid rgba(52,199,89,0.2);">
+                <p style="font-size:1.15rem;margin:4px 0;">🌟 <b>評估：</b><span style="color:var(--apple-green);font-weight:800;">${rating}</span>
+                （強度 ${Math.round(avgBS*100)}% · 對稱 ${Math.round(avgSym*100)}%）</p>
+                <p style="font-size:1.05rem;margin:4px 0;line-height:1.4;">📢 ${elder}</p>
+                <p style="font-size:0.95rem;margin:4px 0;color:var(--apple-dark-gray);line-height:1.4;">💡 ${tip}</p>
+                <p style="font-size:1rem;margin:8px 0 0;font-weight:700;color:var(--gold);">+50 金幣</p>
+            </div>`;
+    }
+    // try Dify if key configured
+    if (DIFY_API_KEY && !DIFY_API_KEY.includes('YOUR_ACTUAL')) {
+        fetch(DIFY_WORKFLOW_URL, {
+            method: 'POST',
+            headers: { 'Authorization': DIFY_API_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                inputs: {
+                    caseId: currentCaseId || 'Guest',
+                    actionName, targetSeconds: targetVal,
+                    blendshapeHistory: JSON.stringify(blendshapeBuffer.slice(-30)),
+                    symmetryHistory: JSON.stringify(symmetryBuffer.slice(-30))
+                },
+                response_mode: 'blocking',
+                user: currentUser ? currentUser.name : 'Elderly'
+            })
+        }).then(r => r.json()).then(data => {
+            try {
+                const result = typeof data.data?.outputs?.text === 'string'
+                    ? JSON.parse(data.data.outputs.text) : data.data?.outputs;
+                if (result && result.elder_feedback && stat) {
+                    speak(result.elder_feedback);
+                    stat.innerHTML = `
+                        <div style="background:rgba(0,113,227,0.06);padding:16px;border-radius:14px;text-align:left;margin-top:10px;">
+                            <p style="font-size:1.15rem;margin:4px 0;">🌟 <b>AI 評估：</b>${result.accuracy_rating || rating}</p>
+                            <p style="font-size:1.05rem;margin:4px 0;">📢 ${result.elder_feedback}</p>
+                            <p style="font-size:0.95rem;margin:4px 0;color:var(--apple-dark-gray);">💡 ${result.next_step_tip || tip}</p>
+                        </div>`;
+                }
+            } catch (_) {}
+        }).catch(() => {});
+    }
+    syncCloud();
+}
+
+// ---------- 認知命名 ----------
+const cogData = [
+    { t: "水果", i: [{ n: "蘋果", p: "🍎", u: "紅紅甜甜醫生遠離我", s: "蘋" }, { n: "香蕉", p: "🍌", u: "黃色長條猴子愛食", s: "香" }, { n: "西瓜", p: "🍉", u: "消暑必備綠皮紅肉", s: "西" }, { n: "橙", p: "🍊", u: "橙色圓形維他命C", s: "橙" }, { n: "葡萄", p: "🍇", u: "紫色圓形一串串", s: "葡" }] },
+    { t: "交通", i: [{ n: "巴士", p: "🚌", u: "大車有司機載客", s: "巴" }, { n: "地鐵", p: "🚇", u: "地下火車", s: "地" }, { n: "的士", p: "🚕", u: "紅色的車跳錶計錢", s: "的" }, { n: "飛機", p: "✈️", u: "在天空中飛", s: "飛" }, { n: "單車", p: "🚲", u: "用腳踏兩個圈", s: "單" }] },
+    { t: "動物", i: [{ n: "大象", p: "🐘", u: "長鼻大耳", s: "大" }, { n: "獅子", p: "🦁", u: "萬獸之王鬃毛", s: "獅" }, { n: "貓", p: "🐱", u: "喵喵叫捉老鼠", s: "貓" }, { n: "狗", p: "🐶", u: "汪汪叫好朋友", s: "狗" }, { n: "猴子", p: "🐒", u: "爬樹食香蕉", s: "猴" }] },
+    { t: "文具", i: [{ n: "鉛筆", p: "✏️", u: "寫字工具", s: "鉛" }, { n: "書本", p: "📖", u: "閱讀知識", s: "書" }, { n: "尺子", p: "📏", u: "畫線量長度", s: "尺" }, { n: "剪刀", p: "✂️", u: "剪開紙張", s: "剪" }, { n: "膠水", p: "🧪", u: "黐住兩樣嘢", s: "膠" }] },
+    { t: "衣物", i: [{ n: "襯衫", p: "👕", u: "短袖衫", s: "襯" }, { n: "褲子", p: "👖", u: "著喺腿上面", s: "褲" }, { n: "鞋子", p: "👟", u: "著喺腳行路", s: "鞋" }, { n: "帽子", p: "🧢", u: "戴頭上遮太陽", s: "帽" }, { n: "襪子", p: "🧦", u: "穿喺腳裡面吸汗", s: "襪" }] },
+    { t: "職業", i: [{ n: "醫生", p: "👨‍⚕️", u: "醫院醫病人", s: "醫" }, { n: "警察", p: "👮", u: "捉拿壞人維持治安", s: "警" }, { n: "老師", p: "👩‍🏫", u: "學校教導學生", s: "老" }, { n: "廚師", p: "👨‍🍳", u: "廚房煮美食", s: "廚" }, { n: "司機", p: "👨‍✈️", u: "駕駛車輛載客", s: "司" }] },
+    { t: "餐具", i: [{ n: "碗", p: "🥣", u: "裝飯或者湯", s: "碗" }, { n: "筷子", p: "🥢", u: "兩枝木棍夾嘢食", s: "筷" }, { n: "匙羹", p: "🥄", u: "飲湯或者食粥", s: "匙" }, { n: "茶杯", p: "🥛", u: "裝水飲茶", s: "茶" }, { n: "盤子", p: "🍽️", u: "盛載菜餚", s: "盤" }] },
+    { t: "醫療", i: [{ n: "藥水", p: "🧪", u: "病咗要飲", s: "藥" }, { n: "口罩", p: "😷", u: "遮住口鼻", s: "口" }, { n: "膠布", p: "🩹", u: "貼喺傷口保護", s: "膠" }, { n: "溫度計", p: "🌡️", u: "量體溫睇發燒", s: "溫" }, { n: "輪椅", p: "👩‍🦽", u: "幫助行動不便移動", s: "輪" }] },
+    { t: "天氣", i: [{ n: "太陽", p: "☀️", u: "好曬好熱", s: "太" }, { n: "落雨", p: "🌧️", u: "要帶雨遮", s: "落" }, { n: "閃電", p: "⚡", u: "大聲驚驚", s: "閃" }, { n: "落雪", p: "❄️", u: "白色好凍", s: "落" }, { n: "大風", p: "🌬️", u: "吹出涼風", s: "大" }] },
+    { t: "顏色", i: [{ n: "紅色", p: "🔴", u: "火同蘋果嘅色", s: "紅" }, { n: "藍色", p: "🔵", u: "天空同海洋嘅色", s: "藍" }, { n: "綠色", p: "🟢", u: "草地同樹葉嘅色", s: "綠" }, { n: "黃色", p: "🟡", u: "香蕉同太陽嘅色", s: "黃" }, { n: "紫色", p: "🟣", u: "葡萄嘅色", s: "紫" }] }
+];
+
+function showCogCatalog() {
+    setModal(`
+        <h2 style="font-size:1.7rem;margin-bottom:16px;">🗣️ 認知命名目錄</h2>
+        <div class="grid-10">${cogData.map((c, idx) => `<div class="card-unit" onclick="showCogItems(${idx})">📂 ${c.t}</div>`).join('')}</div>
+        <button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:20px;height:56px;" onclick="closeAll()">返回</button>
+    `);
+}
+function showCogItems(cIdx) {
+    setModal(`
+        <h2 style="font-size:1.6rem;margin-bottom:14px;">${cogData[cIdx].t}</h2>
+        <div class="grid-10">${cogData[cIdx].i.map((item, idx) => `<div class="card-unit" onclick="runCogStep(1,${cIdx},${idx})"><span style="font-size:2.8rem;display:block;margin-bottom:4px;">${item.p}</span>${item.n}</div>`).join('')}</div>
+        <button class="sub-btn" style="background:var(--apple-dark-gray);width:100%;margin-top:16px;height:52px;" onclick="showCogCatalog()">返回目錄</button>
+    `);
+}
+let hStep = 0;
+function runCogStep(step, c, i) {
+    const item = cogData[c].i[i];
+    const displayTxt = step == 1 ? "呢件係咩？" : step == 2 ? `用途：${item.u}` : step == 3 ? `首字提示：${item.s}…` : item.n;
+    setModal(`
+        <div style="font-size:5rem;margin:10px 0;">${item.p}</div>
+        <div id="disp-area" style="font-size:1.5rem;font-weight:700;background:rgba(0,0,0,0.03);padding:18px;border-radius:16px;margin-bottom:16px;">${displayTxt}</div>
+        <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:6px;">
+            <button class="sub-btn" style="background:var(--gold);color:var(--apple-black);" id="hint-btn">💡 提示</button>
+            <button class="sub-btn" style="background:var(--ai-blue);" id="mic-btn">🎤 作答</button>
+            <button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="showCogItems(${c})">返回</button>
+            <button class="sub-btn" style="background:var(--apple-red);" onclick="runCogStep(1,${c},${(i+1)%5})">下一題</button>
+        </div>
+    `);
+    document.getElementById('hint-btn').onclick = () => {
+        hStep++;
+        setTimeout(() => {
+            if (hStep === 1) {
+                if (step == 1) speak("呢件係咩物件？");
+                else if (step == 2) speak("提示：用途係" + item.u);
+                else if (step == 3) speak("首字提示係" + item.s);
+            } else if (step < 4) runCogStep(step + 1, c, i);
+            hStep = 0;
+        }, 300);
+    };
+    document.getElementById('mic-btn').onclick = () => {
+        speak("請讀出正確名稱");
+        listenOnce((transcript) => {
+            const t = (transcript || '').replace(/\s/g, '');
+            if (t.includes(item.n) || item.n.includes(t) || fuzzyMatch(t, item.n)) {
+                currentTrainingType = "認知命名：" + item.n;
+                speak("正確！獲得金幣。");
+                addGold(30);
+                markDaily('cog');
+                addHistory('認知：' + item.n, 30, [], transcript);
+                document.getElementById('disp-area').innerText = item.n;
+                document.getElementById('hint-btn').style.visibility = 'hidden';
+                toast('✅ 正確 +30 金幣');
+                syncCloud();
+            } else {
+                speak("唔啱，再試多次啦。");
+                toast('再試一次：你講咗「' + (transcript || '…') + '」');
+            }
+        });
+    };
+}
+function fuzzyMatch(a, b) {
+    if (!a || !b) return false;
+    if (a.length >= 2 && b.includes(a.slice(0, 2))) return true;
+    return false;
+}
+
+// ---------- 情境對話 ----------
+const sceneData = [
+    { t: "超市付款", q: ["呢個袋收五蚊。", "唔該用八達通。", "幫我嘟一嘟。", "洗唔洗儲積分？", "唔洗喇唔該。", "多謝晒。"] },
+    { t: "搭的士", q: ["唔該去中環站。", "行西隧快啲。", "呢度轉角停。", "幾多錢話？", "收唔收現金？", "唔該晒。"] },
+    { t: "看醫生", q: ["我有少少發燒。", "喉嚨好痛。", "洗唔洗打針？", "一日食幾次？", "記住戒口。", "多謝醫生。"] },
+    { t: "理髮店", q: ["修短少少。", "側邊剪薄。", "洗頭水好香。", "吹乾唔該。", "幾好睇。", "再見。"] },
+    { t: "圖書館", q: ["借呢本書。", "幾時還？", "可以續借？", "還書箱喺邊？", "呢度安靜。", "多謝。"] },
+    { t: "餐廳找錢", q: ["埋單唔該。", "幾多錢？", "找返十蚊。", "唔使找喇。", "服務幾好。", "拜拜。"] },
+    { t: "過馬路", q: ["地鐵點行？", "轉左定右？", "要行幾耐？", "過對面馬路？", "清楚晒。", "唔該。"] },
+    { t: "公園晨運", q: ["天氣好。", "一齊行下啦。", "好多花。", "休息一陣先。", "飲啖水。", "聽日見。"] },
+    { t: "飲茶點餐", q: ["兩位普洱。", "燒賣蝦餃。", "嘢食仲未到？", "唔該埋單。", "找返幾多錢？", "下次見。"] },
+    { t: "探訪老友", q: ["好久不見。", "最近點呀？", "小禮物。", "入黎坐下。", "下次聚。", "拜拜。"] }
+];
+
+function showSceneCatalog() {
+    setModal(`
+        <h2 style="font-size:1.7rem;margin-bottom:14px;">📍 真實情境應對</h2>
+        <p style="font-size:0.95rem;color:var(--apple-dark-gray);margin-bottom:10px;">累積金幣可解鎖更多情境</p>
+        <div class="grid-10">${sceneData.map((s, idx) => {
+            const locked = !unlockedScenes.includes(idx);
+            return `<div class="card-unit" style="${locked ? 'opacity:0.45;' : ''}" onclick="${locked ? `toast('需累積更多金幣解鎖')` : `runScenePuzzle(${idx})`}">${locked ? '🔒' : '📍'} ${s.t}</div>`;
+        }).join('')}</div>
+        <button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:20px;height:56px;" onclick="closeAll()">返回</button>
+    `);
+}
+let pCount = 1;
+function runScenePuzzle(idx) {
+    pCount = 1;
+    const s = sceneData[idx];
+    setModal(`
+        <h3 style="font-size:1.5rem;margin-bottom:10px;">情境：${s.t}</h3>
+        <div id="p-res" style="min-height:100px;background:#fff;border:2px dashed rgba(0,0,0,0.15);padding:14px;margin-bottom:14px;text-align:left;border-radius:14px;"></div>
+        <div id="p-pool" style="max-height:220px;overflow-y:auto;">${[...s.q].sort(() => Math.random() - 0.5).map(t => `<button class="puzzle-key" onclick="tapPuzzle(this,'${t.replace(/'/g, "\\'")}')">${t}</button>`).join('')}</div>
+        <div style="margin-top:14px;">
+            <button class="sub-btn" style="background:var(--ai-blue);" onclick="recScene('${s.q[0].replace(/'/g, "\\'")}',${idx})">🎤 朗讀評估</button>
+            <button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="showSceneCatalog()">返回</button>
+            <button class="sub-btn" style="background:var(--apple-red);" onclick="runScenePuzzle(${(idx+1)%sceneData.length})">下一題</button>
+        </div>
+    `);
+}
+function tapPuzzle(btn, t) {
+    speak(t);
+    document.getElementById('p-res').innerHTML += `<div style="font-size:1.05rem;margin:4px 0;font-weight:700;"><b>（${pCount++}）</b> ${t}</div>`;
+    btn.style.opacity = '0.25';
+    btn.disabled = true;
+}
+function recScene(correct, idx) {
+    const s = sceneData[idx];
+    speak("請朗讀正確對話");
+    listenOnce((transcript) => {
+        const t = (transcript || '');
+        if (t.includes(correct.slice(0, 3)) || correct.includes(t.slice(0, 3))) {
+            currentTrainingType = "情境對話：" + s.t;
+            speak("良好！獎勵四十金幣。");
+            addGold(40);
+            markDaily('scene');
+            addHistory('情境：' + s.t, 40, [], transcript);
+            toast('✅ +40 金幣');
+            syncCloud();
+        } else {
+            speak("未達標，請再試。");
+            toast('再試：你講咗「' + t + '」');
+        }
+    });
+}
+
+// ---------- 聲控 / 氣量 ----------
+function setThresholdRate(rate, type) {
+    soundTargetThreshold = parseInt(rate);
+    soundResetThreshold = Math.round(soundTargetThreshold * 0.5);
+    showGameUI(type);
+}
+function updateThresholdLive(rate) {
+    soundTargetThreshold = parseInt(rate);
+    soundResetThreshold = Math.round(soundTargetThreshold * 0.5);
+    const tDisp = document.getElementById('t-val-disp');
+    const rDisp = document.getElementById('r-val-disp');
+    if (tDisp) tDisp.innerText = soundTargetThreshold;
+    if (rDisp) rDisp.innerText = soundResetThreshold;
+    const tm = document.getElementById('target-marker');
+    const rm = document.getElementById('reset-marker');
+    if (tm) { tm.style.left = soundTargetThreshold + '%'; tm.setAttribute('data-label', soundTargetThreshold + '% 達標'); }
+    if (rm) { rm.style.left = soundResetThreshold + '%'; rm.setAttribute('data-label', soundResetThreshold + '% 重置'); }
+    saveLocal();
+}
+function showGameUI(type) {
+    recordedScores = [];
+    const matrixHTML = Array.from({ length: 10 }, (_, i) => `
+        <div class="score-badge" id="badge-${i+1}">
+            <div class="badge-label">第${i+1}次</div>
+            <div class="badge-value" id="val-${i+1}">--</div>
+        </div>`).join('');
+    setModal(`
+        <h2 style="font-size:1.55rem;margin-bottom:6px;">${type === 'voice' ? '🎵 聲控開花（大聲發「呀～」）' : '🎈 氣量阻抗（持續吹氣）'}</h2>
+        <div class="thresh-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:1rem;font-weight:700;">
+                <span>🎯 達標：<span id="t-val-disp" style="color:var(--apple-blue);font-size:1.2rem;">${soundTargetThreshold}</span>%</span>
+                <span style="color:var(--apple-dark-gray);font-size:0.85rem;">重置：<span id="r-val-disp">${soundResetThreshold}</span>%</span>
+            </div>
+            <input type="range" class="thresh-slider" min="50" max="95" step="5" value="${soundTargetThreshold}" oninput="updateThresholdLive(this.value)">
+            <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">
+                <button class="apple-pill-btn ${soundTargetThreshold==60?'primary':''}" style="padding:4px 12px;font-size:0.85rem;" onclick="setThresholdRate(60,'${type}')">輕鬆 60%</button>
+                <button class="apple-pill-btn ${soundTargetThreshold==80?'primary':''}" style="padding:4px 12px;font-size:0.85rem;" onclick="setThresholdRate(80,'${type}')">標準 80%</button>
+                <button class="apple-pill-btn ${soundTargetThreshold==90?'primary':''}" style="padding:4px 12px;font-size:0.85rem;" onclick="setThresholdRate(90,'${type}')">進階 90%</button>
+            </div>
+        </div>
+        <div id="game-stage" style="font-size:4.5rem;margin:8px 0;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1);">${type === 'voice' ? '🌱' : '☁️'}</div>
+        <div class="sound-meter-wrapper">
+            <div id="target-marker" class="threshold-marker-target" style="left:${soundTargetThreshold}%;" data-label="${soundTargetThreshold}% 達標"></div>
+            <div id="reset-marker" class="threshold-marker-reset" style="left:${soundResetThreshold}%;" data-label="${soundResetThreshold}% 重置"></div>
+            <div id="sound-bar-container"><div id="sound-bar-fill"></div><div id="sound-val-text">0%</div></div>
+        </div>
+        <div id="sound-status-pill">⚪ 撳下方啟動麥克風</div>
+        <div class="score-matrix-grid">${matrixHTML}</div>
+        <p id="v-info" style="font-size:1.2rem;font-weight:800;margin:8px 0;">已達成：0 / 10 次</p>
+        <div style="display:flex;justify-content:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
+            <button class="sub-btn" style="background:var(--apple-blue);min-width:180px;" onclick="startAudioGame('${type}')">🎙️ 啟動收音</button>
+            <button class="sub-btn" style="background:var(--apple-black);min-width:120px;" onclick="closeAll()">返回</button>
+        </div>
+    `);
+}
+async function startAudioGame(type) {
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.35;
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        const source = audioCtx.createMediaStreamSource(audioStream);
+        source.connect(analyser);
+        let count = 0, canTrigger = true, currentPeak = 0;
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        const statusPill = document.getElementById('sound-status-pill');
+        toast('麥克風已開啟，請開始');
+        const loop = () => {
+            if (!analyser || !document.getElementById('sound-bar-fill')) return;
+            analyser.getByteFrequencyData(data);
+            // 加權中低頻（人聲／吹氣更敏感）
+            let weighted = 0, wSum = 0;
+            for (let i = 0; i < data.length; i++) {
+                const w = i < data.length / 3 ? 1.4 : 0.7;
+                weighted += data[i] * w;
+                wSum += w;
+            }
+            const average = weighted / wSum;
+            const level = Math.min(100, Math.round((average / 110) * 100));
+            document.getElementById('sound-bar-fill').style.width = level + '%';
+            document.getElementById('sound-val-text').innerText = level + '%';
+            if (level > currentPeak) currentPeak = level;
+            if (level >= soundTargetThreshold && canTrigger) {
+                count++;
+                canTrigger = false;
+                const peak = Math.max(level, currentPeak);
+                recordedScores.push(peak);
+                const badge = document.getElementById('badge-' + count);
+                const valEl = document.getElementById('val-' + count);
+                if (badge) badge.classList.add('achieved');
+                if (valEl) valEl.innerText = peak + '%';
+                if (statusPill) {
+                    statusPill.style.background = 'rgba(52,199,89,0.15)';
+                    statusPill.style.color = 'var(--apple-green)';
+                    statusPill.innerText = `🎉 第 ${count} 次達標！${peak}%`;
+                }
+                document.getElementById('v-info').innerText = `已達成：${count} / 10 次`;
+                const stage = document.getElementById('game-stage');
+                if (stage) {
+                    if (type === 'blow') stage.style.transform = `scale(${1 + count * 0.08})`;
+                    else stage.style.transform = `scale(${1 + (count % 3) * 0.15})`;
+                }
+                if (count >= 10) {
+                    stopAudioGame();
+                    if (stage) { stage.innerText = type === 'voice' ? '🌸' : '🎈'; stage.style.transform = 'scale(1.35)'; }
+                    if (statusPill) statusPill.innerText = '🏆 完成 10 次訓練！';
+                    currentTrainingType = (type === 'voice' ? '聲控發聲' : '氣量阻抗') + ` (${soundTargetThreshold}%)`;
+                    addGold(100);
+                    markDaily(type === 'voice' ? 'voice' : 'blow');
+                    addHistory(currentTrainingType, 100, recordedScores.slice(), '');
+                    speak('太叻喇！完成十次，獲得一百金幣！');
+                    toast('🏆 完成！+100 金幣');
+                    syncCloud();
+                    return;
+                }
+            } else if (level <= soundResetThreshold && !canTrigger) {
+                canTrigger = true;
+                currentPeak = 0;
+                if (statusPill) {
+                    statusPill.style.background = 'rgba(0,0,0,0.05)';
+                    statusPill.style.color = 'var(--apple-dark-gray)';
+                    statusPill.innerText = '💨 換氣完成，再來一次';
+                }
+            }
+            audioLoopId = requestAnimationFrame(loop);
+        };
+        audioLoopId = requestAnimationFrame(loop);
+    } catch (err) {
+        console.error(err);
+        toast('無法開啟麥克風，請允許權限');
+        speak('無法開啟麥克風，請檢查權限設定');
+    }
+}
+function stopAudioGame() {
+    if (audioLoopId) { cancelAnimationFrame(audioLoopId); audioLoopId = null; }
+    if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+}
+
+// ---------- 語音辨識（含 fallback 提示） ----------
+function listenOnce(callback) {
+    if (!recognizer) {
+        toast('此瀏覽器不支援語音辨識，請用 Chrome');
+        speak('請使用 Chrome 瀏覽器以支援語音辨識');
+        // 手動輸入 fallback
+        const ans = prompt('請輸入你講嘅內容（語音辨識不可用）：');
+        callback(ans || '');
+        return;
+    }
+    try {
+        recognizer.onresult = (e) => {
+            const t = e.results[0][0].transcript;
+            callback(t);
+        };
+        recognizer.onerror = (e) => {
+            console.warn('SR error', e);
+            toast('語音辨識失敗，可手動輸入');
+            const ans = prompt('語音辨識失敗，請輸入：');
+            callback(ans || '');
+        };
+        recognizer.start();
+        toast('🎙️ 請開始講…');
+    } catch (e) {
+        const ans = prompt('請輸入你講嘅內容：');
+        callback(ans || '');
+    }
+}
+
+// ---------- 語音操作模式 ----------
+function toggleVoiceMode() {
+    if (voiceModeActive) stopVoiceMode();
+    else startVoiceMode();
+}
+function startVoiceMode() {
+    if (!recognizer) { toast('需 Chrome 先支援語音操作'); return; }
+    voiceModeActive = true;
+    document.getElementById('voice-mode-bar').classList.add('active');
+    document.getElementById('voice-toggle-btn').classList.add('primary');
+    toast('語音操作已開啟');
+    speak('語音操作已開啟，你可以講開口肌、開聲控、睇進度或者返回');
+    loopVoiceCommand();
+}
+function stopVoiceMode() {
+    voiceModeActive = false;
+    document.getElementById('voice-mode-bar').classList.remove('active');
+    document.getElementById('voice-toggle-btn').classList.remove('primary');
+    try { if (voiceModeRec) voiceModeRec.abort(); } catch (_) {}
+}
+function loopVoiceCommand() {
+    if (!voiceModeActive || !recognizer) return;
+    try {
+        const r = new SpeechRec();
+        r.lang = 'zh-HK';
+        r.continuous = false;
+        r.onresult = (e) => {
+            const t = (e.results[0][0].transcript || '').replace(/\s/g, '');
+            handleVoiceCmd(t);
+            setTimeout(loopVoiceCommand, 800);
+        };
+        r.onerror = () => setTimeout(loopVoiceCommand, 1500);
+        r.onend = () => { if (voiceModeActive) setTimeout(loopVoiceCommand, 600); };
+        voiceModeRec = r;
+        r.start();
+    } catch (_) {
+        setTimeout(loopVoiceCommand, 2000);
+    }
+}
+function handleVoiceCmd(t) {
+    if (/口肌|嘴巴|嘴唇/.test(t)) { closeAll(); showMouthUI(); speak('打開口肌訓練'); }
+    else if (/聲控|發聲|開花/.test(t)) { closeAll(); showGameUI('voice'); speak('打開聲控開花'); }
+    else if (/吹氣|氣量|氣球/.test(t)) { closeAll(); showGameUI('blow'); speak('打開氣量練習'); }
+    else if (/認知|命名|水果|動物/.test(t)) { closeAll(); showCogCatalog(); speak('打開認知命名'); }
+    else if (/情境|對話|的士|超市/.test(t)) { closeAll(); showSceneCatalog(); speak('打開情境對話'); }
+    else if (/進度|紀錄|報告/.test(t)) { showProgressUI(); speak('打開進度'); }
+    else if (/返回|關閉|主頁|返去/.test(t)) { closeAll(); speak('返回主頁'); }
+    else if (/獎勵|金幣|解鎖/.test(t)) { showRewardsUI(); }
+}
+
+// ---------- 進度 UI ----------
+function showProgressUI() {
+    const last7 = sessionHistory.filter(h => {
+        const d = new Date(h.date);
+        return (Date.now() - d.getTime()) < 7 * 86400000;
+    });
+    const byType = {};
+    last7.forEach(h => {
+        const key = h.type.split('：')[0].split(' ')[0];
+        byType[key] = (byType[key] || 0) + 1;
+    });
+    const totalGold7 = last7.reduce((s, h) => s + (h.gold || 0), 0);
+    const maxC = Math.max(1, ...Object.values(byType), 1);
+    const bars = Object.keys(byType).length
+        ? Object.entries(byType).map(([k, v]) => `
+            <div class="prog-row">
+                <div class="prog-label">${k}</div>
+                <div class="prog-track"><div class="prog-fill" style="width:${Math.round(v/maxC*100)}%"></div></div>
+                <div class="prog-val">${v}</div>
+            </div>`).join('')
+        : '<p style="color:var(--apple-dark-gray);">近 7 日暫無訓練紀錄，開始練啦！</p>';
+
+    const recent = sessionHistory.slice(-8).reverse().map(h => {
+        const d = new Date(h.date);
+        const ds = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+        return `<div style="text-align:left;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:0.95rem;">
+            <b>${ds}</b> · ${h.type} · <span style="color:var(--gold);">+${h.gold}</span>
+        </div>`;
+    }).join('') || '<p style="color:var(--apple-dark-gray);">尚無紀錄</p>';
+
+    setModal(`
+        <h2 style="font-size:1.7rem;margin-bottom:6px;">📊 我的進度</h2>
+        <p style="font-size:1.1rem;font-weight:700;">近 7 日訓練次數 · 共賺 ${totalGold7} 金幣</p>
+        <div class="progress-bars">${bars}</div>
+        <h3 style="font-size:1.2rem;margin:16px 0 8px;text-align:left;">最近紀錄</h3>
+        <div style="max-height:200px;overflow-y:auto;">${recent}</div>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+            <button class="sub-btn" style="background:var(--apple-green);" onclick="shareProgress()">📲 分享俾家人</button>
+            <button class="sub-btn" style="background:var(--apple-black);" onclick="closeAll()">返回</button>
+        </div>
+    `);
+}
+function shareProgress() {
+    const last7 = sessionHistory.filter(h => (Date.now() - new Date(h.date).getTime()) < 7 * 86400000);
+    const name = currentUser ? currentUser.name : '長者';
+    const text = `【樂活金掌家】${name} 近 7 日訓練報告\n` +
+        `完成 ${last7.length} 次訓練，累計金幣 ${goldCount}\n` +
+        `繼續加油！💪\n（由樂活金掌家自動產生）`;
+    if (navigator.share) {
+        navigator.share({ title: '訓練進度', text }).catch(() => openWhatsApp(text));
+    } else {
+        openWhatsApp(text);
+    }
+}
+function openWhatsApp(text) {
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    toast('已開啟 WhatsApp 分享');
+}
+
+// ---------- 生活錄音任務 ----------
+const lifeTasks = [
+    { id: 'taxi', title: '搭的士', prompt: '請清楚講：「唔該去中環站，行西隧。」' },
+    { id: 'clinic', title: '睇醫生', prompt: '請清楚講：「我喉嚨痛，有少少發燒。」' },
+    { id: 'market', title: '買餸', prompt: '請清楚講：「呢啲菜幾多錢一斤？」' },
+    { id: 'phone', title: '打電話', prompt: '請清楚講：「喂，我係陳生，想約禮拜三覆診。」' },
+    { id: 'thanks', title: '道謝', prompt: '請清楚講：「多謝晒你嘅幫忙，真係好唔好意思。」' }
+];
+let mediaRecorder = null, recordedChunks = [];
+
+function showLifeRecordUI() {
+    setModal(`
+        <h2 style="font-size:1.6rem;margin-bottom:10px;">🎤 生活錄音任務</h2>
+        <p style="font-size:1rem;color:var(--apple-dark-gray);margin-bottom:14px;">練習真實生活句子，可重播對比</p>
+        <div class="grid-10">${lifeTasks.map(t => `
+            <div class="card-unit" onclick="openLifeTask('${t.id}')">
+                <span style="font-size:1.8rem;display:block;">🎙️</span>${t.title}
+            </div>`).join('')}
+        </div>
+        <button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:18px;height:54px;" onclick="closeAll()">返回</button>
+    `);
+}
+function openLifeTask(id) {
+    const task = lifeTasks.find(t => t.id === id);
+    const prev = lifeRecordings[id];
+    setModal(`
+        <h2 style="font-size:1.5rem;">${task.title}</h2>
+        <p style="font-size:1.25rem;font-weight:700;background:rgba(0,0,0,0.04);padding:16px;border-radius:14px;margin:14px 0;">${task.prompt}</p>
+        <div id="life-status" style="font-size:1.05rem;font-weight:600;color:var(--apple-dark-gray);margin:10px 0;">準備錄音</div>
+        <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;">
+            <button class="sub-btn" style="background:var(--apple-red);" id="rec-btn" onclick="toggleLifeRec('${id}')">⏺ 開始錄音</button>
+            <button class="sub-btn" style="background:var(--gold);color:var(--apple-black);" onclick="speak('${task.prompt}')">🔊 聽示範</button>
+            ${prev ? `<button class="sub-btn" style="background:var(--ai-blue);" onclick="playLifePrev('${id}')">▶️ 聽上次</button>` : ''}
+            <button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="showLifeRecordUI()">返回</button>
+        </div>
+        <audio id="life-audio" style="width:100%;margin-top:14px;display:none;" controls></audio>
+    `);
+}
+async function toggleLifeRec(id) {
+    const btn = document.getElementById('rec-btn');
+    const status = document.getElementById('life-status');
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        btn.innerText = '⏺ 開始錄音';
+        status.innerText = '處理中…';
+        return;
+    }
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+            stream.getTracks().forEach(t => t.stop());
+            const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+            const url = URL.createObjectURL(blob);
+            lifeRecordings[id] = { blobUrl: url, date: new Date().toISOString() };
+            const audio = document.getElementById('life-audio');
+            if (audio) { audio.src = url; audio.style.display = 'block'; }
+            status.innerText = '✅ 已儲存，可重播對比';
+            addGold(20);
+            addHistory('生活錄音：' + id, 20, [], '');
+            toast('+20 金幣 · 錄音已存');
+            speak('錄音完成，做得好');
+            // 嘗試語音辨識
+            listenOnce((t) => {
+                if (t) status.innerText = '✅ 已儲存｜辨識：「' + t + '」';
+            });
+        };
+        mediaRecorder.start();
+        btn.innerText = '⏹ 停止錄音';
+        status.innerText = '🔴 錄音中…請講出句子';
+        speak('開始錄音');
+    } catch (e) {
+        toast('無法開啟麥克風');
+    }
+}
+function playLifePrev(id) {
+    const prev = lifeRecordings[id];
+    if (!prev) return;
+    const audio = document.getElementById('life-audio');
+    if (audio) { audio.src = prev.blobUrl; audio.style.display = 'block'; audio.play(); }
+}
+
+// ---------- 獎勵中心 ----------
+function showRewardsUI() {
+    const nextUnlock = unlockedScenes.length < sceneData.length
+        ? sceneData[unlockedScenes.length] ? sceneData[Math.max(...unlockedScenes) + 1] || sceneData[unlockedScenes.length] : null
+        : null;
+    const need = 150 - (goldCount % 150);
+    setModal(`
+        <h2 style="font-size:1.7rem;margin-bottom:8px;">🏆 金幣獎勵中心</h2>
+        <p style="font-size:2rem;font-weight:800;color:var(--gold);margin:10px 0;">💰 ${goldCount}</p>
+        <p style="font-size:1.05rem;color:var(--apple-dark-gray);">已解鎖情境：${unlockedScenes.length} / ${sceneData.length}</p>
+        ${nextUnlock ? `<p style="font-size:1rem;margin:10px 0;">再賺 <b>${need}</b> 金幣可解鎖「${nextUnlock.t || '下一個情境'}」</p>` : '<p style="color:var(--apple-green);font-weight:700;">全部情境已解鎖！</p>'}
+        <div style="background:rgba(0,0,0,0.03);border-radius:14px;padding:14px;margin:14px 0;text-align:left;">
+            <p style="font-weight:700;margin:0 0 8px;">金幣用途</p>
+            <p style="margin:4px 0;font-size:0.95rem;">• 每 150 金幣解鎖 1 個新生活情境</p>
+            <p style="margin:4px 0;font-size:0.95rem;">• 分享進度俾家人打氣</p>
+            <p style="margin:4px 0;font-size:0.95rem;">• 累積證明你有持續練習</p>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+            <button class="sub-btn" style="background:var(--apple-green);" onclick="shareProgress()">📲 分享進度</button>
+            <button class="sub-btn" style="background:var(--apple-black);" onclick="closeAll()">返回</button>
+        </div>
+    `);
+}
+
+// ---------- Modal 工具 ----------
+function setModal(html) {
+    const container = document.getElementById('modal-container');
+    const body = document.getElementById('modal-body');
+    container.style.display = 'flex';
+    body.innerHTML = html;
+    body.style.transform = 'scale(0.88)';
+    requestAnimationFrame(() => {
+        body.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1)';
+        body.style.transform = 'scale(1)';
+    });
+}
+function closeAll() {
+    document.getElementById('modal-container').style.display = 'none';
+    stopFaceCam();
+    stopAudioGame();
+    if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+    window.speechSynthesis.cancel();
+}
+
+// ---------- 啟動 ----------
+window.onload = function () {
+    loadA11y();
+    loadLocal();
+    refreshV();
+    loadUsersFromCloud();
+    setInterval(() => {
+        const el = document.getElementById('time');
+        if (el) el.innerText = new Date().toTimeString().slice(0, 5);
+    }, 1000);
+    // TTS voices load
+    if (window.speechSynthesis) window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+};
 </script>
 </body>
 </html>
