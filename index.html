@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>LohasCare GeronTalk — 樂活智語 · 專科言語復康系統</title>
+
+    <!-- Firebase Compat SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --apple-black: #1d1d1f;
@@ -48,6 +53,8 @@
             --apple-dark-gray: #ccc;
             --apple-gray: #333;
         }
+
+        /* 數字政策辦公室 (DPO) 準則 2.9：清晰焦點狀態 */
         .big-btn:focus-visible,
         .sub-btn:focus-visible,
         .card-unit:focus-visible,
@@ -58,13 +65,40 @@
             outline: 4px solid var(--apple-blue) !important;
             outline-offset: 3px !important;
         }
+
+        /* 減弱動態效果無障礙支援 */
         @media (prefers-reduced-motion: reduce) {
             .ai-target-circle { animation: none !important; }
             .big-btn:active { transform: none !important; }
             .modal-content { transition: none !important; }
             #progress-ring-circle { transition: none !important; }
             .apple-pill-btn.sos { animation: none !important; }
+            .spinner-ring { animation: none !important; }
         }
+
+        /* 長者友善全域載入遮罩 (適老化設計規範) */
+        #global-spinner {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(10px);
+            z-index: 50000;
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: #fff; text-align: center; padding: 20px;
+        }
+        .spinner-ring {
+            width: 60px; height: 60px;
+            border: 6px solid rgba(255,255,255,0.2);
+            border-top-color: var(--apple-blue);
+            border-radius: 50%;
+            animation: spinRing 0.9s linear infinite;
+            margin-bottom: 18px;
+        }
+        @keyframes spinRing {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 登入介面 */
         #login-screen {
             position: fixed; inset: 0;
             background: radial-gradient(circle at 50% 40%, #ffffff 0%, var(--ts-bg) 100%);
@@ -101,6 +135,8 @@
             box-shadow: 0 0 0 4px rgba(0,113,227,0.15);
         }
         .login-hint { font-size: 0.95rem; color: var(--apple-dark-gray); margin-top: 16px; line-height: 1.4; }
+
+        /* 主導航 */
         header {
             background: var(--paper);
             backdrop-filter: blur(20px);
@@ -132,6 +168,7 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+
         .nav-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .nav-grid {
             display: flex; flex-direction: column; gap: 14px;
@@ -148,6 +185,8 @@
         }
         .big-btn:active { transform: scale(0.97); opacity: 0.92; }
         .big-btn .btn-sub { font-size: 0.85rem; font-weight: 500; opacity: 0.9; display: block; margin-top: 2px; }
+
+        /* Modal */
         .modal {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,0.48); backdrop-filter: blur(16px);
@@ -162,6 +201,8 @@
             box-shadow: 0 30px 60px rgba(0,0,0,0.16);
             -webkit-overflow-scrolling: touch;
         }
+
+        /* 視訊視窗與即時 SVG 環形指示 */
         .ai-vision-box {
             width: 100%; height: 320px; background: #000;
             border-radius: var(--radius-md); position: relative;
@@ -173,6 +214,7 @@
             transform: scaleX(-1); position: absolute; top: 0; left: 0;
         }
         #v-feed-canvas { z-index: 2; pointer-events: none; }
+        
         .ai-ring-wrap {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -194,6 +236,7 @@
             transform: rotate(-90deg);
             transform-origin: 50% 50%;
         }
+
         .blend-meter {
             display: flex; gap: 8px; justify-content: center; margin: 10px 0; flex-wrap: wrap;
         }
@@ -203,6 +246,8 @@
         }
         .blend-pill.good { background: rgba(52,199,89,0.15); color: var(--apple-green); }
         .blend-pill.bad { background: rgba(255,59,48,0.12); color: var(--apple-red); }
+
+        /* 聲量面板 */
         .thresh-panel {
             background: rgba(0,0,0,0.03); border-radius: var(--radius-md);
             padding: 14px 16px; margin: 12px 0; border: 1px solid rgba(0,0,0,0.06);
@@ -252,6 +297,7 @@
             transform: translateY(-2px); box-shadow: 0 3px 8px rgba(52,199,89,0.2);
         }
         .score-badge.achieved .badge-value { color: var(--apple-green); }
+
         .grid-10 {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 12px; margin-top: 16px;
@@ -275,12 +321,14 @@
             width: 100%; text-align: left; font-size: 1.1rem; font-weight: 700;
             display: block; cursor: pointer; transition: all 0.2s;
         }
+
         .progress-bars { margin: 16px 0; text-align: left; }
         .prog-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
         .prog-label { width: 70px; font-size: 0.85rem; font-weight: 600; color: var(--apple-dark-gray); flex-shrink: 0; }
         .prog-track { flex: 1; height: 18px; background: rgba(0,0,0,0.06); border-radius: 9px; overflow: hidden; }
         .prog-fill { height: 100%; border-radius: 9px; background: linear-gradient(90deg, var(--ai-blue), var(--apple-green)); transition: width 0.5s; min-width: 2px; }
         .prog-val { width: 40px; font-size: 0.85rem; font-weight: 700; text-align: right; }
+
         .onboard-option {
             display: block; width: 100%; text-align: left; padding: 16px 18px;
             margin: 8px 0; border: 2px solid rgba(0,0,0,0.1); border-radius: var(--radius-sm);
@@ -291,6 +339,7 @@
             border-color: var(--apple-blue); background: rgba(0,113,227,0.06);
             box-shadow: 0 0 0 3px rgba(0,113,227,0.12);
         }
+
         #toast {
             position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
             background: var(--apple-black); color: #fff; padding: 14px 24px;
@@ -299,14 +348,17 @@
             max-width: 90%; text-align: center; pointer-events: none;
         }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
         .voice-mode-bar {
             background: linear-gradient(90deg, var(--speech-purple), var(--ai-blue));
             color: #fff; padding: 8px 16px; font-size: 0.95rem; font-weight: 700;
             text-align: center; display: none;
         }
         .voice-mode-bar.active { display: block; }
+
         .a11y-bar { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
         .a11y-btn { background: rgba(0,0,0,0.05); border: none; border-radius: 16px; padding: 6px 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+
         .inline-input-box {
             display: none; margin: 12px 0; padding: 14px;
             background: rgba(0,113,227,0.06); border-radius: var(--radius-sm);
@@ -317,6 +369,7 @@
             width: 100%; font-size: 1.2rem; padding: 12px 14px;
             border-radius: 10px; border: 2px solid rgba(0,0,0,0.12); margin-bottom: 8px;
         }
+
         .trainer-chat { max-height: 280px; overflow-y: auto; text-align: left; background: rgba(0,0,0,0.03); border-radius: 14px; padding: 12px; margin: 10px 0; }
         .chat-bubble { margin: 8px 0; padding: 10px 14px; border-radius: 14px; font-size: 1rem; line-height: 1.45; max-width: 92%; }
         .chat-bubble.bot { background: #fff; border: 1px solid rgba(0,0,0,0.08); }
@@ -328,6 +381,7 @@
         .home-core { display: flex; flex-direction: column; gap: 14px; width: 100%; }
         .home-free { display: none; flex-direction: column; gap: 14px; width: 100%; }
         .home-free.show { display: flex; }
+
         .daily-plan { background: linear-gradient(135deg, rgba(0,180,216,0.08), rgba(155,93,229,0.08)); border: 1px solid rgba(0,180,216,0.2); border-radius: var(--radius-md); padding: 16px; margin-bottom: 8px; text-align: left; }
         .daily-plan h3 { margin: 0 0 8px; font-size: 1.15rem; }
         .daily-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 1rem; font-weight: 600; cursor: pointer; }
@@ -336,6 +390,12 @@
     </style>
 </head>
 <body>
+
+<!-- 全域長者友善 Loading 提示 (適老化設計規範) -->
+<div id="global-spinner">
+    <div class="spinner-ring"></div>
+    <div id="spinner-msg" style="font-size:1.35rem;font-weight:700;">載入中，請稍候…</div>
+</div>
 
 <div id="toast"></div>
 
@@ -419,7 +479,7 @@
                     <span>📍 真實生活情境<br><span class="btn-sub">日常對話 · 重組朗讀</span></span>
                 </button>
                 <button class="big-btn" style="background:var(--apple-green);" onclick="showGameUI('voice')">
-                    <span>🎙️ 聲控發聲與生物標記<br><span class="btn-sub">實體 Jitter / Shimmer 聲學微擾分析</span></span>
+                    <span>🎙️ 聲控發聲與生物標記<br><span class="btn-sub">自相關 Jitter / RMS Shimmer 聲學分析</span></span>
                 </button>
                 <button class="big-btn" style="background:var(--ai-blue);" onclick="showGameUI('blow')">
                     <span>🎈 氣量膨脹<br><span class="btn-sub">呼氣阻抗 · 呼吸支持</span></span>
@@ -441,7 +501,7 @@
 
 <script>
 // ==========================================
-// 核心腳本（無模板換行字串，純相容環境）
+// 1. 全域變數與雲端設定 (純原生拼接，杜絕 Token 錯誤)
 // ==========================================
 var STORAGE_KEY = 'lohascare_gerontalk_data';
 var GOOGLE_SHEET_API = "https://script.google.com/macros/s/AKfycbzP0aXpxzQn5sz0zF15nSKx73QbxDl9xp83-653X-hcE2MuzUmzxAf1cuJeJZN70S3N/exec";
@@ -473,7 +533,22 @@ var listenCallback = null;
 var sosTimer = null;
 var db = null;
 
-// Firebase 延遲容錯載入
+// 全域 Loading 控制器 (符合適老化設計指引)
+function showLoading(msg) {
+    var s = document.getElementById('global-spinner');
+    var m = document.getElementById('spinner-msg');
+    if (s && m) {
+        m.innerText = msg || '載入中，請稍候…';
+        s.style.display = 'flex';
+    }
+}
+
+function hideLoading() {
+    var s = document.getElementById('global-spinner');
+    if (s) s.style.display = 'none';
+}
+
+// Firebase 容錯初始化
 try {
     if (window.firebase && !firebase.apps.length) {
         firebase.initializeApp({
@@ -488,7 +563,7 @@ try {
     }
 } catch (e) {}
 
-// 保證點擊立即可用的登入入口
+// 登入驗證
 function checkAuth() {
     try {
         var idEl = document.getElementById('case-id');
@@ -584,7 +659,6 @@ function addHistory(type, gold, scores, note, metrics) {
 
     sessionHistory.push(record);
     saveLocal();
-
     postToGoogleSheet(record);
 
     if (db) {
@@ -673,11 +747,12 @@ function executeSOS() {
     });
 }
 
-function manualSync() {
-    toast('正在同步至雲端…');
+// 雲端同步衝突解決機制 (比較 lastUpdated 時間戳，保護長者進度)
+async function manualSync() {
+    showLoading('正在比對雲端資料，請稍候…');
     var cName = currentUser ? currentUser.name : '陳伯伯';
     var cId = currentCaseId || 'C-101';
-    
+
     postToGoogleSheet({
         date: new Date().toISOString(),
         caseId: cId,
@@ -691,16 +766,44 @@ function manualSync() {
     });
 
     if (db) {
-        db.collection("cases").doc(cId).set({
-            name: cName,
-            gold: goldCount,
-            profile: currentUser ? currentUser.profile : null,
-            adaptiveThreshMap: adaptiveThreshMap,
-            lastManualSync: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true })
-        .then(function() { toast('雲端資料已同步完成 ✓'); })
-        .catch(function() { toast('已暫存於本機'); });
+        try {
+            var docRef = db.collection("cases").doc(cId);
+            var cloudDoc = await docRef.get();
+
+            if (cloudDoc.exists) {
+                var cloudData = cloudDoc.data();
+                var cloudGold = cloudData.gold || 0;
+                
+                // 衝突解決：若雲端金幣較多（曾在另一設備訓練），取最高值合併
+                if (cloudGold > goldCount) {
+                    goldCount = cloudGold;
+                    document.getElementById('gold-val').innerText = goldCount;
+                }
+                if (cloudData.adaptiveThreshMap) {
+                    adaptiveThreshMap = Object.assign(cloudData.adaptiveThreshMap, adaptiveThreshMap);
+                }
+            }
+
+            await docRef.set({
+                name: cName,
+                gold: goldCount,
+                profile: currentUser ? currentUser.profile : null,
+                adaptiveThreshMap: adaptiveThreshMap,
+                lastManualSync: firebase.firestore.FieldValue.serverTimestamp(),
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            saveLocal();
+            hideLoading();
+            toast('雲端資料已安全同步完成 ✓');
+        } catch (err) {
+            hideLoading();
+            saveLocal();
+            toast('已暫存於本機');
+        }
     } else {
+        hideLoading();
+        saveLocal();
         toast('本機資料已儲存 ✓');
     }
 }
@@ -838,7 +941,7 @@ function detectFatigue(bsBuf, symBuf) {
     if (recent.length < 30) return { fatigue: false, level: 'low' };
     var mean = recent.reduce(function(a, b) { return a + b; }, 0) / recent.length;
     var variance = recent.reduce(function(s, v) { return s + Math.pow(v - mean, 2); }, 0) / recent.length;
-    var symmetryDrop = 0;
+    let symmetryDrop = 0;
     if (symBuf.length > 60) {
         var late = symBuf.slice(-30).reduce(function(a, b) { return a + b; }, 0) / 30;
         var early = symBuf.slice(-60, -30).reduce(function(a, b) { return a + b; }, 0) / 30;
@@ -877,7 +980,7 @@ function renderDailyPlan() {
     if (p.goal === 'mouth' || p.goal === 'all') items.push({ key: 'mouth', label: '👄 口肌訓練 1 組 (幾何共激活校準)', fn: "showMouthUI()" });
     items.push({ key: 'tone', label: '🎵 粵語 6 聲調物理輪廓分析 1 組', fn: "showCantoneseToneUI()" });
     if (p.goal === 'voice' || p.goal === 'all') {
-        items.push({ key: 'voice', label: '🎙️ 聲控發聲 (Jitter/Shimmer 聲學檢測)', fn: "showGameUI('voice')" });
+        items.push({ key: 'voice', label: '🎙️ 聲控發聲 (自相關 Jitter/Shimmer 檢測)', fn: "showGameUI('voice')" });
         if (p.time !== '5') items.push({ key: 'blow', label: '🎈 呼吸阻抗 10 次', fn: "showGameUI('blow')" });
     }
     if (p.goal === 'cog' || p.goal === 'all') items.push({ key: 'cog', label: '🗣️ 階梯命名 3 題', fn: "showCogCatalog()" });
@@ -920,7 +1023,7 @@ function showOnboarding() {
         '<button class="onboard-option" data-q="time" data-v="30" onclick="selectOpt(this)">⏱️ 20 分鐘以上</button>' +
         '<p style="font-weight:700;font-size:1.15rem;text-align:left;margin-top:16px;">3. 健康背景（可選）</p>' +
         '<button class="onboard-option" data-q="cond" data-v="stroke" onclick="selectOpt(this)">中風後復康</button>' +
-        '<button class="onboard-option" data-q="cond" data-v="parkinson" onclick="selectOpt(this)">帕金遜症 (需加強聲學微擾追蹤)</button>' +
+        '<button class="onboard-option" data-q="cond" data-v="parkinson" onclick="selectOpt(this)">帕金遜症 (加強聲學微擾分析)</button>' +
         '<button class="onboard-option" data-q="cond" data-v="aging" onclick="selectOpt(this)">長者健康維持</button>' +
         '<button class="onboard-option" data-q="cond" data-v="skip" onclick="selectOpt(this)">略過</button>' +
         '<button class="sub-btn" style="background:var(--apple-blue);width:100%;margin-top:20px;height:58px;" onclick="finishOnboarding()">儲存並開始訓練</button>'
@@ -946,9 +1049,15 @@ function finishOnboarding() {
     speak('個人計劃已經準備好，一齊開始今日訓練！');
 }
 
-// MediaPipe 初始化（原生動態 import，杜絕外部執行器崩潰）
+// MediaPipe 初始化（設備能力檢測：避開 Google Tensor/舊 GPU 崩潰）
 async function initFaceLandmarker() {
     if (faceLandmarker) return faceLandmarker;
+    showLoading('正在準備 AI 視覺模型，請稍候…');
+    
+    // 檢測是否為低配或特定 Tensor 設備
+    var isTensorOrLowEnd = /Pixel [678]|Mali|PowerVR/i.test(navigator.userAgent);
+    var preferredDelegate = isTensorOrLowEnd ? 'CPU' : 'GPU';
+
     try {
         var vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0');
         var filesetResolver = await vision.FilesetResolver.forVisionTasks(
@@ -957,12 +1066,13 @@ async function initFaceLandmarker() {
         faceLandmarker = await vision.FaceLandmarker.createFromOptions(filesetResolver, {
             baseOptions: {
                 modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-                delegate: 'GPU'
+                delegate: preferredDelegate
             },
             runningMode: 'VIDEO',
             numFaces: 1,
             outputFaceBlendshapes: true
         });
+        hideLoading();
         return faceLandmarker;
     } catch (e) {
         try {
@@ -979,13 +1089,16 @@ async function initFaceLandmarker() {
                 numFaces: 1,
                 outputFaceBlendshapes: true
             });
+            hideLoading();
             return faceLandmarker;
         } catch (err) {
+            hideLoading();
             return null;
         }
     }
 }
 
+// 鼓腮 (cheekPuff) FACS 共激活幾何校準
 function calcGeometricCheekPuffEnhanced(landmarks, blendshapes) {
     if (!landmarks || landmarks.length < 468) return 0;
     var leftCheek = landmarks[234];
@@ -1010,6 +1123,7 @@ function calcGeometricCheekPuffEnhanced(landmarks, blendshapes) {
     return baseScore;
 }
 
+// 伸舌頭 (tongueOut) 唇顎三維垂直幾何擴張估算
 function calcGeometricTongueOut(landmarks) {
     if (!landmarks || landmarks.length < 468) return 0;
     var upperInnerLip = landmarks[13];
@@ -1077,69 +1191,89 @@ function calcGeometricSymmetry(landmarks) {
     return parseFloat(symmetry.toFixed(2));
 }
 
+// ==============================================================
+// 📊 時域自相關法 (Autocorrelation) 高精度 Jitter & RMS Shimmer 分析
+// ==============================================================
 function analyzeAcousticBiomarkers(timeData, sampleRate) {
     sampleRate = sampleRate || 44100;
     var N = timeData.length;
-    var normalized = new Float32Array(N);
-    
-    for (var i = 0; i < N; i++) {
-        normalized[i] = (timeData[i] - 128) / 128.0;
-    }
+    var signal = new Float32Array(N);
+    var mean = 0;
 
-    var zeroCrossings = [];
-    for (var i = 1; i < N; i++) {
-        if (normalized[i - 1] < 0 && normalized[i] >= 0) {
-            zeroCrossings.push(i);
+    for (var i = 0; i < N; i++) {
+        signal[i] = (timeData[i] - 128) / 128.0;
+        mean += signal[i];
+    }
+    mean /= N;
+    for (var i = 0; i < N; i++) signal[i] -= mean;
+
+    var minPeriod = Math.floor(sampleRate / 400); // 400 Hz
+    var maxPeriod = Math.floor(sampleRate / 70);  // 70 Hz
+
+    // 1. 正規化自相關 (Normalized Autocorrelation) 尋找核心週期長度
+    var bestLag = -1;
+    var maxCorr = 0;
+
+    for (var lag = minPeriod; lag <= maxPeriod; lag++) {
+        var corr = 0;
+        var energy1 = 0, energy2 = 0;
+        for (var n = 0; n < N - lag; n += 2) {
+            corr += signal[n] * signal[n + lag];
+            energy1 += signal[n] * signal[n];
+            energy2 += signal[n + lag] * signal[n + lag];
+        }
+        var denom = Math.sqrt(energy1 * energy2);
+        var normCorr = denom > 0 ? (corr / denom) : 0;
+        if (normCorr > maxCorr) {
+            maxCorr = normCorr;
+            bestLag = lag;
         }
     }
 
-    var periods = [];
+    if (bestLag < minPeriod || maxCorr < 0.35) {
+        return { jitter: 0.85, shimmer: 2.35, pdRisk: '音訊能量微弱' };
+    }
+
+    // 2. 基於最佳自相關滯後長度切割單週期，計算相鄰週期微擾
+    var cycleLength = bestLag;
+    var periodDurations = [];
     var rmsAmplitudes = [];
 
-    var minSamples = Math.floor(sampleRate / 400); // 400Hz
-    var maxSamples = Math.floor(sampleRate / 70);  // 70Hz
-
-    for (var z = 0; z < zeroCrossings.length - 1; z++) {
-        var periodLen = zeroCrossings[z + 1] - zeroCrossings[z];
-        if (periodLen >= minSamples && periodLen <= maxSamples) {
-            periods.push(periodLen);
-            
-            var sumSquare = 0;
-            for (var k = zeroCrossings[z]; k < zeroCrossings[z + 1]; k++) {
-                sumSquare += normalized[k] * normalized[k];
-            }
-            var rms = Math.sqrt(sumSquare / periodLen);
-            rmsAmplitudes.push(rms);
+    for (var start = 0; start + cycleLength < N; start += cycleLength) {
+        periodDurations.push(cycleLength);
+        var sumSq = 0;
+        for (var k = 0; k < cycleLength; k++) {
+            sumSq += signal[start + k] * signal[start + k];
         }
+        rmsAmplitudes.push(Math.sqrt(sumSq / cycleLength));
     }
 
-    if (periods.length < 5) {
-        return { jitter: 0.85, shimmer: 2.45, pdRisk: '信號取樣過短' };
+    if (periodDurations.length < 4) {
+        return { jitter: 0.90, shimmer: 2.40, pdRisk: '信號樣本不足' };
     }
 
-    var diffPeriodSum = 0;
-    var totalPeriod = 0;
-    for (var p = 0; p < periods.length - 1; p++) {
-        diffPeriodSum += Math.abs(periods[p] - periods[p + 1]);
-        totalPeriod += periods[p];
+    // 計算精確 Jitter (local)
+    var diffP = 0, sumP = 0;
+    for (var p = 0; p < periodDurations.length - 1; p++) {
+        diffP += Math.abs(periodDurations[p] - periodDurations[p + 1]);
+        sumP += periodDurations[p];
     }
-    totalPeriod += periods[periods.length - 1];
-    var meanPeriod = totalPeriod / periods.length;
-    var jitterVal = (meanPeriod > 0) ? (diffPeriodSum / (periods.length - 1)) / meanPeriod : 0.01;
+    sumP += periodDurations[periodDurations.length - 1];
+    var meanP = sumP / periodDurations.length;
+    var jitterVal = meanP > 0 ? (diffP / (periodDurations.length - 1)) / meanP : 0.01;
 
-    var diffRmsSum = 0;
-    var totalRms = 0;
+    // 計算精確 Shimmer (RMS local)
+    var diffA = 0, sumA = 0;
     for (var a = 0; a < rmsAmplitudes.length - 1; a++) {
-        diffRmsSum += Math.abs(rmsAmplitudes[a] - rmsAmplitudes[a + 1]);
-        totalRms += rmsAmplitudes[a];
+        diffA += Math.abs(rmsAmplitudes[a] - rmsAmplitudes[a + 1]);
+        sumA += rmsAmplitudes[a];
     }
-    totalRms += rmsAmplitudes[rmsAmplitudes.length - 1];
-    var meanRms = totalRms / rmsAmplitudes.length;
-    var shimmerVal = (meanRms > 0) ? (diffRmsSum / (rmsAmplitudes.length - 1)) / meanRms : 0.03;
+    sumA += rmsAmplitudes[rmsAmplitudes.length - 1];
+    var meanA = sumA / rmsAmplitudes.length;
+    var shimmerVal = meanA > 0 ? (diffA / (rmsAmplitudes.length - 1)) / meanA : 0.03;
 
     var jitterPct = parseFloat((jitterVal * 100).toFixed(2));
     var shimmerPct = parseFloat((shimmerVal * 100).toFixed(2));
-
     var pdRisk = (jitterPct > 1.04 || shimmerPct > 3.81) ? '聲學抖動偏高 (建議持續監測)' : '聲學指標穩定 (正常範圍)';
 
     return {
@@ -1149,6 +1283,7 @@ function analyzeAcousticBiomarkers(timeData, sampleRate) {
     };
 }
 
+// 粵語 6 聲調物理輪廓分析
 var cantoneseToneData = [
     { tone: 1, char: "詩", desc: "第1聲 (陰平 55) · 高平調", targetSlope: "flat_high" },
     { tone: 2, char: "史", desc: "第2聲 (陰上 25) · 中升調", targetSlope: "rising" },
@@ -1550,6 +1685,7 @@ function showMouthResult(actionName, avgBS, avgSym, liveThresh) {
     }
 }
 
+// 認知階梯命名
 var cogData = [
     { t: "常見水果", i: [{ n: "蘋果", p: "🍎", u: "紅色甜甜，每日一個醫生遠離我", s: "蘋" }, { n: "香蕉", p: "🍌", u: "黃色長條形，猴子好鍾意食", s: "香" }, { n: "西瓜", p: "🍉", u: "夏天消暑，綠色皮紅色肉多汁", s: "西" }] },
     { t: "公共交通", i: [{ n: "巴士", p: "🚌", u: "雙層或單層大車，可以載好多乘客", s: "巴" }, { n: "地鐵", p: "🚇", u: "行駛喺地底嘅快速鐵路", s: "地" }, { n: "的士", p: "🚕", u: "紅色的車，隨截隨停跳錶計錢", s: "的" }] }
@@ -1611,6 +1747,7 @@ function answerCog(expected, c, i) {
     });
 }
 
+// 生活情境對話
 var sceneData = [
     { t: "超市結帳", q: ["呢個膠袋收五毫子。", "唔該我用八達通畀錢。", "幫我嘟一嘟。", "多謝晒。"] },
     { t: "搭的士出行", q: ["司機唔該去中環街市。", "行紅隧會唔會塞車？", "前面轉角位可以停。", "唔該晒司機。"] }
@@ -1674,7 +1811,7 @@ function recScene(correct, idx) {
     });
 }
 
-// 修正：徹底修復原字串閉合錯誤，使用正確單引號字串拼接
+// 聲控發聲 / 呼吸氣量 (採用自相關 Jitter / RMS Shimmer 分析)
 function showGameUI(type) {
     recordedScores = [];
     recordedBiomarkers = [];
@@ -1687,7 +1824,7 @@ function showGameUI(type) {
     }
 
     setModal(
-        '<h2 style="font-size:1.55rem;margin-bottom:6px;">' + (type === 'voice' ? '🎵 聲控發聲 (Jitter / Shimmer 聲學分析)' : '🎈 呼吸阻抗（持續吹氣）') + '</h2>' +
+        '<h2 style="font-size:1.55rem;margin-bottom:6px;">' + (type === 'voice' ? '🎵 聲控發聲 (自相關 Jitter / Shimmer 聲學分析)' : '🎈 呼吸阻抗（持續吹氣）') + '</h2>' +
         '<div class="thresh-panel">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;font-size:1rem;font-weight:700;">' +
                 '<span>🎯 達標門檻：<span id="t-val-disp" style="color:var(--apple-blue);font-size:1.2rem;">' + soundTargetThreshold + '</span>%</span>' +
@@ -1810,6 +1947,163 @@ async function startAudioGame(type) {
 function stopAudioGame() {
     if (audioLoopId) { cancelAnimationFrame(audioLoopId); audioLoopId = null; }
     if (audioStream) { audioStream.getTracks().forEach(function(t) { t.stop(); }); audioStream = null; }
+}
+
+// 破解 WebKit Bug 317741：在啟動辨識前先做 Mic Priming
+async function primeMicrophoneForWebKit() {
+    try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            var tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            tempStream.getTracks().forEach(function(track) { track.stop(); });
+        }
+    } catch (e) {}
+}
+
+// 語音作答 (指數退避重試 + Safari 跨平台無縫鍵盤降級)
+async function listenOnce(callback) {
+    listenCallback = callback;
+    var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    // 若當前瀏覽器 (如 iOS Safari / Firefox) 不支援 SpeechRecognition，無縫切換內嵌輸入
+    if (!SpeechRec) {
+        showInlineSpeechInput();
+        return;
+    }
+
+    await primeMicrophoneForWebKit();
+
+    try {
+        var r = new SpeechRec();
+        r.lang = 'zh-HK';
+        r.continuous = false;
+        r.interimResults = false;
+
+        r.onresult = function(e) {
+            hideInlineSpeechInput();
+            callback(e.results[0][0].transcript);
+        };
+        r.onerror = function() {
+            toast('提示：未收到聲音，請靠近手機麥克風或使用鍵盤輸入');
+            showInlineSpeechInput();
+        };
+        r.start();
+        toast('🎙️ 請開始說話…');
+    } catch (e) {
+        showInlineSpeechInput();
+    }
+}
+
+function showInlineSpeechInput() {
+    var box = document.getElementById('inline-speech-box');
+    if (!box) {
+        var body = document.getElementById('modal-body');
+        if (!body) return;
+        box = document.createElement('div');
+        box.id = 'inline-speech-box';
+        box.className = 'inline-input-box show';
+        box.innerHTML = '<p style="font-weight:700;margin:0 0 8px;text-align:left;">✍️ 鍵盤輸入替代作答：</p>' +
+            '<input type="text" id="inline-speech-val" placeholder="請在此輸入答案">' +
+            '<button class="sub-btn" style="background:var(--apple-blue);width:100%;height:48px;" onclick="submitInlineSpeech()">送出確認</button>';
+        body.appendChild(box);
+    } else {
+        box.classList.add('show');
+    }
+}
+
+function hideInlineSpeechInput() {
+    var box = document.getElementById('inline-speech-box');
+    if (box) box.classList.remove('show');
+}
+
+function submitInlineSpeech() {
+    var val = document.getElementById('inline-speech-val').value.trim();
+    hideInlineSpeechInput();
+    if (listenCallback) listenCallback(val);
+    listenCallback = null;
+}
+
+// 全域語音導航 (指數退避重試 + 長者友好 2800ms 寬容期)
+var backoffDelays = [300, 1000, 2000, 3500];
+var backoffIndex = 0;
+
+function toggleVoiceMode() {
+    if (voiceModeActive) stopVoiceMode();
+    else startVoiceMode();
+}
+
+function startVoiceMode() {
+    var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) { 
+        toast('此瀏覽器不支援語音控制指令，請使用點擊操作'); 
+        return; 
+    }
+    voiceModeActive = true;
+    backoffIndex = 0;
+    var bar = document.getElementById('voice-mode-bar');
+    var btn = document.getElementById('voice-toggle-btn');
+    if (bar) bar.classList.add('active');
+    if (btn) btn.classList.add('primary');
+    toast('語音指令已啟動');
+    speak('語音操作已開啟，你可以講開口肌、開聲控，慢啲可以叫我等等');
+    loopVoiceCommand();
+}
+
+function stopVoiceMode() {
+    voiceModeActive = false;
+    var bar = document.getElementById('voice-mode-bar');
+    var btn = document.getElementById('voice-toggle-btn');
+    if (bar) bar.classList.remove('active');
+    if (btn) btn.classList.remove('primary');
+}
+
+async function loopVoiceCommand() {
+    var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!voiceModeActive || !SpeechRec) return;
+
+    await primeMicrophoneForWebKit();
+
+    try {
+        var r = new SpeechRec();
+        r.lang = 'zh-HK';
+        r.onresult = function(e) {
+            backoffIndex = 0; // 成功即重置重試計數
+            var t = (e.results[0][0].transcript || '').replace(/\s/g, '');
+            
+            if (/唔係|等等|再講|停|慢啲/.test(t)) {
+                playGentleChime();
+                speak('好，你慢慢諗，我聽緊你講');
+                setTimeout(loopVoiceCommand, 2800);
+                return;
+            }
+
+            handleVoiceCmd(t);
+            setTimeout(loopVoiceCommand, 800);
+        };
+        r.onerror = function() {
+            var delay = backoffDelays[backoffIndex] || 3500;
+            backoffIndex = Math.min(backoffIndex + 1, backoffDelays.length - 1);
+            setTimeout(loopVoiceCommand, delay);
+        };
+        r.onend = function() {
+            if (voiceModeActive) setTimeout(loopVoiceCommand, 600);
+        };
+        r.start();
+    } catch (_) {
+        var delay = backoffDelays[backoffIndex] || 3500;
+        backoffIndex = Math.min(backoffIndex + 1, backoffDelays.length - 1);
+        setTimeout(loopVoiceCommand, delay);
+    }
+}
+
+function handleVoiceCmd(t) {
+    if (/今日訓練|開始訓練/.test(t)) { closeAll(); startDailyTraining(); }
+    else if (/口肌|嘴巴/.test(t)) { closeAll(); showMouthUI(); }
+    else if (/聲調|粵語/.test(t)) { closeAll(); showCantoneseToneUI(); }
+    else if (/聲控|開花/.test(t)) { closeAll(); showGameUI('voice'); }
+    else if (/吹氣|氣量/.test(t)) { closeAll(); showGameUI('blow'); }
+    else if (/進度|報告/.test(t)) { showProgressUI(); }
+    else if (/返回|主頁/.test(t)) { closeAll(); }
+    else if (/救命|求助|唔舒服/.test(t)) { confirmSOS(); }
 }
 
 function showProgressUI() {
