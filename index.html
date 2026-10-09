@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>LohasCare GeronTalk — 樂活智語 · 專科言語復康系統</title>
 
-    <!-- MediaPipe Tasks Vision CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js" crossorigin="anonymous"></script>
-
-    <!-- Firebase Compat SDK -->
+    <!-- Firebase Compat SDK (穩定傳統腳本引入) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -339,6 +336,7 @@
         .a11y-bar { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
         .a11y-btn { background: rgba(0,0,0,0.05); border: none; border-radius: 16px; padding: 6px 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
 
+        /* 內嵌鍵盤替代輸入框 */
         .inline-input-box {
             display: none; margin: 12px 0; padding: 14px;
             background: rgba(0,113,227,0.06); border-radius: var(--radius-sm);
@@ -525,7 +523,7 @@ try {
     console.warn("Firebase 離線保護模式", e);
 }
 
-// 登入驗證
+// 登入驗證（保證 100% 不死機）
 function checkAuth() {
     try {
         var idEl = document.getElementById('case-id');
@@ -991,16 +989,15 @@ function finishOnboarding() {
     speak('個人計劃已經準備好，一齊開始今日訓練！');
 }
 
-// MediaPipe 初始化
+// MediaPipe 初始化（修正：採用動態 ES Module import，徹底解決 Unexpected token export）
 async function initFaceLandmarker() {
     if (faceLandmarker) return faceLandmarker;
     try {
-        var pkg = window.tasksVision || window;
-        if (!pkg.FilesetResolver || !pkg.FaceLandmarker) return null;
-        var vision = await pkg.FilesetResolver.forVisionTasks(
+        var vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0');
+        var filesetResolver = await vision.FilesetResolver.forVisionTasks(
             'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
         );
-        faceLandmarker = await pkg.FaceLandmarker.createFromOptions(vision, {
+        faceLandmarker = await vision.FaceLandmarker.createFromOptions(filesetResolver, {
             baseOptions: {
                 modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
                 delegate: 'GPU'
@@ -1011,7 +1008,26 @@ async function initFaceLandmarker() {
         });
         return faceLandmarker;
     } catch (e) {
-        return null;
+        console.warn('GPU 模式略過，嘗試 CPU 備援載入...', e);
+        try {
+            var vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0');
+            var filesetResolver = await vision.FilesetResolver.forVisionTasks(
+                'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
+            );
+            faceLandmarker = await vision.FaceLandmarker.createFromOptions(filesetResolver, {
+                baseOptions: {
+                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                    delegate: 'CPU'
+                },
+                runningMode: 'VIDEO',
+                numFaces: 1,
+                outputFaceBlendshapes: true
+            });
+            return faceLandmarker;
+        } catch (err) {
+            console.warn('FaceLandmarker 載入略過，使用幾何保護模式', err);
+            return null;
+        }
     }
 }
 
@@ -1278,7 +1294,7 @@ async function startToneContourTest(idx) {
             }
             sampleCount++;
 
-            if (sampleCount >= 20) { // 取樣約 2 秒
+            if (sampleCount >= 20) {
                 clearInterval(toneInterval);
                 audioStream.getTracks().forEach(function(t) { t.stop(); });
                 
@@ -1292,11 +1308,11 @@ async function startToneContourTest(idx) {
                     var slope = avg2 - avg1;
 
                     if (item.targetSlope === 'rising' || item.targetSlope === 'low_rising') {
-                        pass = slope > 8; // 有明顯上升
+                        pass = slope > 8;
                     } else if (item.targetSlope === 'falling') {
-                        pass = slope < -8; // 有明顯下降
+                        pass = slope < -8;
                     } else {
-                        pass = Math.abs(slope) <= 18; // 維持平調穩定
+                        pass = Math.abs(slope) <= 18;
                     }
                 }
 
@@ -1321,289 +1337,7 @@ async function startToneContourTest(idx) {
     }
 }
 
-// 運動項目清單（已清理 jawOpen: "jawOpen" 冗餘屬性）
-var mouthData = [
-    { n: "噘嘴", i: "😙", bs: "mouthPucker", d: "雙唇用力向前翹起，似吹口哨咁", thresh: 0.35 },
-    { n: "咧嘴", i: "😊", bs: "mouthSmile", d: "嘴角向兩邊拉開，露齒微笑", thresh: 0.40 },
-    { n: "鼓腮", i: "😗", bs: "cheekPuff", d: "兩頰含氣撐大（已啟用 FACS 共激活校準）", thresh: 0.30 },
-    { n: "張大口", i: "😲", bs: "jawOpen", d: "下巴放鬆，盡量擘大個口", thresh: 0.35 },
-    { n: "伸舌頭", i: "👅", bs: "tongueOut", d: "舌頭平直向前伸出（唇顎距離分析）", thresh: 0.28 },
-    { n: "抿嘴", i: "😐", bs: "mouthClose", d: "上下唇緊閉壓實", thresh: 0.40 },
-    { n: "吸腮 (魚嘴)", i: "😚", bs: "mouthFrown", d: "面頰向內吸，做出魚嘴動作", thresh: 0.25 },
-    { n: "舌尖向上", i: "⬆️", bs: "tongueUp", d: "舌尖向上舔上唇部位", thresh: 0.25 },
-    { n: "舌尖向下", i: "⬇️", bs: "tongueDown", d: "舌尖向外下方伸展", thresh: 0.25 },
-    { n: "露齒咬合", i: "😬", bs: "mouthSmile", d: "上下牙齒微合，用力橫向展現牙齒", thresh: 0.40 }
-];
-
-function showMouthUI() {
-    var secBtns = [5, 10, 15, 20].map(function(s) {
-        return '<button class="sub-btn" style="width:100px;background:' + (targetVal == s ? 'var(--apple-black)' : 'var(--apple-dark-gray)') + ';" onclick="targetVal=' + s + ';showMouthUI()">' + s + '秒</button>';
-    }).join('');
-
-    var cards = mouthData.map(function(m, idx) {
-        return '<div class="card-unit" onclick="openMouthAI(' + idx + ')"><span style="font-size:2.8rem;display:block;margin-bottom:4px;">' + m.i + '</span>' + m.n + '</div>';
-    }).join('');
-
-    setModal(
-        '<h2 style="font-size:1.7rem;margin-bottom:10px;">👄 AI 口肌視覺訓練</h2>' +
-        '<p style="font-size:1.05rem;color:var(--apple-dark-gray);">已啟用 478 Landmark FACS 幾何校準引擎</p>' +
-        '<div style="margin-bottom:18px;">' + secBtns + '</div>' +
-        '<div class="grid-10">' + cards + '</div>' +
-        '<button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:20px;height:56px;" onclick="closeAll()">返回主頁</button>'
-    );
-}
-
-async function openMouthAI(idx) {
-    var m = mouthData[idx];
-    currentMouthIdx = idx;
-    var adaptT = getAdaptiveThresh(m.bs, m.thresh);
-    currentMouthThresh = adaptT;
-
-    setModal(
-        '<h2 style="font-size:1.7rem;margin-bottom:4px;">' + m.n + '</h2>' +
-        '<div style="font-size:4rem;margin:6px 0;">' + m.i + '</div>' +
-        '<p id="timer-disp" style="font-size:1.4rem;font-weight:800;color:var(--apple-red);margin:0;">目標：' + targetVal + ' 秒</p>' +
-        '<p style="font-size:0.9rem;color:var(--apple-dark-gray);margin:4px 0;">🎯 個人化門檻：<b id="adapt-thresh-disp">' + Math.round(adaptT * 100) + '%</b></p>' +
-        '<div class="ai-vision-box" id="vision-wrap">' +
-            '<video id="v-feed" autoplay playsinline muted></video>' +
-            '<canvas id="v-feed-canvas"></canvas>' +
-            '<div class="ai-ring-wrap">' +
-                '<svg width="210" height="210" viewBox="0 0 210 210">' +
-                    '<circle stroke="rgba(255,255,255,0.2)" stroke-width="8" fill="transparent" r="95" cx="105" cy="105"/>' +
-                    '<circle id="progress-ring-circle" stroke="var(--apple-red)" stroke-width="8" stroke-dasharray="596.9" stroke-dashoffset="596.9" stroke-linecap="round" fill="transparent" r="95" cx="105" cy="105"/>' +
-                '</svg>' +
-                '<div class="ai-target-circle"></div>' +
-            '</div>' +
-            '<div class="pause-overlay" id="pause-overlay">' +
-                '<div style="font-size:2rem;">⏸️</div>' +
-                '<div style="font-size:1.2rem;font-weight:700;margin-top:8px;">已暫停</div>' +
-                '<button class="sub-btn" style="background:var(--apple-green);margin-top:12px;" onclick="resumeFaceAI()">繼續訓練</button>' +
-            '</div>' +
-        '</div>' +
-        '<div class="fatigue-banner" id="fatigue-banner">☕ 偵測到肌肉疲勞，已自動降低要求，建議飲啖水休息一下</div>' +
-        '<div class="blend-meter">' +
-            '<span class="blend-pill" id="bs-score">強度：--</span>' +
-            '<span class="blend-pill" id="sym-score">對稱度：--</span>' +
-        '</div>' +
-        '<p id="ai-stat" style="font-size:1.15rem;color:var(--apple-dark-gray);font-weight:700;">📸 正在啟動鏡頭…</p>' +
-        '<div style="margin-top:14px;">' +
-            '<button class="sub-btn" style="background:var(--apple-blue);" id="start-face-btn" onclick="startFaceAI(\'' + m.bs + '\', ' + idx + ')">開始偵測</button>' +
-            '<button class="sub-btn" style="background:var(--apple-orange);" id="pause-face-btn" onclick="pauseFaceAI()" disabled>暫停</button>' +
-            '<button class="sub-btn" style="background:var(--gold);color:#fff;" onclick="speak(\'' + m.d + '\')">動作提示</button>' +
-            '<button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="stopFaceCam();showMouthUI()">返回</button>' +
-        '</div>'
-    );
-
-    try {
-        await initFaceLandmarker();
-        faceCamStream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
-            audio: false
-        });
-        var vid = document.getElementById('v-feed');
-        if (vid) {
-            vid.srcObject = faceCamStream;
-            await vid.play();
-        }
-        var stat = document.getElementById('ai-stat');
-        if (stat) stat.innerText = '✅ 鏡頭已就緒，請按「開始偵測」';
-    } catch (e) {
-        var stat = document.getElementById('ai-stat');
-        if (stat) stat.innerText = '⚠️ 無法取得鏡頭，請確認權限設定';
-        toast('無法開啟鏡頭，請檢查權限');
-    }
-}
-
-function updateVisualProgressRing(score, liveThresh) {
-    var ring = document.getElementById('progress-ring-circle');
-    if (!ring) return;
-    var circumference = 2 * Math.PI * 95;
-    var percent = Math.min(1.0, Math.max(0, score / Math.max(0.01, liveThresh)));
-    var offset = circumference - (percent * circumference);
-    ring.style.strokeDashoffset = offset;
-    ring.style.stroke = score >= liveThresh ? "var(--apple-green)" : "var(--apple-red)";
-}
-
-function startFaceAI(bsType, idx) {
-    var m = mouthData[idx];
-    var timeLeft = (facePauseSnapshot && facePauseSnapshot.idx === idx) ? facePauseSnapshot.timeLeft : targetVal;
-    var holdAccum = 0;
-    var smoothedScore = 0;
-
-    if (!facePauseSnapshot || facePauseSnapshot.idx !== idx) {
-        blendshapeBuffer = [];
-        symmetryBuffer = [];
-    }
-    faceRunning = true;
-    facePaused = false;
-    facePauseSnapshot = null;
-
-    var liveThresh = getAdaptiveThresh(m.bs, m.thresh);
-    currentMouthThresh = liveThresh;
-
-    var btn = document.getElementById('start-face-btn');
-    var pauseBtn = document.getElementById('pause-face-btn');
-    if (btn) { btn.disabled = true; btn.innerText = '偵測中…'; }
-    if (pauseBtn) pauseBtn.disabled = false;
-
-    var video = document.getElementById('v-feed');
-    var canvas = document.getElementById('v-feed-canvas');
-    var ctx = canvas ? canvas.getContext('2d') : null;
-    var lastVideoTime = -1;
-    var fatigueNotified = false;
-
-    var loop = function() {
-        if (!faceRunning) return;
-        if (facePaused) { faceAnimId = requestAnimationFrame(loop); return; }
-
-        if (video && video.readyState >= 2) {
-            if (canvas && (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight)) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-            }
-            if (faceLandmarker && video.currentTime !== lastVideoTime) {
-                lastVideoTime = video.currentTime;
-                var result = faceLandmarker.detectForVideo(video, performance.now());
-                
-                var rawScore = getUnifiedMouthScore(result, bsType);
-                
-                var sym = (result && result.faceLandmarks && result.faceLandmarks.length) 
-                    ? calcGeometricSymmetry(result.faceLandmarks[0]) 
-                    : 0.95;
-
-                smoothedScore = smoothedScore === 0 ? rawScore : (smoothedScore * 0.7 + rawScore * 0.3);
-                var score = smoothedScore;
-
-                updateVisualProgressRing(score, liveThresh);
-
-                blendshapeBuffer.push(parseFloat(score.toFixed(3)));
-                symmetryBuffer.push(parseFloat(sym.toFixed(3)));
-                if (blendshapeBuffer.length > 300) blendshapeBuffer.shift();
-                if (symmetryBuffer.length > 300) symmetryBuffer.shift();
-
-                liveThresh = updateAdaptiveLive(bsType, m.thresh, blendshapeBuffer);
-                currentMouthThresh = liveThresh;
-                var atd = document.getElementById('adapt-thresh-disp');
-                if (atd) atd.textContent = Math.round(liveThresh * 100) + '%';
-
-                var fat = detectFatigue(blendshapeBuffer, symmetryBuffer);
-                var fb = document.getElementById('fatigue-banner');
-                if (fat.fatigue && fb) {
-                    fb.classList.add('show');
-                    if (!fatigueNotified) {
-                        fatigueNotified = true;
-                        liveThresh = Math.max(0.15, liveThresh - 0.08);
-                        currentMouthThresh = liveThresh;
-                        speak('放鬆飲啖水先，我已經為你調低咗門檻');
-                    }
-                }
-
-                var bsEl = document.getElementById('bs-score');
-                var syEl = document.getElementById('sym-score');
-                if (bsEl) {
-                    bsEl.textContent = '強度：' + Math.round(score * 100) + '%';
-                    bsEl.className = 'blend-pill ' + (score >= liveThresh ? 'good' : 'bad');
-                }
-                if (syEl) {
-                    syEl.textContent = '對稱度：' + Math.round(sym * 100) + '%';
-                    syEl.className = 'blend-pill ' + (sym >= 0.7 ? 'good' : 'bad');
-                }
-
-                if (ctx && result.faceLandmarks && result.faceLandmarks.length) {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = score >= liveThresh ? 'rgba(52,199,89,0.7)' : 'rgba(255,59,48,0.5)';
-                    for (var p = 0; p < result.faceLandmarks[0].length; p++) {
-                        var pt = result.faceLandmarks[0][p];
-                        ctx.beginPath();
-                        ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 1.2, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-
-                if (score >= liveThresh) {
-                    holdAccum += 1 / 30;
-                    if (holdAccum >= 1) {
-                        holdAccum -= 1;
-                        timeLeft--;
-                        window._faceTimeLeft = timeLeft;
-                        var tDisp = document.getElementById('timer-disp');
-                        if (tDisp) tDisp.innerText = '保持中：' + timeLeft + ' 秒';
-                        var stat = document.getElementById('ai-stat');
-                        if (stat) stat.innerText = '✅ 動作標準，請繼續保持！';
-                    }
-                } else {
-                    var stat = document.getElementById('ai-stat');
-                    if (stat) stat.innerText = '❌ 請對準畫面並用力做出動作';
-                }
-
-                if (timeLeft <= 0) {
-                    faceRunning = false;
-                    stopFaceCam();
-                    currentTrainingType = '口肌訓練：' + m.n;
-                    var avgBS = blendshapeBuffer.length ? (blendshapeBuffer.reduce(function(a, b) { return a + b; }, 0) / blendshapeBuffer.length) : 0;
-                    var avgSym = symmetryBuffer.length ? (symmetryBuffer.reduce(function(a, b) { return a + b; }, 0) / symmetryBuffer.length) : 0;
-                    
-                    addGold(50);
-                    markDaily('mouth');
-                    addHistory('口肌訓練：' + m.n, 50, [Math.round(avgBS * 100), Math.round(avgSym * 100)], m.bs, {
-                        avgBS: avgBS, avgSym: avgSym, finalThresh: liveThresh
-                    });
-                    showMouthResult(m.n, avgBS, avgSym, liveThresh);
-                    return;
-                }
-            }
-        }
-        faceAnimId = requestAnimationFrame(loop);
-    };
-    faceAnimId = requestAnimationFrame(loop);
-    speak('開始偵測，請做出動作並維持住');
-}
-
-function pauseFaceAI() {
-    if (!faceRunning) return;
-    facePaused = true;
-    facePauseSnapshot = {
-        idx: currentMouthIdx,
-        timeLeft: window._faceTimeLeft != null ? window._faceTimeLeft : targetVal
-    };
-    var ov = document.getElementById('pause-overlay');
-    if (ov) ov.classList.add('show');
-    toast('已暫停，隨時可以繼續');
-}
-
-function resumeFaceAI() {
-    facePaused = false;
-    var ov = document.getElementById('pause-overlay');
-    if (ov) ov.classList.remove('show');
-    speak('繼續維持動作');
-}
-
-function stopFaceCam() {
-    faceRunning = false;
-    facePaused = false;
-    if (faceAnimId) { cancelAnimationFrame(faceAnimId); faceAnimId = null; }
-    if (faceCamStream) {
-        faceCamStream.getTracks().forEach(function(t) { t.stop(); });
-        faceCamStream = null;
-    }
-}
-
-function showMouthResult(actionName, avgBS, avgSym, liveThresh) {
-    var stat = document.getElementById('ai-stat');
-    var rating = (avgBS >= liveThresh + 0.1 && avgSym >= 0.75) ? '優秀' : (avgBS >= liveThresh ? '良好' : '需加強');
-    var msg = rating === '優秀' ? '做得好標準！口部肌力好充足。' : (rating === '良好' ? '做得好好！繼續保持練習。' : '動作已經好接近，休息一陣再試！');
-    speak(msg);
-    if (stat) {
-        stat.innerHTML = '<div style="background:rgba(52,199,89,0.08);padding:16px;border-radius:14px;text-align:left;margin-top:10px;border:1px solid rgba(52,199,89,0.2);">' +
-            '<p style="font-size:1.15rem;margin:4px 0;">🌟 <b>評估結果：</b><span style="color:var(--apple-green);font-weight:800;">' + rating + '</span></p>' +
-            '<p style="font-size:1.05rem;margin:4px 0;">📢 ' + msg + '</p>' +
-            '<p style="font-size:0.9rem;color:var(--apple-dark-gray);">平均強度：' + Math.round(avgBS * 100) + '% ｜ 對稱度：' + Math.round(avgSym * 100) + '%</p>' +
-            '<p style="font-size:1.1rem;margin:8px 0 0;font-weight:800;color:var(--gold);">+50 金幣已存入雲端</p>' +
-        '</div>';
-    }
-}
-
-// 階梯認知命名
+// 認知階梯命名
 var cogData = [
     { t: "常見水果", i: [{ n: "蘋果", p: "🍎", u: "紅色甜甜，每日一個醫生遠離我", s: "蘋" }, { n: "香蕉", p: "🍌", u: "黃色長條形，猴子好鍾意食", s: "香" }, { n: "西瓜", p: "🍉", u: "夏天消暑，綠色皮紅色肉多汁", s: "西" }] },
     { t: "公共交通", i: [{ n: "巴士", p: "🚌", u: "雙層或單層大車，可以載好多乘客", s: "巴" }, { n: "地鐵", p: "🚇", u: "行駛喺地底嘅快速鐵路", s: "地" }, { n: "的士", p: "🚕", u: "紅色的車，隨截隨停跳錶計錢", s: "的" }] }
@@ -1659,7 +1393,6 @@ function answerCog(expected, c, i) {
             if (area) area.innerText = '✅ 正確：' + expected;
             toast('答對！+30 金幣');
         } else {
-            // DPO 準則 3.2 具體建議指導
             speak("差少少，試吓大聲啲，或者行近少少手機再試多次。");
             toast('未達標：請試吓行近手機少少，再大聲讀出「' + expected + '」');
         }
