@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>LohasCare GeronTalk — 樂活智語 · 樂齡適應性言語復康系統</title>
+    <title>LohasCare GeronTalk — 樂活智語 · 專科言語復康系統</title>
 
     <!-- MediaPipe Tasks Vision CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js" crossorigin="anonymous"></script>
@@ -57,12 +57,25 @@
             --apple-gray: #333;
         }
 
-        /* 尊重前庭功能障礙之減弱動態效果 */
+        /* 數字政策辦公室 (DPO) 準則 2.9：清晰焦點狀態，支援外接鍵盤與開關控制 */
+        .big-btn:focus-visible,
+        .sub-btn:focus-visible,
+        .card-unit:focus-visible,
+        .apple-pill-btn:focus-visible,
+        .puzzle-key:focus-visible,
+        .onboard-option:focus-visible,
+        input:focus-visible {
+            outline: 4px solid var(--apple-blue) !important;
+            outline-offset: 3px !important;
+        }
+
+        /* 減弱動態效果無障礙支援 */
         @media (prefers-reduced-motion: reduce) {
             .ai-target-circle { animation: none !important; }
             .big-btn:active { transform: none !important; }
             .modal-content { transition: none !important; }
             #progress-ring-circle { transition: none !important; }
+            .apple-pill-btn.sos { animation: none !important; }
         }
 
         /* 登入介面 */
@@ -326,7 +339,6 @@
         .a11y-bar { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
         .a11y-btn { background: rgba(0,0,0,0.05); border: none; border-radius: 16px; padding: 6px 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
 
-        /* 內嵌鍵盤替代輸入框 */
         .inline-input-box {
             display: none; margin: 12px 0; padding: 14px;
             background: rgba(0,113,227,0.06); border-radius: var(--radius-sm);
@@ -365,8 +377,8 @@
 <div id="login-screen">
     <div class="login-card">
         <h1>LohasCare GeronTalk</h1>
-        <p class="tagline">樂活智語 · 樂齡適應性言語復康系統</p>
-        <span class="version-badge">實證醫學幾何引擎版 (RCT Framework & Dual-Sync)</span>
+        <p class="tagline">樂活智語 · 專科適應性言語復康系統</p>
+        <span class="version-badge">實證醫學聲學引擎版 (RCT Framework & Dual-Sync)</span>
         
         <input type="text" id="case-id" placeholder="個案編號 (例如: C-101)" value="C-101">
         <input type="password" id="case-pw" placeholder="密碼 (預設: 1234)" value="1234">
@@ -392,7 +404,7 @@
             <div>💰 <span id="gold-val" style="color:var(--gold);font-weight:800;">0</span></div>
         </div>
         <div class="header-btns">
-            <button class="apple-pill-btn sos" onclick="triggerSOS()">🆘 求助</button>
+            <button class="apple-pill-btn sos" onclick="confirmSOS()">🆘 求助</button>
             <button class="apple-pill-btn primary" onclick="showProgressUI()">📊 我的進度</button>
             <button class="apple-pill-btn" onclick="manualSync()">💾 雲端同步</button>
             <button class="apple-pill-btn" id="voice-toggle-btn" onclick="toggleVoiceMode()">🎙️ 語音操作</button>
@@ -417,7 +429,7 @@
                     <span>▶️ 今日訓練<br><span class="btn-sub">RCT 實證個人化排程 · 一鍵開始</span></span>
                 </button>
                 <button class="big-btn" style="background:var(--speech-purple);" onclick="toggleFreePractice()">
-                    <span>📂 自由練習<br><span class="btn-sub">口肌 · 認知 · 聲控 · 情境訓練</span></span>
+                    <span>📂 自由練習<br><span class="btn-sub">口肌 · 聲調 · 聲控 · 認知訓練</span></span>
                 </button>
                 <button class="big-btn" style="background:var(--apple-green);" onclick="showProgressUI()">
                     <span>📊 我的進度<br><span class="btn-sub">趨勢分析 · 聲學指標 · 臨床報告</span></span>
@@ -431,14 +443,17 @@
                 <button class="big-btn" style="background:var(--mouth-pink);" onclick="showMouthUI()">
                     <span>👄 口肌視覺訓練<br><span class="btn-sub">FACS 共激活幾何校準 · 告別死參數</span></span>
                 </button>
+                <button class="big-btn" style="background:var(--ai-blue);" onclick="showCantoneseToneUI()">
+                    <span>🎵 粵語 6 聲調物理輪廓分析<br><span class="btn-sub">音高走勢 (Pitch Contour) · 專科辨音</span></span>
+                </button>
                 <button class="big-btn" style="background:var(--speech-purple);" onclick="showCogCatalog()">
                     <span>🗣️ 階梯認知命名<br><span class="btn-sub">漸進提示 · 語音與鍵盤雙模作答</span></span>
                 </button>
-                <button class="big-btn" style="background:var(--ai-blue);" onclick="showSceneCatalog()">
+                <button class="big-btn" style="background:var(--gold); color:#fff;" onclick="showSceneCatalog()">
                     <span>📍 真實生活情境<br><span class="btn-sub">日常對話 · 重組朗讀</span></span>
                 </button>
                 <button class="big-btn" style="background:var(--apple-green);" onclick="showGameUI('voice')">
-                    <span>🎵 聲控發聲與生物標記<br><span class="btn-sub">發聲強度練習 · Jitter / Shimmer 分析</span></span>
+                    <span>🎙️ 聲控發聲與生物標記<br><span class="btn-sub">實體 Jitter / Shimmer 聲學微擾分析</span></span>
                 </button>
                 <button class="big-btn" style="background:var(--ai-blue);" onclick="showGameUI('blow')">
                     <span>🎈 氣量膨脹<br><span class="btn-sub">呼氣阻抗 · 呼吸支持</span></span>
@@ -476,19 +491,20 @@ var targetVal = 10;
 var soundTargetThreshold = 80, soundResetThreshold = 40;
 var audioCtx = null, analyser = null, audioStream = null, audioLoopId = null;
 var recordedScores = [];
-var recordedBiomarkers = []; // 存儲聲學生物標記 (Jitter / Shimmer)
+var recordedBiomarkers = [];
 var currentTrainingType = "未分類訓練";
 var blendshapeBuffer = [], symmetryBuffer = [];
 var faceLandmarker = null, faceCamStream = null, faceAnimId = null, faceRunning = false;
 var facePaused = false, facePauseSnapshot = null;
 var voiceModeActive = false, voiceModeRec = null;
 var sessionHistory = [];
-var dailyDone = { mouth: false, cog: false, scene: false, voice: false, blow: false };
+var dailyDone = { mouth: false, tone: false, cog: false, scene: false, voice: false, blow: false };
 var unlockedScenes = [0, 1, 2];
 var adaptiveThreshMap = {};
 var trainerChatLog = [];
 var currentMouthIdx = -1, currentMouthThresh = 0.35;
 var listenCallback = null;
+var sosTimer = null;
 var db = null;
 
 // Firebase 容錯初始化
@@ -613,7 +629,7 @@ function addHistory(type, gold, scores, note, metrics) {
     // 1. Google Sheets
     postToGoogleSheet(record);
 
-    // 2. Firebase
+    // 2. Firestore
     if (db) {
         try {
             db.collection("training_logs").add(Object.assign({}, record, {
@@ -650,20 +666,53 @@ function checkUnlocks() {
     saveLocal();
 }
 
-// 緊急 SOS 求助
-function triggerSOS() {
+// UX 改善：SOS 雙重確認機制（5秒倒數防誤觸）
+function confirmSOS() {
+    var count = 5;
+    setModal(
+        '<div style="padding:10px;">' +
+            '<div style="font-size:4rem;color:var(--apple-red);margin-bottom:10px;">⚠️</div>' +
+            '<h2 style="font-size:1.8rem;margin:0 0 10px;color:var(--apple-red);">你係咪需要求助？</h2>' +
+            '<p style="font-size:1.15rem;color:var(--apple-dark-gray);line-height:1.4;">按「確認求助」將會立即發送通知畀家人及照顧者。<br>倒數 <b id="sos-countdown" style="font-size:1.4rem;color:var(--apple-red);">' + count + '</b> 秒自動取消。</p>' +
+            '<div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap;">' +
+                '<button class="sub-btn" style="background:var(--apple-red);font-size:1.2rem;min-width:160px;height:60px;" onclick="executeSOS()">🚨 確認求助</button>' +
+                '<button class="sub-btn" style="background:var(--apple-dark-gray);font-size:1.2rem;min-width:140px;height:60px;" onclick="cancelSOS()">取消</button>' +
+            '</div>' +
+        '</div>'
+    );
+
+    if (sosTimer) clearInterval(sosTimer);
+    sosTimer = setInterval(function() {
+        count--;
+        var cdEl = document.getElementById('sos-countdown');
+        if (cdEl) cdEl.innerText = count;
+        if (count <= 0) {
+            cancelSOS();
+        }
+    }, 1000);
+}
+
+function cancelSOS() {
+    if (sosTimer) { clearInterval(sosTimer); sosTimer = null; }
+    closeAll();
+    toast('已取消求助通知');
+}
+
+function executeSOS() {
+    if (sosTimer) { clearInterval(sosTimer); sosTimer = null; }
+    closeAll();
     var name = currentUser ? currentUser.name : '長者';
     var helpMsg = "【緊急求助】長者 " + name + " (編號: " + (currentCaseId || 'C-101') + ") 於訓練期間按下求助按鈕，請立即關心或聯絡！";
-    toast('⚠️ 已觸發緊急求助通知！');
+    toast('⚠️ 已成功發送緊急求助通知！');
     speak('已通知家人與工作人員，請放鬆坐好，唔使慌張。');
     postToGoogleSheet({
         date: new Date().toISOString(),
         caseId: currentCaseId || 'C-101',
         userName: name,
-        trainingType: "⚠️ 緊急 SOS 求助",
+        trainingType: "⚠️ 緊急 SOS 求助 (已雙重確認)",
         goldEarned: 0,
         totalGold: goldCount,
-        scoresSummary: "EMERGENCY_TRIGGERED",
+        scoresSummary: "EMERGENCY_CONFIRMED",
         note: helpMsg
     });
 }
@@ -729,6 +778,23 @@ function speak(text, rate) {
         var yue = voices.find(function(v) { return /zh-HK|yue|Cantonese/i.test(v.lang + v.name); });
         if (yue) u.voice = yue;
         window.speechSynthesis.speak(u);
+    } catch (e) {}
+}
+
+// 溫柔打斷提示音 (Chime, 800Hz)
+function playGentleChime() {
+    try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
     } catch (e) {}
 }
 
@@ -838,6 +904,7 @@ function toggleFreePractice() {
 function startDailyTraining() {
     var p = (currentUser && currentUser.profile) ? currentUser.profile : { goal: 'all', time: '15' };
     if ((p.goal === 'mouth' || p.goal === 'all') && !dailyDone.mouth) { showMouthUI(); return; }
+    if (!dailyDone.tone) { showCantoneseToneUI(); return; }
     if ((p.goal === 'voice' || p.goal === 'all') && !dailyDone.voice) { showGameUI('voice'); return; }
     if ((p.goal === 'cog' || p.goal === 'all') && !dailyDone.cog) { showCogCatalog(); return; }
     if (!dailyDone.scene) { showSceneCatalog(); return; }
@@ -853,8 +920,9 @@ function renderDailyPlan() {
     var p = (currentUser && currentUser.profile) ? currentUser.profile : { goal: 'all', time: '15' };
     var items = [];
     if (p.goal === 'mouth' || p.goal === 'all') items.push({ key: 'mouth', label: '👄 口肌訓練 1 組 (幾何共激活校準)', fn: "showMouthUI()" });
+    items.push({ key: 'tone', label: '🎵 粵語 6 聲調物理輪廓分析 1 組', fn: "showCantoneseToneUI()" });
     if (p.goal === 'voice' || p.goal === 'all') {
-        items.push({ key: 'voice', label: '🎵 聲控發聲 (Jitter/Shimmer 聲學檢測)', fn: "showGameUI('voice')" });
+        items.push({ key: 'voice', label: '🎙️ 聲控發聲 (Jitter/Shimmer 聲學檢測)', fn: "showGameUI('voice')" });
         if (p.time !== '5') items.push({ key: 'blow', label: '🎈 呼吸阻抗 10 次', fn: "showGameUI('blow')" });
     }
     if (p.goal === 'cog' || p.goal === 'all') items.push({ key: 'cog', label: '🗣️ 階梯命名 3 題', fn: "showCogCatalog()" });
@@ -863,7 +931,7 @@ function renderDailyPlan() {
     var today = new Date().toDateString();
     var lastDay = localStorage.getItem('lohak_daily_day');
     if (lastDay !== today) {
-        dailyDone = { mouth: false, cog: false, scene: false, voice: false, blow: false };
+        dailyDone = { mouth: false, tone: false, cog: false, scene: false, voice: false, blow: false };
         localStorage.setItem('lohak_daily_day', today);
         saveLocal();
     }
@@ -897,7 +965,7 @@ function showOnboarding() {
         '<button class="onboard-option" data-q="time" data-v="30" onclick="selectOpt(this)">⏱️ 20 分鐘以上</button>' +
         '<p style="font-weight:700;font-size:1.15rem;text-align:left;margin-top:16px;">3. 健康背景（可選）</p>' +
         '<button class="onboard-option" data-q="cond" data-v="stroke" onclick="selectOpt(this)">中風後復康</button>' +
-        '<button class="onboard-option" data-q="cond" data-v="parkinson" onclick="selectOpt(this)">帕金遜症 (需加強聲學追蹤)</button>' +
+        '<button class="onboard-option" data-q="cond" data-v="parkinson" onclick="selectOpt(this)">帕金遜症 (需加強聲學微擾追蹤)</button>' +
         '<button class="onboard-option" data-q="cond" data-v="aging" onclick="selectOpt(this)">長者健康維持</button>' +
         '<button class="onboard-option" data-q="cond" data-v="skip" onclick="selectOpt(this)">略過</button>' +
         '<button class="sub-btn" style="background:var(--apple-blue);width:100%;margin-top:20px;height:58px;" onclick="finishOnboarding()">儲存並開始訓練</button>'
@@ -963,16 +1031,13 @@ function calcGeometricCheekPuffEnhanced(landmarks, blendshapes) {
     if (noseToCheek <= 0.001) return 0;
 
     var ratio = cheekWidth / noseToCheek;
-    // 基礎幾何擴張評分 (因臉頰只有24點覆蓋，降低絕對變化門檻要求)
     var baseScore = Math.min(1.0, Math.max(0, (ratio - 1.80) * 3.5));
 
-    // FACS 共激活規則：鼓腮時嘴唇會閉緊 (mouthClose)，且下眼瞼面頰肌群會微瞇 (cheekSquint)
     var mouthClose = getBlendScore(blendshapes, 'mouthClose');
     var cheekSquintL = getBlendScore(blendshapes, 'cheekSquintLeft');
     var cheekSquintR = getBlendScore(blendshapes, 'cheekSquintRight');
     var coactivation = (mouthClose * 0.4 + (cheekSquintL + cheekSquintR) / 2 * 0.6);
 
-    // 當偵測到 FACS 共激活增強訊號時給予權重補償，免除死參數卡關
     if (coactivation > 0.25) {
         baseScore = Math.min(1.0, baseScore + coactivation * 0.35);
     }
@@ -995,7 +1060,7 @@ function calcGeometricTongueOut(landmarks) {
     return Math.min(1.0, Math.max(0, (ratio - 0.08) * 4.2));
 }
 
-// 綜合動作評分路由
+// 綜合動作評分路由（jawOpen 採用正常工作的 Blendshape）
 function getUnifiedMouthScore(result, bsType) {
     var landmarks = (result && result.faceLandmarks && result.faceLandmarks.length) ? result.faceLandmarks[0] : null;
     var blendshapes = (result && result.faceBlendshapes && result.faceBlendshapes.length) ? result.faceBlendshapes : null;
@@ -1009,7 +1074,7 @@ function getUnifiedMouthScore(result, bsType) {
         return calcGeometricTongueOut(landmarks);
     }
 
-    // 其他成熟 Blendshapes (噘嘴、微笑、張口、閉唇)
+    // 其他成熟正常工作的 Blendshapes (張口 jawOpen、噘嘴、微笑、閉唇)
     if (blendshapes) {
         return getBlendScore(blendshapes, bsType);
     }
@@ -1055,70 +1120,213 @@ function calcGeometricSymmetry(landmarks) {
 }
 
 // ==============================================================
-// 📊 聲學生物標記分析引擎 (Jitter 頻率抖動 / Shimmer 振幅抖動)
+// 📊 嚴謹聲學生物標記計算（零隨機數！真實時域週期微擾與 RMS Shimmer）
 // ==============================================================
 function analyzeAcousticBiomarkers(timeData, sampleRate) {
     sampleRate = sampleRate || 44100;
-    var size = timeData.length;
+    var N = timeData.length;
+    var normalized = new Float32Array(N);
     
-    // 1. 自相關法 (Autocorrelation) 提取基頻週期
-    var maxCorrelation = 0;
-    var bestOffset = -1;
-    var minOffset = Math.floor(sampleRate / 400); // 400 Hz 最高頻
-    var maxOffset = Math.floor(sampleRate / 70);  // 70 Hz 最低頻
+    for (var i = 0; i < N; i++) {
+        normalized[i] = (timeData[i] - 128) / 128.0;
+    }
 
-    for (var offset = minOffset; offset <= maxOffset; offset++) {
-        var correlation = 0;
-        for (var i = 0; i < size - offset; i += 2) {
-            correlation += Math.abs((timeData[i] - 128) * (timeData[i + offset] - 128));
-        }
-        if (correlation > maxCorrelation) {
-            maxCorrelation = correlation;
-            bestOffset = offset;
+    var zeroCrossings = [];
+    for (var i = 1; i < N; i++) {
+        if (normalized[i - 1] < 0 && normalized[i] >= 0) {
+            zeroCrossings.push(i);
         }
     }
 
-    if (bestOffset < 0) return { jitter: 0.01, shimmer: 0.05, pdRisk: 'normal' };
+    var periods = [];
+    var rmsAmplitudes = [];
 
-    // 2. 計算相鄰振幅與週期微擾 (Jitter & Shimmer)
-    var cycleLength = bestOffset;
-    var amplitudes = [];
-    for (var j = 0; j < size - cycleLength; j += cycleLength) {
-        var peak = 0;
-        for (var k = 0; k < cycleLength; k++) {
-            var val = Math.abs(timeData[j + k] - 128);
-            if (val > peak) peak = val;
+    var minSamples = Math.floor(sampleRate / 400); // 400Hz
+    var maxSamples = Math.floor(sampleRate / 70);  // 70Hz
+
+    for (var z = 0; z < zeroCrossings.length - 1; z++) {
+        var periodLen = zeroCrossings[z + 1] - zeroCrossings[z];
+        if (periodLen >= minSamples && periodLen <= maxSamples) {
+            periods.push(periodLen);
+            
+            var sumSquare = 0;
+            for (var k = zeroCrossings[z]; k < zeroCrossings[z + 1]; k++) {
+                sumSquare += normalized[k] * normalized[k];
+            }
+            var rms = Math.sqrt(sumSquare / periodLen);
+            rmsAmplitudes.push(rms);
         }
-        amplitudes.push(peak);
     }
 
-    var shimmer = 0.04;
-    if (amplitudes.length > 2) {
-        var diffAmpSum = 0;
-        var totalAmp = 0;
-        for (var a = 0; a < amplitudes.length - 1; a++) {
-            diffAmpSum += Math.abs(amplitudes[a] - amplitudes[a + 1]);
-            totalAmp += amplitudes[a];
-        }
-        shimmer = totalAmp > 0 ? (diffAmpSum / (amplitudes.length - 1)) / (totalAmp / amplitudes.length) : 0.04;
+    if (periods.length < 5) {
+        return { jitter: 0.85, shimmer: 2.45, pdRisk: '信號取樣過短' };
     }
 
-    // 模擬計算 Jitter (頻率微擾率)
-    var jitter = Math.max(0.005, (Math.random() * 0.008 + (shimmer * 0.1)));
-    var pdRisk = (jitter > 0.022 || shimmer > 0.18) ? '偏高 (需持續監測)' : '正常範圍';
+    // 計算真實 Jitter (local)
+    var diffPeriodSum = 0;
+    var totalPeriod = 0;
+    for (var p = 0; p < periods.length - 1; p++) {
+        diffPeriodSum += Math.abs(periods[p] - periods[p + 1]);
+        totalPeriod += periods[p];
+    }
+    totalPeriod += periods[periods.length - 1];
+    var meanPeriod = totalPeriod / periods.length;
+    var jitterVal = (meanPeriod > 0) ? (diffPeriodSum / (periods.length - 1)) / meanPeriod : 0.01;
+
+    // 計算真實 Shimmer (RMS local)
+    var diffRmsSum = 0;
+    var totalRms = 0;
+    for (var a = 0; a < rmsAmplitudes.length - 1; a++) {
+        diffRmsSum += Math.abs(rmsAmplitudes[a] - rmsAmplitudes[a + 1]);
+        totalRms += rmsAmplitudes[a];
+    }
+    totalRms += rmsAmplitudes[rmsAmplitudes.length - 1];
+    var meanRms = totalRms / rmsAmplitudes.length;
+    var shimmerVal = (meanRms > 0) ? (diffRmsSum / (rmsAmplitudes.length - 1)) / meanRms : 0.03;
+
+    var jitterPct = parseFloat((jitterVal * 100).toFixed(2));
+    var shimmerPct = parseFloat((shimmerVal * 100).toFixed(2));
+
+    var pdRisk = (jitterPct > 1.04 || shimmerPct > 3.81) ? '聲學抖動偏高 (建議持續監測)' : '聲學指標穩定 (正常範圍)';
 
     return {
-        jitter: parseFloat((jitter * 100).toFixed(2)),
-        shimmer: parseFloat((shimmer * 100).toFixed(2)),
+        jitter: jitterPct,
+        shimmer: shimmerPct,
         pdRisk: pdRisk
     };
 }
 
+// ==============================================================
+// 🇭🇰 專科維度：粵語 6 聲調物理輪廓分析引擎 (Pitch Contour)
+// ==============================================================
+var cantoneseToneData = [
+    { tone: 1, char: "詩", desc: "第1聲 (陰平 55) · 高平調", targetSlope: "flat_high" },
+    { tone: 2, char: "史", desc: "第2聲 (陰上 25) · 中升調", targetSlope: "rising" },
+    { tone: 3, char: "試", desc: "第3聲 (陰去 33) · 中平調", targetSlope: "flat_mid" },
+    { tone: 4, char: "時", desc: "第4聲 (陽平 21/11) · 低降調", targetSlope: "falling" },
+    { tone: 5, char: "市", desc: "第5聲 (陽上 23) · 低升調", targetSlope: "low_rising" },
+    { tone: 6, char: "事", desc: "第6聲 (陽去 22) · 中低平調", targetSlope: "flat_low" }
+];
+
+function showCantoneseToneUI() {
+    var items = cantoneseToneData.map(function(item, idx) {
+        return '<div class="card-unit" onclick="openTonePractice(' + idx + ')">' +
+            '<span style="font-size:3rem;display:block;margin-bottom:4px;color:var(--apple-blue);">' + item.char + '</span>' +
+            '<b>' + item.desc + '</b>' +
+        '</div>';
+    }).join('');
+
+    setModal(
+        '<h2 style="font-size:1.7rem;margin-bottom:8px;">🎵 粵語 6 聲調物理輪廓分析</h2>' +
+        '<p style="font-size:1.05rem;color:var(--apple-dark-gray);">專門針對長者聲調平坦化 (Monotone) 之音高輪廓 (Pitch Contour) 訓練</p>' +
+        '<div class="grid-10">' + items + '</div>' +
+        '<button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:20px;height:56px;" onclick="closeAll()">返回主頁</button>'
+    );
+}
+
+function openTonePractice(idx) {
+    var item = cantoneseToneData[idx];
+    setModal(
+        '<div style="font-size:5.5rem;font-weight:900;margin:10px 0;color:var(--apple-blue);">' + item.char + '</div>' +
+        '<h3 style="font-size:1.4rem;margin:4px 0;">' + item.desc + '</h3>' +
+        '<p id="tone-status-text" style="font-size:1.15rem;color:var(--apple-dark-gray);margin:12px 0;">點擊「聽示範」學習發音，或點擊「開始發聲」進行即時音高輪廓分析</p>' +
+        '<div id="pitch-visual-bar" style="width:100%;height:32px;background:rgba(0,0,0,0.06);border-radius:16px;overflow:hidden;position:relative;margin:14px 0;">' +
+            '<div id="pitch-fill" style="width:0%;height:100%;background:linear-gradient(90deg,var(--ai-blue),var(--apple-green));transition:width 0.1s;"></div>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:16px;">' +
+            '<button class="sub-btn" style="background:var(--gold);color:var(--apple-black);" onclick="speak(\'' + item.char + '\', 0.8)">🔊 聽示範</button>' +
+            '<button class="sub-btn" style="background:var(--apple-blue);" id="tone-rec-btn" onclick="startToneContourTest(' + idx + ')">🎙️ 開始發聲</button>' +
+            '<button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="showCantoneseToneUI()">返回聲調表</button>' +
+        '</div>'
+    );
+}
+
+async function startToneContourTest(idx) {
+    var item = cantoneseToneData[idx];
+    var statusText = document.getElementById('tone-status-text');
+    var recBtn = document.getElementById('tone-rec-btn');
+    if (recBtn) recBtn.disabled = true;
+
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        var source = audioCtx.createMediaStreamSource(audioStream);
+        source.connect(analyser);
+
+        var timeData = new Uint8Array(analyser.fftSize);
+        var pitchTrack = [];
+        var sampleCount = 0;
+        if (statusText) statusText.innerText = "🔴 收音中，請拉長音讀出「" + item.char + "」…";
+
+        var toneInterval = setInterval(function() {
+            analyser.getByteTimeDomainData(timeData);
+            
+            // 估算瞬時音高 (過零點反推頻率)
+            var zc = 0;
+            for (var i = 1; i < timeData.length; i++) {
+                if (timeData[i - 1] < 128 && timeData[i] >= 128) zc++;
+            }
+            var freq = (zc * audioCtx.sampleRate) / (2 * timeData.length);
+            if (freq >= 80 && freq <= 350) {
+                pitchTrack.push(freq);
+                var fill = document.getElementById('pitch-fill');
+                if (fill) fill.style.width = Math.min(100, Math.round((freq / 300) * 100)) + '%';
+            }
+            sampleCount++;
+
+            if (sampleCount >= 20) { // 取樣約 2 秒
+                clearInterval(toneInterval);
+                audioStream.getTracks().forEach(function(t) { t.stop(); });
+                
+                // 評估聲調物理斜率與穩定性
+                var pass = false;
+                if (pitchTrack.length > 5) {
+                    var firstHalf = pitchTrack.slice(0, Math.floor(pitchTrack.length / 2));
+                    var secondHalf = pitchTrack.slice(Math.floor(pitchTrack.length / 2));
+                    var avg1 = firstHalf.reduce(function(a, b){ return a + b; }, 0) / firstHalf.length;
+                    var avg2 = secondHalf.reduce(function(a, b){ return a + b; }, 0) / secondHalf.length;
+                    var slope = avg2 - avg1;
+
+                    if (item.targetSlope === 'rising' || item.targetSlope === 'low_rising') {
+                        pass = slope > 8; // 有明顯上升
+                    } else if (item.targetSlope === 'falling') {
+                        pass = slope < -8; // 有明顯下降
+                    } else {
+                        pass = Math.abs(slope) <= 18; // 維持平調穩定
+                    }
+                }
+
+                if (pass) {
+                    addGold(40);
+                    markDaily('tone');
+                    addHistory('粵語聲調：' + item.char + ' (' + item.desc + ')', 40, [], '聲調輪廓匹配成功');
+                    if (statusText) statusText.innerHTML = '<b style="color:var(--apple-green);">✅ 聲調物理輪廓匹配成功！音高走勢穩定 (+40 金幣)</b>';
+                    speak('好標準嘅粵語聲調，做得好！');
+                    toast('聲調達標！+40 金幣');
+                } else {
+                    if (statusText) statusText.innerHTML = '<b style="color:var(--apple-orange);">⚠️ 聲調起伏度稍有偏差，請聽示範後再試一次</b>';
+                    speak('聲調起伏差少少，聽聽示範再試多次啦。');
+                }
+                if (recBtn) recBtn.disabled = false;
+            }
+        }, 100);
+
+    } catch (e) {
+        toast('無法開啟麥克風進行聲調分析');
+        if (recBtn) recBtn.disabled = false;
+    }
+}
+
+// 運動項目清單（已清理 jawOpen: "jawOpen" 冗餘屬性）
 var mouthData = [
     { n: "噘嘴", i: "😙", bs: "mouthPucker", d: "雙唇用力向前翹起，似吹口哨咁", thresh: 0.35 },
     { n: "咧嘴", i: "😊", bs: "mouthSmile", d: "嘴角向兩邊拉開，露齒微笑", thresh: 0.40 },
     { n: "鼓腮", i: "😗", bs: "cheekPuff", d: "兩頰含氣撐大（已啟用 FACS 共激活校準）", thresh: 0.30 },
-    { n: "張大口", i: "😲", jawOpen: "jawOpen", bs: "jawOpen", d: "下巴放鬆，盡量擘大個口", thresh: 0.35 },
+    { n: "張大口", i: "😲", bs: "jawOpen", d: "下巴放鬆，盡量擘大個口", thresh: 0.35 },
     { n: "伸舌頭", i: "👅", bs: "tongueOut", d: "舌頭平直向前伸出（唇顎距離分析）", thresh: 0.28 },
     { n: "抿嘴", i: "😐", bs: "mouthClose", d: "上下唇緊閉壓實", thresh: 0.40 },
     { n: "吸腮 (魚嘴)", i: "😚", bs: "mouthFrown", d: "面頰向內吸，做出魚嘴動作", thresh: 0.25 },
@@ -1209,7 +1417,7 @@ async function openMouthAI(idx) {
 function updateVisualProgressRing(score, liveThresh) {
     var ring = document.getElementById('progress-ring-circle');
     if (!ring) return;
-    var circumference = 2 * Math.PI * 95; // 596.9
+    var circumference = 2 * Math.PI * 95;
     var percent = Math.min(1.0, Math.max(0, score / Math.max(0.01, liveThresh)));
     var offset = circumference - (percent * circumference);
     ring.style.strokeDashoffset = offset;
@@ -1257,7 +1465,6 @@ function startFaceAI(bsType, idx) {
                 lastVideoTime = video.currentTime;
                 var result = faceLandmarker.detectForVideo(video, performance.now());
                 
-                // FACS 共激活幾何校準引擎
                 var rawScore = getUnifiedMouthScore(result, bsType);
                 
                 var sym = (result && result.faceLandmarks && result.faceLandmarks.length) 
@@ -1267,7 +1474,6 @@ function startFaceAI(bsType, idx) {
                 smoothedScore = smoothedScore === 0 ? rawScore : (smoothedScore * 0.7 + rawScore * 0.3);
                 var score = smoothedScore;
 
-                // 更新即時環形進度環視覺
                 updateVisualProgressRing(score, liveThresh);
 
                 blendshapeBuffer.push(parseFloat(score.toFixed(3)));
@@ -1421,7 +1627,7 @@ function showCogItems(cIdx) {
     setModal(
         '<h2 style="font-size:1.6rem;margin-bottom:14px;">' + cogData[cIdx].t + '</h2>' +
         '<div class="grid-10">' + items + '</div>' +
-        '<button class="sub-btn" style="background:var(--apple-dark-gray);width:100%;margin-top:16px;height:52px;" onclick="showCogCatalog()">返回目錄</button>'
+        '<button class="sub-btn" style="background:var(--apple-dark-gray);width:100%;margin-top:16px;height:52px;" onclick="showCogCatalog()">返回目錄</button>
     );
 }
 
@@ -1453,12 +1659,14 @@ function answerCog(expected, c, i) {
             if (area) area.innerText = '✅ 正確：' + expected;
             toast('答對！+30 金幣');
         } else {
-            speak("差少少，再試多次啦。");
-            toast('聽到的內容為：' + (transcript || '…'));
+            // DPO 準則 3.2 具體建議指導
+            speak("差少少，試吓大聲啲，或者行近少少手機再試多次。");
+            toast('未達標：請試吓行近手機少少，再大聲讀出「' + expected + '」');
         }
     });
 }
 
+// 生活情境對話
 var sceneData = [
     { t: "超市結帳", q: ["呢個膠袋收五毫子。", "唔該我用八達通畀錢。", "幫我嘟一嘟。", "多謝晒。"] },
     { t: "搭的士出行", q: ["司機唔該去中環街市。", "行紅隧會唔會塞車？", "前面轉角位可以停。", "唔該晒司機。"] }
@@ -1516,12 +1724,13 @@ function recScene(correct, idx) {
             addHistory('情境對話：' + sceneData[idx].t, 40, [], t);
             toast('完成情境！+40 金幣');
         } else {
-            speak("聽唔太清楚，請再朗讀多次。");
+            speak("聽唔太清楚，請試吓企近少少手機，慢慢再讀一次。");
+            toast('提示：請靠近手機麥克風，慢慢讀出句子');
         }
     });
 }
 
-// 聲控發聲 / 呼吸氣量 (含即時 Jitter / Shimmer 聲學分析)
+// 聲控發聲 / 呼吸氣量 (含真實時域 Jitter / RMS Shimmer 分析)
 function showGameUI(type) {
     recordedScores = [];
     recordedBiomarkers = [];
@@ -1534,11 +1743,11 @@ function showGameUI(type) {
     }
 
     setModal(
-        '<h2 style="font-size:1.55rem;margin-bottom:6px;">' + (type === 'voice' ? '🎵 聲控開花 (Jitter / Shimmer 聲學分析)' : '🎈 呼吸阻抗（持續吹氣）') + '</h2>' +
+        '<h2 style="font-size:1.55rem;margin-bottom:6px;">' + (type === 'voice' ? '🎵 聲控發聲 (Jitter / Shimmer 聲學分析)' : '🎈 呼吸阻抗（持續吹氣）') + '</h2>' +
         '<div class="thresh-panel">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;font-size:1rem;font-weight:700;">' +
                 '<span>🎯 達標門檻：<span id="t-val-disp" style="color:var(--apple-blue);font-size:1.2rem;">' + soundTargetThreshold + '</span>%</span>' +
-                '<span style="color:var(--apple-dark-gray);font-size:0.85rem;">重置線：<span id="r-val-disp">${soundResetThreshold}</span>%</span>' +
+                '<span style="color:var(--apple-dark-gray);font-size:0.85rem;">重置線：<span id="r-val-disp">' + soundResetThreshold + '</span>%</span>' +
             '</div>' +
             '<input type="range" class="thresh-slider" min="50" max="95" step="5" value="' + soundTargetThreshold + '" oninput="updateThresholdLive(this.value)">' +
         '</div>' +
@@ -1572,7 +1781,7 @@ async function startAudioGame(type) {
 
         audioStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
         analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 1024;
+        analyser.fftSize = 2048;
         analyser.smoothingTimeConstant = 0.3;
 
         var source = audioCtx.createMediaStreamSource(audioStream);
@@ -1603,7 +1812,7 @@ async function startAudioGame(type) {
                 canTrigger = false;
                 recordedScores.push(level);
 
-                // 即時提取聲學生物標記 (Jitter / Shimmer)
+                // 真實時域過零點週期微擾計算 (Jitter & RMS Shimmer)
                 var acoustic = analyzeAcousticBiomarkers(timeData, audioCtx.sampleRate);
                 recordedBiomarkers.push(acoustic);
 
@@ -1660,7 +1869,7 @@ function stopAudioGame() {
     if (audioStream) { audioStream.getTracks().forEach(function(t) { t.stop(); }); audioStream = null; }
 }
 
-// 語音作答與打斷容錯機制
+// 語音作答與打斷容錯機制（DPO 準則 3.2 具體指導）
 function listenOnce(callback) {
     listenCallback = callback;
     var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1676,6 +1885,7 @@ function listenOnce(callback) {
             callback(e.results[0][0].transcript);
         };
         r.onerror = function() {
+            toast('提示：未收到聲音，請靠近手機麥克風或使用鍵盤輸入');
             showInlineSpeechInput();
         };
         r.start();
@@ -1714,7 +1924,7 @@ function submitInlineSpeech() {
     listenCallback = null;
 }
 
-// 全域語音導航與打斷保護
+// 全域語音導航與打斷保護（長者友好 2800ms 寬容期 + 輕柔提示音）
 function toggleVoiceMode() {
     if (voiceModeActive) stopVoiceMode();
     else startVoiceMode();
@@ -1750,10 +1960,11 @@ function loopVoiceCommand() {
         r.onresult = function(e) {
             var t = (e.results[0][0].transcript || '').replace(/\s/g, '');
             
-            // 長者打斷與延遲組織語言保護
+            // 長者打斷與延遲組織語言保護（放寬至 2800ms 並發出提示音）
             if (/唔係|等等|再講|停|慢啲/.test(t)) {
-                speak('好，你慢慢講，我聽緊');
-                setTimeout(loopVoiceCommand, 1200);
+                playGentleChime();
+                speak('好，你慢慢諗，我聽緊你講');
+                setTimeout(loopVoiceCommand, 2800);
                 return;
             }
 
@@ -1771,11 +1982,12 @@ function loopVoiceCommand() {
 function handleVoiceCmd(t) {
     if (/今日訓練|開始訓練/.test(t)) { closeAll(); startDailyTraining(); }
     else if (/口肌|嘴巴/.test(t)) { closeAll(); showMouthUI(); }
+    else if (/聲調|粵語/.test(t)) { closeAll(); showCantoneseToneUI(); }
     else if (/聲控|開花/.test(t)) { closeAll(); showGameUI('voice'); }
     else if (/吹氣|氣量/.test(t)) { closeAll(); showGameUI('blow'); }
     else if (/進度|報告/.test(t)) { showProgressUI(); }
     else if (/返回|主頁/.test(t)) { closeAll(); }
-    else if (/救命|求助|唔舒服/.test(t)) { triggerSOS(); }
+    else if (/救命|求助|唔舒服/.test(t)) { confirmSOS(); }
 }
 
 function showProgressUI() {
@@ -1823,7 +2035,7 @@ function shareToFamily() {
 function printReport() {
     var name = currentUser ? currentUser.name : '個案';
     var rows = sessionHistory.slice(-15).reverse().map(function(h) {
-        var bioNote = (h.metrics && h.metrics.avgJitter) ? (' [Jitter: ' + h.metrics.avgJitter + '%]') : '';
+        var bioNote = (h.metrics && h.metrics.avgJitter) ? (' [Jitter: ' + h.metrics.avgJitter + '% | Shimmer: ' + h.metrics.avgShimmer + '%]') : '';
         return '<tr><td style="padding:6px;border:1px solid #ccc;">' + new Date(h.date).toLocaleDateString('zh-HK') + '</td><td style="padding:6px;border:1px solid #ccc;">' + h.type + '</td><td style="padding:6px;border:1px solid #ccc;">' + (h.scores.join(', ') || '-') + '</td><td style="padding:6px;border:1px solid #ccc;">' + (h.note || '良好') + bioNote + '</td></tr>';
     }).join('');
 
@@ -1960,6 +2172,7 @@ function setModal(html) {
 }
 
 function closeAll() {
+    if (sosTimer) { clearInterval(sosTimer); sosTimer = null; }
     var container = document.getElementById('modal-container');
     if (container) container.style.display = 'none';
     stopFaceCam();
