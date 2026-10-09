@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>LohasCare GeronTalk — 樂活智語 · 專科言語復康系統</title>
 
-    <!-- Firebase Compat SDK (穩定傳統腳本引入) -->
+    <!-- Firebase Compat SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -881,7 +881,7 @@ function detectFatigue(bsBuf, symBuf) {
     if (recent.length < 30) return { fatigue: false, level: 'low' };
     var mean = recent.reduce(function(a, b) { return a + b; }, 0) / recent.length;
     var variance = recent.reduce(function(s, v) { return s + Math.pow(v - mean, 2); }, 0) / recent.length;
-    let symmetryDrop = 0;
+    var symmetryDrop = 0;
     if (symBuf.length > 60) {
         var late = symBuf.slice(-30).reduce(function(a, b) { return a + b; }, 0) / 30;
         var early = symBuf.slice(-60, -30).reduce(function(a, b) { return a + b; }, 0) / 30;
@@ -989,7 +989,7 @@ function finishOnboarding() {
     speak('個人計劃已經準備好，一齊開始今日訓練！');
 }
 
-// MediaPipe 初始化（修正：採用動態 ES Module import，徹底解決 Unexpected token export）
+// MediaPipe 初始化（動態原生 import，杜絕外部執行器崩潰）
 async function initFaceLandmarker() {
     if (faceLandmarker) return faceLandmarker;
     try {
@@ -1008,7 +1008,6 @@ async function initFaceLandmarker() {
         });
         return faceLandmarker;
     } catch (e) {
-        console.warn('GPU 模式略過，嘗試 CPU 備援載入...', e);
         try {
             var vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0');
             var filesetResolver = await vision.FilesetResolver.forVisionTasks(
@@ -1025,17 +1024,12 @@ async function initFaceLandmarker() {
             });
             return faceLandmarker;
         } catch (err) {
-            console.warn('FaceLandmarker 載入略過，使用幾何保護模式', err);
             return null;
         }
     }
 }
 
-// ==============================================================
-// 🔬 FACS 共激活校準幾何引擎 (破除 MediaPipe 7大死參數)
-// ==============================================================
-
-// 1. 鼓腮 (cheekPuff) - 結合 478 幾何寬度 + FACS 嘴角緊閉與瞇眼共激活
+// 鼓腮 (cheekPuff) FACS 共激活幾何校準
 function calcGeometricCheekPuffEnhanced(landmarks, blendshapes) {
     if (!landmarks || landmarks.length < 468) return 0;
     var leftCheek = landmarks[234];
@@ -1060,7 +1054,7 @@ function calcGeometricCheekPuffEnhanced(landmarks, blendshapes) {
     return baseScore;
 }
 
-// 2. 伸舌頭 (tongueOut) - 唇顎三維垂直幾何擴張估算
+// 伸舌頭 (tongueOut) 唇顎三維垂直幾何擴張估算
 function calcGeometricTongueOut(landmarks) {
     if (!landmarks || landmarks.length < 468) return 0;
     var upperInnerLip = landmarks[13];
@@ -1076,25 +1070,19 @@ function calcGeometricTongueOut(landmarks) {
     return Math.min(1.0, Math.max(0, (ratio - 0.08) * 4.2));
 }
 
-// 綜合動作評分路由（jawOpen 採用正常工作的 Blendshape）
 function getUnifiedMouthScore(result, bsType) {
     var landmarks = (result && result.faceLandmarks && result.faceLandmarks.length) ? result.faceLandmarks[0] : null;
     var blendshapes = (result && result.faceBlendshapes && result.faceBlendshapes.length) ? result.faceBlendshapes : null;
     
-    // 路由：鼓腮專用 FACS 共激活幾何
     if (bsType === 'cheekPuff') {
         return calcGeometricCheekPuffEnhanced(landmarks, blendshapes);
     }
-    // 路由：伸舌專用幾何
     if (bsType === 'tongueOut' || bsType === 'tongueUp' || bsType === 'tongueDown') {
         return calcGeometricTongueOut(landmarks);
     }
-
-    // 其他成熟正常工作的 Blendshapes (張口 jawOpen、噘嘴、微笑、閉唇)
     if (blendshapes) {
         return getBlendScore(blendshapes, bsType);
     }
-
     return 0.5;
 }
 
@@ -1119,7 +1107,6 @@ function getBlendScore(blendshapes, bsType) {
     return count === 0 ? 0 : sum / count;
 }
 
-// 幾何面部對稱度
 function calcGeometricSymmetry(landmarks) {
     if (!landmarks || landmarks.length < 300) return 0.95;
     var leftCorner = landmarks[61];
@@ -1135,9 +1122,7 @@ function calcGeometricSymmetry(landmarks) {
     return parseFloat(symmetry.toFixed(2));
 }
 
-// ==============================================================
-// 📊 嚴謹聲學生物標記計算（零隨機數！真實時域週期微擾與 RMS Shimmer）
-// ==============================================================
+// 嚴謹時域聲學生物標記計算（無隨機數）
 function analyzeAcousticBiomarkers(timeData, sampleRate) {
     sampleRate = sampleRate || 44100;
     var N = timeData.length;
@@ -1212,9 +1197,7 @@ function analyzeAcousticBiomarkers(timeData, sampleRate) {
     };
 }
 
-// ==============================================================
-// 🇭🇰 專科維度：粵語 6 聲調物理輪廓分析引擎 (Pitch Contour)
-// ==============================================================
+// 粵語 6 聲調物理輪廓分析
 var cantoneseToneData = [
     { tone: 1, char: "詩", desc: "第1聲 (陰平 55) · 高平調", targetSlope: "flat_high" },
     { tone: 2, char: "史", desc: "第2聲 (陰上 25) · 中升調", targetSlope: "rising" },
@@ -1281,7 +1264,6 @@ async function startToneContourTest(idx) {
         var toneInterval = setInterval(function() {
             analyser.getByteTimeDomainData(timeData);
             
-            // 估算瞬時音高 (過零點反推頻率)
             var zc = 0;
             for (var i = 1; i < timeData.length; i++) {
                 if (timeData[i - 1] < 128 && timeData[i] >= 128) zc++;
@@ -1298,7 +1280,6 @@ async function startToneContourTest(idx) {
                 clearInterval(toneInterval);
                 audioStream.getTracks().forEach(function(t) { t.stop(); });
                 
-                // 評估聲調物理斜率與穩定性
                 var pass = false;
                 if (pitchTrack.length > 5) {
                     var firstHalf = pitchTrack.slice(0, Math.floor(pitchTrack.length / 2));
@@ -1350,7 +1331,7 @@ function showCogCatalog() {
     setModal(
         '<h2 style="font-size:1.7rem;margin-bottom:16px;">🗣️ 階梯認知命名</h2>' +
         '<div class="grid-10">' + list + '</div>' +
-        '<button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:20px;height:56px;" onclick="closeAll()">返回主頁</button>'
+        '<button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:20px;height:56px;" onclick="closeAll()">返回主頁</button>
     );
 }
 
@@ -1463,7 +1444,7 @@ function recScene(correct, idx) {
     });
 }
 
-// 聲控發聲 / 呼吸氣量 (含真實時域 Jitter / RMS Shimmer 分析)
+// 聲控發聲 / 呼吸氣量 (修復字串閉合語法錯誤)
 function showGameUI(type) {
     recordedScores = [];
     recordedBiomarkers = [];
@@ -1545,7 +1526,6 @@ async function startAudioGame(type) {
                 canTrigger = false;
                 recordedScores.push(level);
 
-                // 真實時域過零點週期微擾計算 (Jitter & RMS Shimmer)
                 var acoustic = analyzeAcousticBiomarkers(timeData, audioCtx.sampleRate);
                 recordedBiomarkers.push(acoustic);
 
@@ -1602,7 +1582,6 @@ function stopAudioGame() {
     if (audioStream) { audioStream.getTracks().forEach(function(t) { t.stop(); }); audioStream = null; }
 }
 
-// 語音作答與打斷容錯機制（DPO 準則 3.2 具體指導）
 function listenOnce(callback) {
     listenCallback = callback;
     var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1657,7 +1636,6 @@ function submitInlineSpeech() {
     listenCallback = null;
 }
 
-// 全域語音導航與打斷保護（長者友好 2800ms 寬容期 + 輕柔提示音）
 function toggleVoiceMode() {
     if (voiceModeActive) stopVoiceMode();
     else startVoiceMode();
@@ -1693,7 +1671,6 @@ function loopVoiceCommand() {
         r.onresult = function(e) {
             var t = (e.results[0][0].transcript || '').replace(/\s/g, '');
             
-            // 長者打斷與延遲組織語言保護（放寬至 2800ms 並發出提示音）
             if (/唔係|等等|再講|停|慢啲/.test(t)) {
                 playGentleChime();
                 speak('好，你慢慢諗，我聽緊你講');
