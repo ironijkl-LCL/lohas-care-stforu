@@ -537,7 +537,6 @@ window.cantoneseToneData = [
     { tone: 6, char: "事", desc: "第6聲 (陽去) · 中低平調", targetSlope: "flat_low" }
 ];
 
-// 看圖命名資料庫
 window.cogData = [
     {
         cat: "日常生活用品",
@@ -558,7 +557,6 @@ window.cogData = [
     }
 ];
 
-// 10 大真實生活情境（共 90 個完整句子）
 window.sceneData = [
     {
         t: "搭的士",
@@ -703,7 +701,7 @@ window.sceneData = [
 ];
 
 // ==============================================================
-// 2. Firebase 安全動態載入
+// 2. Firebase 安全動態載入（相容 runcode.htm 避免腳本標籤提早閉合）
 // ==============================================================
 var db = null;
 (function initFirebaseSafely() {
@@ -725,15 +723,15 @@ var db = null;
         } catch(e) {}
         return;
     }
-    function loadScript(url, callback) {
-        var s = document.createElement('script');
+    function loadScriptSafe(url, callback) {
+        var s = document.createElement("script");
         s.src = url;
         s.async = true;
         s.onload = callback;
         document.head.appendChild(s);
     }
-    loadScript("https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js", function() {
-        loadScript("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js", function() {
+    loadScriptSafe("https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js", function() {
+        loadScriptSafe("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js", function() {
             try {
                 if (!firebase.apps.length) {
                     firebase.initializeApp({
@@ -752,9 +750,9 @@ var db = null;
 })();
 
 // ==============================================================
-// 3. 系統狀態與設定變數
+// 3. 系統狀態變數
 // ==============================================================
-var STORAGE_KEY = 'lohascare_gerontalk_data';
+var STORAGE_KEY = "lohascare_gerontalk_data";
 var GOOGLE_SHEET_API = "https://script.google.com/macros/s/AKfycbzP0aXpxzQn5sz0zF15nSKx73QbxDl9xp83-653X-hcE2MuzUmzxAf1cuJeJZN70S3N/exec";
 
 var usersData = {
@@ -782,9 +780,10 @@ var trainerChatLog = [];
 var currentMouthIdx = -1, currentMouthThresh = 0.35;
 var listenCallback = null;
 var sosTimer = null;
+window.currentTongueTipPoint = null;
 
 // ==============================================================
-// 4. 通用生命週期與音訊、視覺輔助函式
+// 4. 生命週期與通用輔助工具
 // ==============================================================
 window.stopFaceCam = function() {
     window.faceRunning = false;
@@ -803,44 +802,44 @@ window.stopAudioGame = function() {
 
 window.closeAll = function() {
     if (window.sosTimer) { clearInterval(window.sosTimer); window.sosTimer = null; }
-    var container = document.getElementById('modal-container');
-    if (container) container.style.display = 'none';
-    if (typeof window.stopFaceCam === 'function') window.stopFaceCam();
-    if (typeof window.stopAudioGame === 'function') window.stopAudioGame();
+    var container = document.getElementById("modal-container");
+    if (container) container.style.display = "none";
+    if (typeof window.stopFaceCam === "function") window.stopFaceCam();
+    if (typeof window.stopAudioGame === "function") window.stopAudioGame();
     if (window.speechSynthesis) window.speechSynthesis.cancel();
 };
 
 function showLoading(msg) {
-    var s = document.getElementById('global-spinner');
-    var m = document.getElementById('spinner-msg');
+    var s = document.getElementById("global-spinner");
+    var m = document.getElementById("spinner-msg");
     if (s && m) {
-        m.innerText = msg || '稍等陣，為你準備緊…';
-        s.style.display = 'flex';
+        m.innerText = msg || "稍等陣，為你準備緊…";
+        s.style.display = "flex";
     }
 }
 
 function hideLoading() {
-    var s = document.getElementById('global-spinner');
-    if (s) s.style.display = 'none';
+    var s = document.getElementById("global-spinner");
+    if (s) s.style.display = "none";
 }
 
 function toast(msg, ms) {
     ms = ms || 2800;
-    var t = document.getElementById('toast');
+    var t = document.getElementById("toast");
     if (!t) return;
     t.textContent = msg;
-    t.classList.add('show');
+    t.classList.add("show");
     clearTimeout(t._tid);
-    t._tid = setTimeout(function() { t.classList.remove('show'); }, ms);
+    t._tid = setTimeout(function() { t.classList.remove("show"); }, ms);
 }
 
 function speak(text, rate) {
     rate = rate || 0.88;
     try {
-        if (!('speechSynthesis' in window)) return;
+        if (!("speechSynthesis" in window)) return;
         window.speechSynthesis.cancel();
         var u = new SpeechSynthesisUtterance(text);
-        u.lang = 'zh-HK';
+        u.lang = "zh-HK";
         u.rate = rate;
         var voices = window.speechSynthesis.getVoices();
         var yue = voices.find(function(v) { return /zh-HK|yue|Cantonese/i.test(v.lang + v.name); });
@@ -854,7 +853,7 @@ function playGentleChime() {
         var ctx = new (window.AudioContext || window.webkitAudioContext)();
         var osc = ctx.createOscillator();
         var gain = ctx.createGain();
-        osc.type = 'sine';
+        osc.type = "sine";
         osc.frequency.setValueAtTime(800, ctx.currentTime);
         gain.gain.setValueAtTime(0.08, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
@@ -866,12 +865,12 @@ function playGentleChime() {
 }
 
 function updateVisualProgressRing(score, thresh) {
-    var circle = document.getElementById('progress-ring-circle');
+    var circle = document.getElementById("progress-ring-circle");
     if (!circle) return;
-    var maxOffset = 596.9; // 2 * PI * 95
+    var maxOffset = 596.9;
     var ratio = Math.min(1.0, score / Math.max(0.01, thresh));
     circle.style.strokeDashoffset = maxOffset * (1 - ratio);
-    circle.style.stroke = score >= thresh ? 'var(--apple-green)' : 'var(--apple-red)';
+    circle.style.stroke = score >= thresh ? "var(--apple-green)" : "var(--apple-red)";
 }
 
 function showMouthResult(name, avgBS, avgSym, liveThresh) {
@@ -883,7 +882,7 @@ function showMouthResult(name, avgBS, avgSym, liveThresh) {
         '<button class="sub-btn" style="background:var(--apple-blue);width:100%;height:56px;" onclick="showMouthUI()">再練其他口肌動作</button>' +
         '<button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:8px;height:56px;" onclick="closeAll()">返去主頁</button>'
     );
-    speak('好叻呀！動作做得好標準，獎你五十金幣！');
+    speak("好叻呀！動作做得好標準，獎你五十金幣！");
 }
 
 function analyzeAcousticBiomarkers(timeData, sampleRate) {
@@ -901,36 +900,66 @@ function analyzeAcousticBiomarkers(timeData, sampleRate) {
 }
 
 // ==============================================================
-// 5. 舌尖方向判斷與人臉幾何分析演算法
+// 5. 舌尖專屬 Landmarker 推算與人臉幾何核心演算法
 // ==============================================================
-function calcGeometricTongueDirection(landmarks, direction) {
-    if (!landmarks || landmarks.length < 468) return 0;
+function detectTongueLandmarkAndScore(landmarks, canvasWidth, canvasHeight, direction) {
+    if (!landmarks || landmarks.length < 468) return { score: 0, tongueTip: null, isAligned: false };
 
-    var upperLip = landmarks[13];        // 上唇內側
-    var lowerLip = landmarks[14];        // 下唇內側
-    var chin = landmarks[152];           // 下巴尖
-    var nose = landmarks[1];             // 鼻尖
-    var tongueTipApprox = landmarks[17]; // 近似舌尖區域（下唇下方）
+    var upperInner = landmarks[13];
+    var lowerInner = landmarks[14];
+    var lowerOuter = landmarks[17];
+    var leftCorner = landmarks[78];
+    var rightCorner = landmarks[308];
+    var chin = landmarks[152];
+    var nose = landmarks[1];
 
-    var lipGap = Math.abs(lowerLip.y - upperLip.y);
-    var noseChin = Math.abs(chin.y - nose.y);
-    if (noseChin < 0.001) return 0;
+    var noseChinDist = Math.abs(chin.y - nose.y);
+    if (noseChinDist < 0.001) return { score: 0, tongueTip: null, isAligned: false };
 
-    var outScore = Math.min(1.0, Math.max(0, (lipGap / noseChin - 0.08) * 4.2));
-    if (direction === 'tongueOut') return outScore;
+    var mouthCenterY = (upperInner.y + lowerInner.y) / 2;
+    var mouthCenterX = (leftCorner.x + rightCorner.x) / 2;
+    var lipOpenRatio = Math.abs(lowerInner.y - upperInner.y) / noseChinDist;
 
-    var tipY = (tongueTipApprox.y + lowerLip.y) / 2;
-    var midY = (upperLip.y + lowerLip.y) / 2;
+    var outScore = Math.min(1.0, Math.max(0, (lipOpenRatio - 0.06) * 5.0));
 
-    if (direction === 'tongueUp') {
-        var upRatio = (midY - tipY) / noseChin;
-        return outScore * Math.min(1.0, Math.max(0, upRatio * 6.0));
+    var tongueTipY = mouthCenterY;
+    var tongueTipX = mouthCenterX;
+    var isAligned = false;
+    var directionScore = 0;
+
+    if (direction === "tongueUp") {
+        var upOffset = (mouthCenterY - upperInner.y);
+        tongueTipY = upperInner.y - (upOffset * 0.8) - (lipOpenRatio * 0.04);
+        tongueTipX = mouthCenterX;
+
+        var upDisplacement = (mouthCenterY - tongueTipY) / noseChinDist;
+        directionScore = Math.min(1.0, Math.max(0, (upDisplacement - 0.02) * 8.0));
+        isAligned = directionScore >= 0.35 && outScore >= 0.25;
+    } else if (direction === "tongueDown") {
+        var downOffset = Math.abs(lowerOuter.y - mouthCenterY);
+        tongueTipY = lowerOuter.y + (downOffset * 0.9) + (lipOpenRatio * 0.05);
+        tongueTipX = mouthCenterX;
+
+        var downDisplacement = (tongueTipY - mouthCenterY) / noseChinDist;
+        directionScore = Math.min(1.0, Math.max(0, (downDisplacement - 0.04) * 7.5));
+        isAligned = directionScore >= 0.35 && outScore >= 0.25;
+    } else {
+        tongueTipY = (lowerInner.y + lowerOuter.y) / 2;
+        tongueTipX = mouthCenterX;
+        directionScore = outScore;
+        isAligned = directionScore >= 0.35;
     }
-    if (direction === 'tongueDown') {
-        var downRatio = (tipY - midY) / noseChin;
-        return outScore * Math.min(1.0, Math.max(0, downRatio * 6.0));
-    }
-    return outScore;
+
+    var finalScore = outScore * 0.3 + directionScore * 0.7;
+
+    return {
+        score: Math.min(1.0, finalScore),
+        tongueTip: {
+            x: tongueTipX * canvasWidth,
+            y: tongueTipY * canvasHeight
+        },
+        isAligned: isAligned
+    };
 }
 
 function calcGeometricCheekPuffEnhanced(landmarks, blendshapes) {
@@ -946,9 +975,9 @@ function calcGeometricCheekPuffEnhanced(landmarks, blendshapes) {
     var ratio = cheekWidth / noseToCheek;
     var baseScore = Math.min(1.0, Math.max(0, (ratio - 1.80) * 3.5));
 
-    var mouthClose = getBlendScore(blendshapes, 'mouthClose');
-    var cheekSquintL = getBlendScore(blendshapes, 'cheekSquintLeft');
-    var cheekSquintR = getBlendScore(blendshapes, 'cheekSquintRight');
+    var mouthClose = getBlendScore(blendshapes, "mouthClose");
+    var cheekSquintL = getBlendScore(blendshapes, "cheekSquintLeft");
+    var cheekSquintR = getBlendScore(blendshapes, "cheekSquintRight");
     var coactivation = (mouthClose * 0.4 + (cheekSquintL + cheekSquintR) / 2 * 0.6);
 
     if (coactivation > 0.25) {
@@ -958,11 +987,11 @@ function calcGeometricCheekPuffEnhanced(landmarks, blendshapes) {
 }
 
 var BS_MAP = {
-    mouthPucker: ['mouthPucker', 'mouthFunnel'],
-    mouthSmile: ['mouthSmileLeft', 'mouthSmileRight'],
-    jawOpen: ['jawOpen'],
-    mouthClose: ['mouthClose', 'mouthPressLeft', 'mouthPressRight'],
-    mouthFrown: ['mouthFrownLeft', 'mouthFrownRight']
+    mouthPucker: ["mouthPucker", "mouthFunnel"],
+    mouthSmile: ["mouthSmileLeft", "mouthSmileRight"],
+    jawOpen: ["jawOpen"],
+    mouthClose: ["mouthClose", "mouthPressLeft", "mouthPressRight"],
+    mouthFrown: ["mouthFrownLeft", "mouthFrownRight"]
 };
 
 function getBlendScore(blendshapes, bsType) {
@@ -993,15 +1022,18 @@ function calcGeometricSymmetry(landmarks) {
     return parseFloat(symmetry.toFixed(2));
 }
 
-function getUnifiedMouthScore(result, bsType) {
+function getUnifiedMouthScore(result, bsType, canvasWidth, canvasHeight) {
     var landmarks = (result && result.faceLandmarks && result.faceLandmarks.length) ? result.faceLandmarks[0] : null;
     var blendshapes = (result && result.faceBlendshapes && result.faceBlendshapes.length) ? result.faceBlendshapes : null;
-    
-    if (bsType === 'cheekPuff') {
+    window.currentTongueTipPoint = null;
+
+    if (bsType === "cheekPuff") {
         return calcGeometricCheekPuffEnhanced(landmarks, blendshapes);
     }
-    if (bsType === 'tongueOut' || bsType === 'tongueUp' || bsType === 'tongueDown') {
-        return calcGeometricTongueDirection(landmarks, bsType);
+    if (bsType === "tongueOut" || bsType === "tongueUp" || bsType === "tongueDown") {
+        var tongueData = detectTongueLandmarkAndScore(landmarks, canvasWidth || 640, canvasHeight || 480, bsType);
+        window.currentTongueTipPoint = tongueData;
+        return tongueData.score;
     }
     if (blendshapes) {
         return getBlendScore(blendshapes, bsType);
@@ -1010,83 +1042,19 @@ function getUnifiedMouthScore(result, bsType) {
 }
 
 // ==============================================================
-// 6. 模態 UI、聲調與口肌鏡頭邏輯
+// 6. 口肌練習與 AI 鏡頭互動系統
 // ==============================================================
-window.showCantoneseToneUI = function() {
-    speak('你想練習邊個聲調？點一下就可以開始');
-    var items = window.cantoneseToneData.map(function(item, idx) {
-        return '<div class="card-unit" onclick="openTonePractice(' + idx + ')">' +
-            '<span style="font-size:3rem;display:block;margin-bottom:4px;color:var(--apple-blue);">' + item.char + '</span>' +
-            '<b>' + item.desc + '</b>' +
-        '</div>';
-    }).join('');
-
-    setModal(
-        '<h2 style="font-size:1.7rem;margin-bottom:8px;">🎵 廣東話 6 聲調練習</h2>' +
-        '<p style="font-size:1.05rem;color:var(--apple-dark-gray);">聽清楚聲調高低起伏，練返講嘢有抑揚頓挫</p>' +
-        '<div class="grid-10">' + items + '</div>' +
-        '<button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:20px;height:56px;" onclick="closeAll()">返去主頁</button>'
-    );
-};
-
-window.openTonePractice = function(idx) {
-    var item = window.cantoneseToneData[idx];
-    setModal(
-        '<div style="font-size:5.5rem;font-weight:900;margin:10px 0;color:var(--apple-blue);">' + item.char + '</div>' +
-        '<h3 style="font-size:1.4rem;margin:4px 0;">' + item.desc + '</h3>' +
-        '<p id="tone-status-text" style="font-size:1.15rem;color:var(--apple-dark-gray);margin:12px 0;">你可以先撳「聽我讀一次」，或者撳「開麥克風」自己讀出嚟</p>' +
-        '<div id="pitch-visual-bar" style="width:100%;height:32px;background:rgba(0,0,0,0.06);border-radius:16px;overflow:hidden;position:relative;margin:14px 0;">' +
-            '<div id="pitch-fill" style="width:0%;height:100%;background:linear-gradient(90deg,var(--ai-blue),var(--apple-green));transition:width 0.1s;"></div>' +
-        '</div>' +
-        '<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:16px;">' +
-            '<button class="sub-btn" style="background:var(--gold);color:var(--apple-black);" onclick="speak(\'' + item.char + '\', 0.8)">🔊 聽我讀一次</button>' +
-            '<button class="sub-btn" style="background:var(--apple-blue);" id="tone-rec-btn" onclick="startToneContourTest(' + idx + ')">🎙️ 開麥克風自己讀</button>' +
-            '<button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="showCantoneseToneUI()">返去揀其他字</button>' +
-        '</div>'
-    );
-};
-
-window.startToneContourTest = function(idx) {
-    var item = window.cantoneseToneData[idx];
-    var status = document.getElementById('tone-status-text');
-    var fill = document.getElementById('pitch-fill');
-    var recBtn = document.getElementById('tone-rec-btn');
-
-    if (status) status.innerText = '🎙️ 聽緊你讀出「' + item.char + '」……請大聲讀出嚟';
-    if (recBtn) recBtn.disabled = true;
-
-    listenOnce(function(transcript) {
-        if (recBtn) recBtn.disabled = false;
-        var clean = (transcript || '').replace(/\s/g, '');
-        var correct = clean.includes(item.char) || item.char.includes(clean);
-
-        if (correct) {
-            if (status) status.innerText = '✅ 答啱咗！聲調感覺正確';
-            if (fill) fill.style.width = '100%';
-            addGold(40);
-            markDaily('tone');
-            addHistory('粵語聲調：' + item.char + ' (' + item.desc + ')', 40, [100], transcript);
-            speak('好叻呀！「' + item.char + '」讀得啱晒！');
-            toast('聲調正確 +40 金幣 💰');
-        } else {
-            if (status) status.innerText = '再試一次，靠近手機慢慢讀「' + item.char + '」';
-            if (fill) fill.style.width = '30%';
-            speak('差少少，再讀一次「' + item.char + '」');
-            toast('差少少，再試多次');
-        }
-    });
-};
-
 window.showMouthUI = function() {
-    speak('想練邊個動作？揀好動作同維持嘅時間就開始');
+    speak("想練邊個動作？揀好動作同維持嘅時間就開始");
     var secBtns = [5, 10, 15, 20].map(function(s) {
-        return '<button class="sub-btn" style="width:100px;background:' + (targetVal == s ? 'var(--apple-black)' : 'var(--apple-dark-gray)') + ';" onclick="targetVal=' + s + ';showMouthUI()">' + s + '秒</button>';
-    }).join('');
+        var bg = targetVal === s ? "var(--apple-black)" : "var(--apple-dark-gray)";
+        return '<button class="sub-btn" style="width:100px;background:' + bg + ';" onclick="targetVal=' + s + ';showMouthUI()">' + s + '秒</button>';
+    }).join("");
 
     var cards = window.mouthData.map(function(m, idx) {
         var visual = m.img ? '<img src="' + m.img + '" alt="' + m.n + '" style="width:72px;height:72px;object-fit:cover;border-radius:14px;margin:0 auto 6px;display:block;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\';"><span style="font-size:2.8rem;display:none;margin-bottom:4px;">' + m.p + '</span>' : '<span style="font-size:2.8rem;display:block;margin-bottom:4px;">' + m.p + '</span>';
         return '<div class="card-unit" onclick="openMouthAI(' + idx + ')">' + visual + m.n + '</div>';
-    }).join('');
+    }).join("");
 
     setModal(
         '<h2 style="font-size:1.7rem;margin-bottom:10px;">👄 口肌鏡頭練習</h2>' +
@@ -1103,7 +1071,7 @@ window.openMouthAI = async function(idx) {
     var adaptT = getAdaptiveThresh(m.bs, m.thresh);
     currentMouthThresh = adaptT;
 
-    speak(m.n + '。' + m.d);
+    speak(m.n + "。" + m.d);
 
     var visualDemonstration = m.img
         ? '<div class="zoomable-container" id="mouth-demo-box" style="width:130px;height:130px;margin:6px auto 10px;">' +
@@ -1142,32 +1110,32 @@ window.openMouthAI = async function(idx) {
         '<div style="margin-top:14px;">' +
             '<button class="sub-btn" style="background:var(--apple-blue);" id="start-face-btn" onclick="startFaceAI(\'' + m.bs + '\', ' + idx + ')">開始練習</button>' +
             '<button class="sub-btn" style="background:var(--apple-orange);" id="pause-face-btn" onclick="pauseFaceAI()" disabled>暫停一陣</button>' +
-            '<button class="sub-btn" style="background:var(--gold);color:#fff;" onclick="speak(\'' + m.d + '\')">點樣做？</button>' +
+            '<button class="sub-btn" style="background:var(--gold);color:#fff;" onclick="speak(\'' + m.d.replace(/'/g, "\\'") + '\')">點樣做？</button>' +
             '<button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="stopFaceCam();showMouthUI()">↩️ 返去揀其他</button>' +
         '</div>'
     );
 
     if (m.img) {
-        setTimeout(function() { setupImageZoom('mouth-demo-box', 'mouth-demo-img'); }, 80);
+        setTimeout(function() { setupImageZoom("mouth-demo-box", "mouth-demo-img"); }, 80);
     }
 
     try {
         await initFaceLandmarker();
         faceCamStream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
             audio: false
         });
-        var vid = document.getElementById('v-feed');
+        var vid = document.getElementById("v-feed");
         if (vid) {
             vid.srcObject = faceCamStream;
             await vid.play();
         }
-        var stat = document.getElementById('ai-stat');
-        if (stat) stat.innerText = '✅ 鏡頭準備好喇，撳「開始練習」啦！';
+        var stat = document.getElementById("ai-stat");
+        if (stat) stat.innerText = "✅ 鏡頭準備好喇，撳「開始練習」啦！";
     } catch (e) {
-        var stat = document.getElementById('ai-stat');
-        if (stat) stat.innerText = '⚠️ 開唔到鏡頭，請檢查手機係咪未准開鏡頭權限';
-        toast('開唔到鏡頭，請檢查手機權限');
+        var stat = document.getElementById("ai-stat");
+        if (stat) stat.innerText = "⚠️ 開唔到鏡頭，請檢查手機係咪未准開鏡頭權限";
+        toast("開唔到鏡頭，請檢查手機權限");
     }
 };
 
@@ -1188,14 +1156,14 @@ window.startFaceAI = function(bsType, idx) {
     var liveThresh = getAdaptiveThresh(m.bs, m.thresh);
     currentMouthThresh = liveThresh;
 
-    var btn = document.getElementById('start-face-btn');
-    var pauseBtn = document.getElementById('pause-face-btn');
-    if (btn) { btn.disabled = true; btn.innerText = '偵測緊…'; }
+    var btn = document.getElementById("start-face-btn");
+    var pauseBtn = document.getElementById("pause-face-btn");
+    if (btn) { btn.disabled = true; btn.innerText = "偵測緊…"; }
     if (pauseBtn) pauseBtn.disabled = false;
 
-    var video = document.getElementById('v-feed');
-    var canvas = document.getElementById('v-feed-canvas');
-    var ctx = canvas ? canvas.getContext('2d') : null;
+    var video = document.getElementById("v-feed");
+    var canvas = document.getElementById("v-feed-canvas");
+    var ctx = canvas ? canvas.getContext("2d") : null;
     var lastVideoTime = -1;
     var fatigueNotified = false;
 
@@ -1211,7 +1179,7 @@ window.startFaceAI = function(bsType, idx) {
             if (faceLandmarker && video.currentTime !== lastVideoTime) {
                 lastVideoTime = video.currentTime;
                 var result = faceLandmarker.detectForVideo(video, performance.now());
-                var rawScore = getUnifiedMouthScore(result, bsType);
+                var rawScore = getUnifiedMouthScore(result, bsType, canvas.width, canvas.height);
                 
                 var sym = (result && result.faceLandmarks && result.faceLandmarks.length) 
                     ? calcGeometricSymmetry(result.faceLandmarks[0]) 
@@ -1229,40 +1197,66 @@ window.startFaceAI = function(bsType, idx) {
 
                 liveThresh = updateAdaptiveLive(bsType, m.thresh, blendshapeBuffer);
                 currentMouthThresh = liveThresh;
-                var atd = document.getElementById('adapt-thresh-disp');
-                if (atd) atd.textContent = Math.round(liveThresh * 100) + '%';
+                var atd = document.getElementById("adapt-thresh-disp");
+                if (atd) atd.textContent = Math.round(liveThresh * 100) + "%";
 
                 var fat = detectFatigue(blendshapeBuffer, symmetryBuffer);
-                var fb = document.getElementById('fatigue-banner');
+                var fb = document.getElementById("fatigue-banner");
                 if (fat.fatigue && fb) {
-                    fb.classList.add('show');
+                    fb.classList.add("show");
                     if (!fatigueNotified) {
                         fatigueNotified = true;
                         liveThresh = Math.max(0.15, liveThresh - 0.08);
                         currentMouthThresh = liveThresh;
-                        speak('放鬆飲啖水先，我已經為你調低咗門檻');
+                        speak("放鬆飲啖水先，我已經為你調低咗門檻");
                     }
                 }
 
-                var bsEl = document.getElementById('bs-score');
-                var syEl = document.getElementById('sym-score');
+                var bsEl = document.getElementById("bs-score");
+                var syEl = document.getElementById("sym-score");
                 if (bsEl) {
-                    bsEl.textContent = '做啱成度：' + Math.round(score * 100) + '%';
-                    bsEl.className = 'blend-pill ' + (score >= liveThresh ? 'good' : 'bad');
+                    bsEl.textContent = "做啱成度：" + Math.round(score * 100) + "%";
+                    bsEl.className = "blend-pill " + (score >= liveThresh ? "good" : "bad");
                 }
                 if (syEl) {
-                    syEl.textContent = '面部平衡：' + Math.round(sym * 100) + '%';
-                    syEl.className = 'blend-pill ' + (sym >= 0.7 ? 'good' : 'bad');
+                    syEl.textContent = "面部平衡：" + Math.round(sym * 100) + "%";
+                    syEl.className = "blend-pill " + (sym >= 0.7 ? "good" : "bad");
                 }
 
                 if (ctx && result.faceLandmarks && result.faceLandmarks.length) {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = score >= liveThresh ? 'rgba(52,199,89,0.7)' : 'rgba(255,59,48,0.5)';
+                    
+                    ctx.fillStyle = score >= liveThresh ? "rgba(52,199,89,0.35)" : "rgba(255,59,48,0.25)";
                     for (var p = 0; p < result.faceLandmarks[0].length; p++) {
                         var pt = result.faceLandmarks[0][p];
                         ctx.beginPath();
-                        ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 1.2, 0, Math.PI * 2);
+                        ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 1.0, 0, Math.PI * 2);
                         ctx.fill();
+                    }
+
+                    if (window.currentTongueTipPoint && window.currentTongueTipPoint.tongueTip) {
+                        var tip = window.currentTongueTipPoint.tongueTip;
+                        var isAligned = window.currentTongueTipPoint.isAligned;
+
+                        ctx.beginPath();
+                        ctx.arc(tip.x, tip.y, 14, 0, Math.PI * 2);
+                        ctx.strokeStyle = isAligned ? "var(--apple-green)" : "var(--apple-orange)";
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.arc(tip.x, tip.y, 7, 0, Math.PI * 2);
+                        ctx.fillStyle = isAligned ? "var(--apple-green)" : "var(--apple-red)";
+                        ctx.fill();
+
+                        ctx.font = "bold 16px -apple-system, BlinkMacSystemFont, sans-serif";
+                        ctx.fillStyle = "#ffffff";
+                        ctx.strokeStyle = "#000000";
+                        ctx.lineWidth = 4;
+                        
+                        var arrowTxt = bsType === "tongueUp" ? "⬆️ 舌尖向上" : (bsType === "tongueDown" ? "⬇️ 舌尖向下" : "👅 伸舌頭");
+                        ctx.strokeText(arrowTxt, tip.x + 18, tip.y + 5);
+                        ctx.fillText(arrowTxt, tip.x + 18, tip.y + 5);
                     }
                 }
 
@@ -1272,26 +1266,26 @@ window.startFaceAI = function(bsType, idx) {
                         holdAccum -= 1;
                         timeLeft--;
                         window._faceTimeLeft = timeLeft;
-                        var tDisp = document.getElementById('timer-disp');
-                        if (tDisp) tDisp.innerText = '維持緊：' + timeLeft + ' 秒';
-                        var stat = document.getElementById('ai-stat');
-                        if (stat) stat.innerText = '✅ 動作做得好靚，頂住呀！';
+                        var tDisp = document.getElementById("timer-disp");
+                        if (tDisp) tDisp.innerText = "維持緊：" + timeLeft + " 秒";
+                        var stat = document.getElementById("ai-stat");
+                        if (stat) stat.innerText = "✅ 動作做得好靚，頂住呀！";
                     }
                 } else {
-                    var stat = document.getElementById('ai-stat');
-                    if (stat) stat.innerText = '❌ 照住相片對準畫面，用力做出動作';
+                    var stat = document.getElementById("ai-stat");
+                    if (stat) stat.innerText = "❌ 照住相片對準畫面，用力做出動作";
                 }
 
                 if (timeLeft <= 0) {
                     faceRunning = false;
                     stopFaceCam();
-                    currentTrainingType = '口肌訓練：' + m.n;
+                    currentTrainingType = "口肌訓練：" + m.n;
                     var avgBS = blendshapeBuffer.length ? (blendshapeBuffer.reduce(function(a, b) { return a + b; }, 0) / blendshapeBuffer.length) : 0;
                     var avgSym = symmetryBuffer.length ? (symmetryBuffer.reduce(function(a, b) { return a + b; }, 0) / symmetryBuffer.length) : 0;
                     
                     addGold(50);
-                    markDaily('mouth');
-                    addHistory('口肌訓練：' + m.n, 50, [Math.round(avgBS * 100), Math.round(avgSym * 100)], m.bs, {
+                    markDaily("mouth");
+                    addHistory("口肌訓練：" + m.n, 50, [Math.round(avgBS * 100), Math.round(avgSym * 100)], m.bs, {
                         avgBS: avgBS, avgSym: avgSym, finalThresh: liveThresh
                     });
                     showMouthResult(m.n, avgBS, avgSym, liveThresh);
@@ -1302,7 +1296,7 @@ window.startFaceAI = function(bsType, idx) {
         faceAnimId = requestAnimationFrame(loop);
     };
     faceAnimId = requestAnimationFrame(loop);
-    speak('開始練習，請做出動作並維持住');
+    speak("開始練習，請做出動作並維持住");
 };
 
 window.pauseFaceAI = function() {
@@ -1312,29 +1306,97 @@ window.pauseFaceAI = function() {
         idx: currentMouthIdx,
         timeLeft: window._faceTimeLeft != null ? window._faceTimeLeft : targetVal
     };
-    var ov = document.getElementById('pause-overlay');
-    if (ov) ov.classList.add('show');
-    toast('休息陣先，隨時可以繼續');
+    var ov = document.getElementById("pause-overlay");
+    if (ov) ov.classList.add("show");
+    toast("休息陣先，隨時可以繼續");
 };
 
 window.resumeFaceAI = function() {
     facePaused = false;
-    var ov = document.getElementById('pause-overlay');
-    if (ov) ov.classList.remove('show');
-    speak('繼續維持住動作');
+    var ov = document.getElementById("pause-overlay");
+    if (ov) ov.classList.remove("show");
+    speak("繼續維持住動作");
 };
 
 // ==============================================================
-// 7. 看圖命名與日常生活情境導覽與互動
+// 7. 廣東話 6 聲調練習
+// ==============================================================
+window.showCantoneseToneUI = function() {
+    speak("你想練習邊個聲調？點一下就可以開始");
+    var items = window.cantoneseToneData.map(function(item, idx) {
+        return '<div class="card-unit" onclick="openTonePractice(' + idx + ')">' +
+            '<span style="font-size:3rem;display:block;margin-bottom:4px;color:var(--apple-blue);">' + item.char + '</span>' +
+            '<b>' + item.desc + '</b>' +
+        '</div>';
+    }).join("");
+
+    setModal(
+        '<h2 style="font-size:1.7rem;margin-bottom:8px;">🎵 廣東話 6 聲調練習</h2>' +
+        '<p style="font-size:1.05rem;color:var(--apple-dark-gray);">聽清楚聲調高低起伏，練返講嘢有抑揚頓挫</p>' +
+        '<div class="grid-10">' + items + '</div>' +
+        '<button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:20px;height:56px;" onclick="closeAll()">返去主頁</button>'
+    );
+};
+
+window.openTonePractice = function(idx) {
+    var item = window.cantoneseToneData[idx];
+    setModal(
+        '<div style="font-size:5.5rem;font-weight:900;margin:10px 0;color:var(--apple-blue);">' + item.char + '</div>' +
+        '<h3 style="font-size:1.4rem;margin:4px 0;">' + item.desc + '</h3>' +
+        '<p id="tone-status-text" style="font-size:1.15rem;color:var(--apple-dark-gray);margin:12px 0;">你可以先撳「聽我讀一次」，或者撳「開麥克風」自己讀出嚟</p>' +
+        '<div id="pitch-visual-bar" style="width:100%;height:32px;background:rgba(0,0,0,0.06);border-radius:16px;overflow:hidden;position:relative;margin:14px 0;">' +
+            '<div id="pitch-fill" style="width:0%;height:100%;background:linear-gradient(90deg,var(--ai-blue),var(--apple-green));transition:width 0.1s;"></div>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:16px;">' +
+            '<button class="sub-btn" style="background:var(--gold);color:var(--apple-black);" onclick="speak(\'' + item.char + '\', 0.8)">🔊 聽我讀一次</button>' +
+            '<button class="sub-btn" style="background:var(--apple-blue);" id="tone-rec-btn" onclick="startToneContourTest(' + idx + ')">🎙️ 開麥克風自己讀</button>' +
+            '<button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="showCantoneseToneUI()">返去揀其他字</button>' +
+        '</div>'
+    );
+};
+
+window.startToneContourTest = function(idx) {
+    var item = window.cantoneseToneData[idx];
+    var status = document.getElementById("tone-status-text");
+    var fill = document.getElementById("pitch-fill");
+    var recBtn = document.getElementById("tone-rec-btn");
+
+    if (status) status.innerText = "🎙️ 聽緊你讀出「" + item.char + "」……請大聲讀出嚟";
+    if (recBtn) recBtn.disabled = true;
+
+    listenOnce(function(transcript) {
+        if (recBtn) recBtn.disabled = false;
+        var clean = (transcript || "").replace(/\s/g, "");
+        var correct = clean.includes(item.char) || item.char.includes(clean);
+
+        if (correct) {
+            if (status) status.innerText = "✅ 答啱咗！聲調感覺正確";
+            if (fill) fill.style.width = "100%";
+            addGold(40);
+            markDaily("tone");
+            addHistory("粵語聲調：" + item.char + " (" + item.desc + ")", 40, [100], transcript);
+            speak("好叻呀！「" + item.char + "」讀得啱晒！");
+            toast("聲調正確 +40 金幣 💰");
+        } else {
+            if (status) status.innerText = "再試一次，靠近手機慢慢讀「" + item.char + "」";
+            if (fill) fill.style.width = "30%";
+            speak("差少少，再讀一次「" + item.char + "」");
+            toast("差少少，再試多次");
+        }
+    });
+};
+
+// ==============================================================
+// 8. 看圖命名與日常生活情境
 // ==============================================================
 window.showCogCatalog = function() {
-    speak('想睇邊一類生活相片？點一下就可以開始');
+    speak("想睇邊一類生活相片？點一下就可以開始");
     var html = window.cogData.map(function(c, idx) {
         return '<div class="card-unit" onclick="showCogItems(' + idx + ')">' +
             '<span style="font-size:3rem;display:block;margin-bottom:6px;">' + c.i[0].p + '</span>' +
             '<b>' + c.cat + '</b>' +
         '</div>';
-    }).join('');
+    }).join("");
 
     setModal(
         '<h2 style="font-size:1.7rem;margin-bottom:8px;">🗣️ 睇相講名 — 類別</h2>' +
@@ -1350,7 +1412,7 @@ window.showCogItems = function(catIdx) {
             '<span style="font-size:3rem;display:block;margin-bottom:6px;">' + item.p + '</span>' +
             '<b>' + item.n + '</b>' +
         '</div>';
-    }).join('');
+    }).join("");
 
     setModal(
         '<h2 style="font-size:1.6rem;margin-bottom:8px;">' + cat.cat + '</h2>' +
@@ -1360,14 +1422,14 @@ window.showCogItems = function(catIdx) {
 };
 
 window.showSceneCatalog = function() {
-    speak('你想練習邊個日常生活場景？');
+    speak("你想練習邊個日常生活場景？");
     var html = window.sceneData.map(function(s, idx) {
         var isLocked = !unlockedScenes.includes(idx);
         return '<div class="card-unit" style="' + (isLocked ? 'opacity:0.5;' : '') + '" onclick="' + (isLocked ? 'toast(\'儲夠金幣就會自動解鎖㗎喇\')' : 'runScenePuzzle(' + idx + ')') + '">' +
             '<span style="font-size:2.4rem;display:block;margin-bottom:4px;">' + (isLocked ? '🔒' : '📍') + '</span>' +
             '<b>' + s.t + '</b>' +
         '</div>';
-    }).join('');
+    }).join("");
 
     setModal(
         '<h2 style="font-size:1.7rem;margin-bottom:8px;">📍 日常出街對答練習</h2>' +
@@ -1397,7 +1459,7 @@ function runCogStep(step, c, i) {
         '<div id="disp-area" style="font-size:1.45rem;font-weight:700;background:rgba(0,0,0,0.03);padding:18px;border-radius:16px;margin:12px 0;">' + displayTxt + '</div>' +
         '<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:6px;">' +
             '<button class="sub-btn" style="background:var(--gold);color:var(--apple-black);" onclick="runCogStep(' + Math.min(4, step + 1) + ', ' + c + ', ' + i + ')">💡 畀啲提示我</button>' +
-            '<button class="sub-btn" style="background:var(--ai-blue);" onclick="answerCog(\'' + item.n + '\', ' + c + ', ' + i + ')">🎤 我講你聽</button>' +
+            '<button class="sub-btn" style="background:var(--ai-blue);" onclick="answerCog(\'' + item.n.replace(/'/g, "\\'") + '\', ' + c + ', ' + i + ')">🎤 我講你聽</button>' +
             '<button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="showInlineSpeechInput()">⌨️ 寫字輸入</button>' +
             '<button class="sub-btn" style="background:var(--apple-red);" onclick="runCogStep(1,' + c + ',' + ((i + 1) % window.cogData[c].i.length) + ')">下一張相</button>' +
         '</div>' +
@@ -1407,35 +1469,35 @@ function runCogStep(step, c, i) {
     );
 
     if (item.img) {
-        setTimeout(function() { setupImageZoom('zoom-box', 'zoom-target'); }, 80);
+        setTimeout(function() { setupImageZoom("zoom-box", "zoom-target"); }, 80);
     }
 }
 
 function answerCog(expected, c, i) {
     speak("請清楚講出佢叫咩名");
     listenOnce(function(transcript) {
-        var clean = (transcript || '').replace(/\s/g, '');
+        var clean = (transcript || "").replace(/\s/g, "");
         if (clean.includes(expected) || expected.includes(clean)) {
             speak("好叻呀，答啱咗！好有記性！");
             addGold(30);
-            markDaily('cog');
-            addHistory('睇相講名：' + expected, 30, [], transcript);
-            var area = document.getElementById('disp-area');
-            if (area) area.innerText = '✅ 答啱咗：' + expected;
-            toast('好記性！答啱咗 +30 金幣');
+            markDaily("cog");
+            addHistory("睇相講名：" + expected, 30, [], transcript);
+            var area = document.getElementById("disp-area");
+            if (area) area.innerText = "✅ 答啱咗：" + expected;
+            toast("好記性！答啱咗 +30 金幣");
         } else {
             speak("差少少咋，試下大聲啲，或者行近少少手機慢慢再講一次！");
-            toast('差少少咋：試下企近手機少少，慢慢講出「' + expected + '」');
+            toast("差少少咋：試下企近手機少少，慢慢講出「" + expected + "」");
         }
     });
 }
 
 function runScenePuzzle(idx) {
     var s = window.sceneData[idx];
-    speak('跟住次序撳出句子，或者直接跟住讀出嚟');
+    speak("跟住次序撳出句子，或者直接跟住讀出嚟");
     var keys = s.q.slice().sort(function() { return Math.random() - 0.5; }).map(function(t) {
         return '<button class="puzzle-key" onclick="tapPuzzle(this,\'' + t.replace(/'/g, "\\'") + '\')">' + t + '</button>';
-    }).join('');
+    }).join("");
 
     setModal(
         '<h3 style="font-size:1.5rem;margin-bottom:10px;">情境：' + s.t + '</h3>' +
@@ -1451,37 +1513,37 @@ function runScenePuzzle(idx) {
 
 function tapPuzzle(btn, t) {
     speak(t);
-    var res = document.getElementById('p-res');
+    var res = document.getElementById("p-res");
     if (res) res.innerHTML += '<div style="font-size:1.05rem;margin:4px 0;font-weight:700;">' + t + '</div>';
-    btn.style.opacity = '0.25';
+    btn.style.opacity = "0.25";
     btn.disabled = true;
 }
 
 function recScene(correct, idx) {
     speak("慢慢將句子讀出嚟");
     listenOnce(function(transcript) {
-        var t = transcript || '';
+        var t = transcript || "";
         if (t.length >= 2) {
             speak("咬字好清楚，出街咁講就啱晒喇！");
             addGold(40);
-            markDaily('scene');
-            addHistory('日常對答：' + window.sceneData[idx].t, 40, [], t);
-            toast('好順暢！+40 金幣');
+            markDaily("scene");
+            addHistory("日常對答：" + window.sceneData[idx].t, 40, [], t);
+            toast("好順暢！+40 金幣");
         } else {
             speak("聽得唔太清楚，唔使急，靠近部手機再讀一次啦！");
-            toast('溫馨提示：靠近少少部手機，慢慢讀多次');
+            toast("溫馨提示：靠近少少部手機，慢慢讀多次");
         }
     });
 }
 
 // ==============================================================
-// 8. 聲控與練氣吹氣球遊戲
+// 9. 聲控發聲與練氣吹氣球
 // ==============================================================
 function showGameUI(type) {
     recordedScores = [];
     recordedBiomarkers = [];
-    speak(type === 'voice' ? '深吸一口氣，大聲發出持續嘅「呀～」聲' : '慢慢吸飽氣，對住麥克風均勻吹氣');
-    var badges = '';
+    speak(type === "voice" ? "深吸一口氣，大聲發出持續嘅「呀～」聲" : "慢慢吸飽氣，對住麥克風均勻吹氣");
+    var badges = "";
     for (var i = 1; i <= 10; i++) {
         badges += '<div class="score-badge" id="badge-' + i + '">' +
             '<div class="badge-label">第' + i + '次</div>' +
@@ -1490,7 +1552,7 @@ function showGameUI(type) {
     }
 
     setModal(
-        '<h2 style="font-size:1.55rem;margin-bottom:6px;">' + (type === 'voice' ? '🎵 聲控發聲 (練返聲線充足)' : '🎈 練氣吹氣球 (強化肺活量)') + '</h2>' +
+        '<h2 style="font-size:1.55rem;margin-bottom:6px;">' + (type === "voice" ? "🎵 聲控發聲 (練返聲線充足)" : "🎈 練氣吹氣球 (強化肺活量)") + '</h2>' +
         '<div class="thresh-panel">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;font-size:1rem;font-weight:700;">' +
                 '<span>🎯 達標要求：<span id="t-val-disp" style="color:var(--apple-blue);font-size:1.2rem;">' + soundTargetThreshold + '</span>%</span>' +
@@ -1498,7 +1560,7 @@ function showGameUI(type) {
             '</div>' +
             '<input type="range" class="thresh-slider" min="50" max="95" step="5" value="' + soundTargetThreshold + '" oninput="updateThresholdLive(this.value)">' +
         '</div>' +
-        '<div id="game-stage" style="font-size:4.5rem;margin:8px 0;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1);">' + (type === 'voice' ? '🌱' : '☁️') + '</div>' +
+        '<div id="game-stage" style="font-size:4.5rem;margin:8px 0;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1);">' + (type === "voice" ? "🌱" : "☁️") + '</div>' +
         '<div class="sound-meter-wrapper">' +
             '<div id="sound-bar-container"><div id="sound-bar-fill"></div><div id="sound-val-text">0%</div></div>' +
         '</div>' +
@@ -1515,8 +1577,8 @@ function showGameUI(type) {
 function updateThresholdLive(rate) {
     soundTargetThreshold = parseInt(rate);
     soundResetThreshold = Math.round(soundTargetThreshold * 0.5);
-    var tDisp = document.getElementById('t-val-disp');
-    var rDisp = document.getElementById('r-val-disp');
+    var tDisp = document.getElementById("t-val-disp");
+    var rDisp = document.getElementById("r-val-disp");
     if (tDisp) tDisp.innerText = soundTargetThreshold;
     if (rDisp) rDisp.innerText = soundResetThreshold;
 }
@@ -1524,7 +1586,7 @@ function updateThresholdLive(rate) {
 async function startAudioGame(type) {
     try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') await audioCtx.resume();
+        if (audioCtx.state === "suspended") await audioCtx.resume();
 
         audioStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
         analyser = audioCtx.createAnalyser();
@@ -1537,10 +1599,10 @@ async function startAudioGame(type) {
         var count = 0, canTrigger = true;
         var data = new Uint8Array(analyser.frequencyBinCount);
         var timeData = new Uint8Array(analyser.fftSize);
-        toast('收音中，請大聲發出持續「呀～」或均勻吹氣！');
+        toast("收音中，請大聲發出持續「呀～」或均勻吹氣！");
 
         var loop = function() {
-            if (!analyser || !document.getElementById('sound-bar-fill')) return;
+            if (!analyser || !document.getElementById("sound-bar-fill")) return;
             analyser.getByteFrequencyData(data);
             analyser.getByteTimeDomainData(timeData);
 
@@ -1549,10 +1611,10 @@ async function startAudioGame(type) {
             var avg = sum / data.length;
             var level = Math.min(100, Math.round((avg / 110) * 100));
 
-            var fill = document.getElementById('sound-bar-fill');
-            var valText = document.getElementById('sound-val-text');
-            if (fill) fill.style.width = level + '%';
-            if (valText) valText.innerText = level + '%';
+            var fill = document.getElementById("sound-bar-fill");
+            var valText = document.getElementById("sound-val-text");
+            if (fill) fill.style.width = level + "%";
+            if (valText) valText.innerText = level + "%";
 
             if (level >= soundTargetThreshold && canTrigger) {
                 count++;
@@ -1562,56 +1624,56 @@ async function startAudioGame(type) {
                 var acoustic = analyzeAcousticBiomarkers(timeData, audioCtx.sampleRate);
                 recordedBiomarkers.push(acoustic);
 
-                var badge = document.getElementById('badge-' + count);
-                var valEl = document.getElementById('val-' + count);
-                if (badge) badge.classList.add('achieved');
-                if (valEl) valEl.innerText = level + '%';
-                var statusPill = document.getElementById('sound-status-pill');
+                var badge = document.getElementById("badge-" + count);
+                var valEl = document.getElementById("val-" + count);
+                if (badge) badge.classList.add("achieved");
+                if (valEl) valEl.innerText = level + "%";
+                var statusPill = document.getElementById("sound-status-pill");
                 if (statusPill) {
-                    statusPill.style.color = 'var(--apple-green)';
-                    statusPill.innerText = '🎉 第 ' + count + ' 次做得好！聲線好夠氣！';
+                    statusPill.style.color = "var(--apple-green)";
+                    statusPill.innerText = "🎉 第 " + count + " 次做得好！聲線好夠氣！";
                 }
-                var vInfo = document.getElementById('v-info');
-                if (vInfo) vInfo.innerText = '做啱次數：' + count + ' / 10 次';
+                var vInfo = document.getElementById("v-info");
+                if (vInfo) vInfo.innerText = "做啱次數：" + count + " / 10 次";
                 
-                var stage = document.getElementById('game-stage');
-                if (stage) stage.style.transform = 'scale(' + (1 + count * 0.08) + ')';
+                var stage = document.getElementById("game-stage");
+                if (stage) stage.style.transform = "scale(" + (1 + count * 0.08) + ")";
 
                 if (count >= 10) {
                     stopAudioGame();
-                    if (stage) stage.innerText = type === 'voice' ? '🌸' : '🎈';
+                    if (stage) stage.innerText = type === "voice" ? "🌸" : "🎈";
                     addGold(100);
-                    markDaily(type === 'voice' ? 'voice' : 'blow');
+                    markDaily(type === "voice" ? "voice" : "blow");
                     
-                    var itemTitle = (type === 'voice' ? '發聲練氣' : '均勻吹氣') + ' (' + soundTargetThreshold + '%)';
-                    addHistory(itemTitle, 100, recordedScores.slice(), '', {
+                    var itemTitle = (type === "voice" ? "發聲練氣" : "均勻吹氣") + " (" + soundTargetThreshold + "%)";
+                    addHistory(itemTitle, 100, recordedScores.slice(), "", {
                         biomarkers: recordedBiomarkers.slice(),
                         avgJitter: recordedBiomarkers.length ? (recordedBiomarkers.reduce(function(s, b){ return s + b.jitter; }, 0) / recordedBiomarkers.length).toFixed(2) : 0,
                         avgShimmer: recordedBiomarkers.length ? (recordedBiomarkers.reduce(function(s, b){ return s + b.shimmer; }, 0) / recordedBiomarkers.length).toFixed(2) : 0
                     });
                     
-                    speak('太犀利喇！做齊十次，把聲好夠氣好穩定，獎你一百金幣！');
-                    toast('🏆 做得好好！+100 金幣已存好');
+                    speak("太犀利喇！做齊十次，把聲好夠氣好穩定，獎你一百金幣！");
+                    toast("🏆 做得好好！+100 金幣已存好");
                     return;
                 }
             } else if (level <= soundResetThreshold && !canTrigger) {
                 canTrigger = true;
-                var statusPill = document.getElementById('sound-status-pill');
+                var statusPill = document.getElementById("sound-status-pill");
                 if (statusPill) {
-                    statusPill.style.color = 'var(--apple-dark-gray)';
-                    statusPill.innerText = '💨 換一換氣，準備發下一次聲';
+                    statusPill.style.color = "var(--apple-dark-gray)";
+                    statusPill.innerText = "💨 換一換氣，準備發下一次聲";
                 }
             }
             audioLoopId = requestAnimationFrame(loop);
         };
         audioLoopId = requestAnimationFrame(loop);
     } catch (e) {
-        toast('開唔到麥克風，請檢查手機權限');
+        toast("開唔到麥克風，請檢查手機權限");
     }
 }
 
 // ==============================================================
-// 9. 語音輸入與語音指令系統
+// 10. 語音輸入與語音指令
 // ==============================================================
 async function primeMicrophoneForWebKit() {
     try {
@@ -1635,7 +1697,7 @@ async function listenOnce(callback) {
 
     try {
         var r = new SpeechRec();
-        r.lang = 'zh-HK';
+        r.lang = "zh-HK";
         r.continuous = false;
         r.interimResults = false;
 
@@ -1644,40 +1706,40 @@ async function listenOnce(callback) {
             callback(e.results[0][0].transcript);
         };
         r.onerror = function() {
-            toast('溫馨提示：聽唔清把聲，可以靠近手機再講，或者打字輸入');
+            toast("溫馨提示：聽唔清把聲，可以靠近手機再講，或者打字輸入");
             showInlineSpeechInput();
         };
         r.start();
-        toast('🎙️ 我聽緊你講嘢…');
+        toast("🎙️ 我聽緊你講嘢…");
     } catch (e) {
         showInlineSpeechInput();
     }
 }
 
 function showInlineSpeechInput() {
-    var box = document.getElementById('inline-speech-box');
+    var box = document.getElementById("inline-speech-box");
     if (!box) {
-        var body = document.getElementById('modal-body');
+        var body = document.getElementById("modal-body");
         if (!body) return;
-        box = document.createElement('div');
-        box.id = 'inline-speech-box';
-        box.className = 'inline-input-box show';
+        box = document.createElement("div");
+        box.id = "inline-speech-box";
+        box.className = "inline-input-box show";
         box.innerHTML = '<p style="font-weight:700;margin:0 0 8px;text-align:left;">✍️ 用鍵盤寫出答案：</p>' +
             '<input type="text" id="inline-speech-val" placeholder="喺度輸入答案">' +
             '<button class="sub-btn" style="background:var(--apple-blue);width:100%;height:48px;" onclick="submitInlineSpeech()">確認答案</button>';
         body.appendChild(box);
     } else {
-        box.classList.add('show');
+        box.classList.add("show");
     }
 }
 
 function hideInlineSpeechInput() {
-    var box = document.getElementById('inline-speech-box');
-    if (box) box.classList.remove('show');
+    var box = document.getElementById("inline-speech-box");
+    if (box) box.classList.remove("show");
 }
 
 function submitInlineSpeech() {
-    var val = document.getElementById('inline-speech-val').value.trim();
+    var val = document.getElementById("inline-speech-val").value.trim();
     hideInlineSpeechInput();
     if (listenCallback) listenCallback(val);
     listenCallback = null;
@@ -1694,26 +1756,26 @@ function toggleVoiceMode() {
 function startVoiceMode() {
     var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) { 
-        toast('呢部手機瀏覽器暫時未支援語音指令，請用手指撳掣練習'); 
+        toast("呢部手機瀏覽器暫時未支援語音指令，請用手指撳掣練習"); 
         return; 
     }
     voiceModeActive = true;
     backoffIndex = 0;
-    var bar = document.getElementById('voice-mode-bar');
-    var btn = document.getElementById('voice-toggle-btn');
-    if (bar) bar.classList.add('active');
-    if (btn) btn.classList.add('primary');
-    toast('語音指令開咗喇');
-    speak('語音操作開咗喇，你可以隨時同我講開口肌、開聲控，想慢慢諗可以同我講「等等」');
+    var bar = document.getElementById("voice-mode-bar");
+    var btn = document.getElementById("voice-toggle-btn");
+    if (bar) bar.classList.add("active");
+    if (btn) btn.classList.add("primary");
+    toast("語音指令開咗喇");
+    speak("語音操作開咗喇，你可以隨時同我講開口肌、開聲控，想慢慢諗可以同我講「等等」");
     loopVoiceCommand();
 }
 
 function stopVoiceMode() {
     voiceModeActive = false;
-    var bar = document.getElementById('voice-mode-bar');
-    var btn = document.getElementById('voice-toggle-btn');
-    if (bar) bar.classList.remove('active');
-    if (btn) btn.classList.remove('primary');
+    var bar = document.getElementById("voice-mode-bar");
+    var btn = document.getElementById("voice-toggle-btn");
+    if (bar) bar.classList.remove("active");
+    if (btn) btn.classList.remove("primary");
 }
 
 async function loopVoiceCommand() {
@@ -1724,14 +1786,14 @@ async function loopVoiceCommand() {
 
     try {
         var r = new SpeechRec();
-        r.lang = 'zh-HK';
+        r.lang = "zh-HK";
         r.onresult = function(e) {
             backoffIndex = 0;
-            var t = (e.results[0][0].transcript || '').replace(/\s/g, '');
+            var t = (e.results[0][0].transcript || "").replace(/\s/g, "");
             
             if (/唔係|等等|再講|停|慢啲/.test(t)) {
                 playGentleChime();
-                speak('好，慢慢諗，我聽緊你講');
+                speak("好，慢慢諗，我聽緊你講");
                 setTimeout(loopVoiceCommand, 2800);
                 return;
             }
@@ -1759,22 +1821,22 @@ function handleVoiceCmd(t) {
     if (/今日訓練|今日練習|開始練習/.test(t)) { closeAll(); startDailyTraining(); }
     else if (/口肌|嘴巴|練嘴/.test(t)) { closeAll(); showMouthUI(); }
     else if (/聲調|粵語|廣東話/.test(t)) { closeAll(); showCantoneseToneUI(); }
-    else if (/聲控|開花|發聲/.test(t)) { closeAll(); showGameUI('voice'); }
-    else if (/吹氣|氣量|氣球/.test(t)) { closeAll(); showGameUI('blow'); }
+    else if (/聲控|開花|發聲/.test(t)) { closeAll(); showGameUI("voice"); }
+    else if (/吹氣|氣量|氣球/.test(t)) { closeAll(); showGameUI("blow"); }
     else if (/進度|報告|成績/.test(t)) { showProgressUI(); }
     else if (/返回|主頁|返去/.test(t)) { closeAll(); }
     else if (/救命|求助|唔舒服/.test(t)) { confirmSOS(); }
 }
 
 // ==============================================================
-// 10. 會員會話、資料保存、自適應難度與介面導覽
+// 11. 會話、自適應難度與資料儲存
 // ==============================================================
 function checkAuth() {
     try {
-        var idEl = document.getElementById('case-id');
-        var pwEl = document.getElementById('case-pw');
-        var id = (idEl ? idEl.value.trim() : '') || 'C-101';
-        var pw = (pwEl ? pwEl.value.trim() : '') || '1234';
+        var idEl = document.getElementById("case-id");
+        var pwEl = document.getElementById("case-pw");
+        var id = (idEl ? idEl.value.trim() : "") || "C-101";
+        var pw = (pwEl ? pwEl.value.trim() : "") || "1234";
 
         if (usersData[id] && usersData[id].pw === pw) {
             initUserSession(id, usersData[id]);
@@ -1789,18 +1851,18 @@ function checkAuth() {
                 if (doc.exists && doc.data().name) {
                     currentUser.name = doc.data().name;
                     currentUser.gold = doc.data().gold || 100;
-                    var nameEl = document.getElementById('u-name');
-                    var goldEl = document.getElementById('gold-val');
+                    var nameEl = document.getElementById("u-name");
+                    var goldEl = document.getElementById("gold-val");
                     if (nameEl) nameEl.innerText = currentUser.name;
                     if (goldEl) goldEl.innerText = currentUser.gold;
                 }
             }).catch(function() {});
         }
     } catch (err) {
-        var screen = document.getElementById('login-screen');
-        var content = document.getElementById('app-content');
-        if (screen) screen.style.display = 'none';
-        if (content) content.style.display = 'flex';
+        var screen = document.getElementById("login-screen");
+        var content = document.getElementById("app-content");
+        if (screen) screen.style.display = "none";
+        if (content) content.style.display = "flex";
     }
 }
 
@@ -1811,30 +1873,30 @@ function initUserSession(id, data) {
     if (data.adaptiveThreshMap) {
         adaptiveThreshMap = Object.assign(adaptiveThreshMap, data.adaptiveThreshMap);
     }
-    var nameEl = document.getElementById('u-name');
-    var goldEl = document.getElementById('gold-val');
-    var screen = document.getElementById('login-screen');
-    var content = document.getElementById('app-content');
+    var nameEl = document.getElementById("u-name");
+    var goldEl = document.getElementById("gold-val");
+    var screen = document.getElementById("login-screen");
+    var content = document.getElementById("app-content");
 
     if (nameEl) nameEl.innerText = currentUser.name || id;
     if (goldEl) goldEl.innerText = goldCount;
-    if (screen) screen.style.display = 'none';
-    if (content) content.style.display = 'flex';
+    if (screen) screen.style.display = "none";
+    if (content) content.style.display = "flex";
 
     if (!currentUser.profile) {
         setTimeout(function() { showOnboarding(); }, 300);
     } else {
         renderDailyPlan();
-        speak('歡迎返嚟，' + currentUser.name + '！今日一齊精神做練習！');
+        speak("歡迎返嚟，" + currentUser.name + "！今日一齊精神做練習！");
     }
 }
 
 function postToGoogleSheet(payload) {
     try {
         fetch(GOOGLE_SHEET_API, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         }).catch(function() {});
     } catch (e) {}
@@ -1842,9 +1904,9 @@ function postToGoogleSheet(payload) {
 
 function addHistory(type, gold, scores, note, metrics) {
     var scoresArr = scores || [];
-    var avgVal = scoresArr.length ? Math.round(scoresArr.reduce(function(a, b) { return a + b; }, 0) / scoresArr.length) : '';
-    var cName = currentUser ? currentUser.name : '陳伯伯';
-    var cId = currentCaseId || 'C-101';
+    var avgVal = scoresArr.length ? Math.round(scoresArr.reduce(function(a, b) { return a + b; }, 0) / scoresArr.length) : "";
+    var cName = currentUser ? currentUser.name : "陳伯伯";
+    var cId = currentCaseId || "C-101";
 
     var record = {
         date: new Date().toISOString(),
@@ -1854,11 +1916,11 @@ function addHistory(type, gold, scores, note, metrics) {
         trainingType: type,
         goldEarned: gold,
         totalGold: goldCount,
-        scoresSummary: scoresArr.join(', '),
+        scoresSummary: scoresArr.join(", "),
         avgIntensity: avgVal,
         recordedScores: scoresArr,
         targetThreshold: soundTargetThreshold,
-        note: note || '',
+        note: note || "",
         metrics: metrics || null
     };
 
@@ -1884,7 +1946,7 @@ function addHistory(type, gold, scores, note, metrics) {
 
 function addGold(n) {
     goldCount += n;
-    var gEl = document.getElementById('gold-val');
+    var gEl = document.getElementById("gold-val");
     if (gEl) gEl.innerText = goldCount;
     saveLocal();
     checkUnlocks();
@@ -1895,8 +1957,8 @@ function checkUnlocks() {
     for (var i = 0; i < window.sceneData.length; i++) {
         if (i <= canUnlock + 2 && !unlockedScenes.includes(i)) {
             unlockedScenes.push(i);
-            toast('🎉 叻仔！為你解鎖咗新嘅日常對答：「' + window.sceneData[i].t + '」');
-            speak('好嘢！解鎖咗新嘅日常對答喇');
+            toast("🎉 叻仔！為你解鎖咗新嘅日常對答：「" + window.sceneData[i].t + "」");
+            speak("好嘢！解鎖咗新嘅日常對答喇");
         }
     }
     saveLocal();
@@ -1907,7 +1969,7 @@ function confirmSOS() {
     setModal(
         '<div style="padding:10px;">' +
             '<div style="font-size:4rem;color:var(--apple-red);margin-bottom:10px;">⚠️</div>' +
-            '<h2 style="font-size:1.8rem;margin:0 0 10px;color:var(--apple-red);">你係咪覺得唔舒服要搵人？</h2>' +
+            '<h2 style="font-size:1.8rem;margin-0 0 10px;color:var(--apple-red);">你係咪覺得唔舒服要搵人？</h2>' +
             '<p style="font-size:1.15rem;color:var(--apple-dark-gray);line-height:1.4;">撳「確認求助」會即刻傳短訊畀屋企人或當席社工。<br>唔小心撳到唔緊要，倒數 <b id="sos-countdown" style="font-size:1.4rem;color:var(--apple-red);">' + count + '</b> 秒會自動取消。</p>' +
             '<div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap;">' +
                 '<button class="sub-btn" style="background:var(--apple-red);font-size:1.2rem;min-width:160px;height:60px;" onclick="executeSOS()">🚨 確認求助</button>' +
@@ -1919,7 +1981,7 @@ function confirmSOS() {
     if (sosTimer) clearInterval(sosTimer);
     sosTimer = setInterval(function() {
         count--;
-        var cdEl = document.getElementById('sos-countdown');
+        var cdEl = document.getElementById("sos-countdown");
         if (cdEl) cdEl.innerText = count;
         if (count <= 0) {
             cancelSOS();
@@ -1930,19 +1992,19 @@ function confirmSOS() {
 function cancelSOS() {
     if (sosTimer) { clearInterval(sosTimer); sosTimer = null; }
     closeAll();
-    toast('好彩無事，求助已經取消');
+    toast("好彩無事，求助已經取消");
 }
 
 function executeSOS() {
     if (sosTimer) { clearInterval(sosTimer); sosTimer = null; }
     closeAll();
-    var name = currentUser ? currentUser.name : '長者';
-    var helpMsg = "【緊急求助】長者 " + name + " (編號: " + (currentCaseId || 'C-101') + ") 喺練習陣撳咗求助掣，請立即致電關心或到場查看！";
-    toast('⚠️ 已經通知咗家人同社工！');
-    speak('已經幫你通知咗家人同職員，慢慢坐低飲啖水，放鬆個人，好快有人幫你。');
+    var name = currentUser ? currentUser.name : "長者";
+    var helpMsg = "【緊急求助】長者 " + name + " (編號: " + (currentCaseId || "C-101") + ") 喺練習陣撳咗求助掣，請立即致電關心或到場查看！";
+    toast("⚠️ 已經通知咗家人同社工！");
+    speak("已經幫你通知咗家人同職員，慢慢坐低飲啖水，放鬆個人，好快有人幫你。");
     postToGoogleSheet({
         date: new Date().toISOString(),
-        caseId: currentCaseId || 'C-101',
+        caseId: currentCaseId || "C-101",
         userName: name,
         trainingType: "⚠️ 緊急求助 (長者確認發出)",
         goldEarned: 0,
@@ -1953,9 +2015,9 @@ function executeSOS() {
 }
 
 async function manualSync() {
-    showLoading('同緊雲端對準資料，稍等一陣…');
-    var cName = currentUser ? currentUser.name : '陳伯伯';
-    var cId = currentCaseId || 'C-101';
+    showLoading("同緊雲端對準資料，稍等一陣…");
+    var cName = currentUser ? currentUser.name : "陳伯伯";
+    var cId = currentCaseId || "C-101";
 
     postToGoogleSheet({
         date: new Date().toISOString(),
@@ -1979,7 +2041,7 @@ async function manualSync() {
                 var cloudGold = cloudData.gold || 0;
                 if (cloudGold > goldCount) {
                     goldCount = cloudGold;
-                    document.getElementById('gold-val').innerText = goldCount;
+                    document.getElementById("gold-val").innerText = goldCount;
                 }
                 if (cloudData.adaptiveThreshMap) {
                     adaptiveThreshMap = Object.assign(cloudData.adaptiveThreshMap, adaptiveThreshMap);
@@ -1997,16 +2059,16 @@ async function manualSync() {
 
             saveLocal();
             hideLoading();
-            toast('進度已經妥善存好晒喺雲端 ✓');
+            toast("進度已經妥善存好晒喺雲端 ✓");
         } catch (err) {
             hideLoading();
             saveLocal();
-            toast('已經幫你存好喺手機本機');
+            toast("已經幫你存好喺手機本機");
         }
     } else {
         hideLoading();
         saveLocal();
-        toast('已經存好喺本機 ✓');
+        toast("已經存好喺本機 ✓");
     }
 }
 
@@ -2018,23 +2080,23 @@ function doLogout() {
 }
 
 function adjustFont(delta) {
-    var cur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--font-scale')) || 1;
+    var cur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--font-scale")) || 1;
     var next = Math.min(1.4, Math.max(0.85, cur + delta));
-    document.documentElement.style.setProperty('--font-scale', next);
-    localStorage.setItem('lohak_font', next);
-    toast(delta > 0 ? '字體放大咗' : '字體縮細咗');
+    document.documentElement.style.setProperty("--font-scale", next);
+    localStorage.setItem("lohak_font", next);
+    toast(delta > 0 ? "字體放大咗" : "字體縮細咗");
 }
 
 function toggleContrast() {
-    document.body.classList.toggle('high-contrast');
-    localStorage.setItem('lohak_contrast', document.body.classList.contains('high-contrast') ? '1' : '0');
-    toast(document.body.classList.contains('high-contrast') ? '開咗高對比黑底' : '轉返普通畫面');
+    document.body.classList.toggle("high-contrast");
+    localStorage.setItem("lohak_contrast", document.body.classList.contains("high-contrast") ? "1" : "0");
+    toast(document.body.classList.contains("high-contrast") ? "開咗高對比黑底" : "轉返普通畫面");
 }
 
 function loadA11y() {
-    var f = localStorage.getItem('lohak_font');
-    if (f) document.documentElement.style.setProperty('--font-scale', f);
-    if (localStorage.getItem('lohak_contrast') === '1') document.body.classList.add('high-contrast');
+    var f = localStorage.getItem("lohak_font");
+    if (f) document.documentElement.style.setProperty("--font-scale", f);
+    if (localStorage.getItem("lohak_contrast") === "1") document.body.classList.add("high-contrast");
 }
 
 function loadLocal() {
@@ -2085,21 +2147,21 @@ function adaptiveThreshold(baseThreshold, history) {
 }
 
 function getAdaptiveThresh(bsType, baseThresh) {
-    var key = (currentCaseId || 'Guest') + '_' + bsType;
+    var key = (currentCaseId || "Guest") + "_" + bsType;
     if (adaptiveThreshMap[key] == null) adaptiveThreshMap[key] = baseThresh;
     return adaptiveThreshMap[key];
 }
 
 function updateAdaptiveLive(bsType, baseThresh, buffer) {
     var adj = adaptiveThreshold(baseThresh, buffer);
-    var key = (currentCaseId || 'Guest') + '_' + bsType;
+    var key = (currentCaseId || "Guest") + "_" + bsType;
     adaptiveThreshMap[key] = adj;
     return adj;
 }
 
 function detectFatigue(bsBuf, symBuf) {
     var recent = bsBuf.slice(-60);
-    if (recent.length < 30) return { fatigue: false, level: 'low' };
+    if (recent.length < 30) return { fatigue: false, level: "low" };
     var mean = recent.reduce(function(a, b) { return a + b; }, 0) / recent.length;
     var variance = recent.reduce(function(s, v) { return s + Math.pow(v - mean, 2); }, 0) / recent.length;
     var symmetryDrop = 0;
@@ -2109,49 +2171,49 @@ function detectFatigue(bsBuf, symBuf) {
         symmetryDrop = late - early;
     }
     var fatigue = variance > 0.05 || symmetryDrop < -0.15;
-    var level = variance > 0.08 ? 'high' : (variance > 0.05 ? 'medium' : 'low');
+    var level = variance > 0.08 ? "high" : (variance > 0.05 ? "medium" : "low");
     return { fatigue: fatigue, level: level, variance: variance, symmetryDrop: symmetryDrop };
 }
 
 function toggleFreePractice() {
-    var free = document.getElementById('home-free');
+    var free = document.getElementById("home-free");
     if (!free) return;
-    free.classList.toggle('show');
-    if (free.classList.contains('show')) speak('想自己揀邊樣練習？');
+    free.classList.toggle("show");
+    if (free.classList.contains("show")) speak("想自己揀邊樣練習？");
 }
 
 function startDailyTraining() {
-    var p = (currentUser && currentUser.profile) ? currentUser.profile : { goal: 'all', time: '15' };
-    if ((p.goal === 'mouth' || p.goal === 'all') && !dailyDone.mouth) { showMouthUI(); return; }
+    var p = (currentUser && currentUser.profile) ? currentUser.profile : { goal: "all", time: "15" };
+    if ((p.goal === "mouth" || p.goal === "all") && !dailyDone.mouth) { showMouthUI(); return; }
     if (!dailyDone.tone) { showCantoneseToneUI(); return; }
-    if ((p.goal === 'voice' || p.goal === 'all') && !dailyDone.voice) { showGameUI('voice'); return; }
-    if ((p.goal === 'cog' || p.goal === 'all') && !dailyDone.cog) { showCogCatalog(); return; }
+    if ((p.goal === "voice" || p.goal === "all") && !dailyDone.voice) { showGameUI("voice"); return; }
+    if ((p.goal === "cog" || p.goal === "all") && !dailyDone.cog) { showCogCatalog(); return; }
     if (!dailyDone.scene) { showSceneCatalog(); return; }
-    if (!dailyDone.blow) { showGameUI('blow'); return; }
-    toast('好叻呀！今日嘅建議練習全部做齊晒！');
-    speak('好叻呀！今日嘅練習全部做完喇，飲杯水休息下啦！');
+    if (!dailyDone.blow) { showGameUI("blow"); return; }
+    toast("好叻呀！今日嘅建議練習全部做齊晒！");
+    speak("好叻呀！今日嘅練習全部做完喇，飲杯水休息下啦！");
     toggleFreePractice();
 }
 
 function renderDailyPlan() {
-    var box = document.getElementById('daily-plan-items');
+    var box = document.getElementById("daily-plan-items");
     if (!box) return;
-    var p = (currentUser && currentUser.profile) ? currentUser.profile : { goal: 'all', time: '15' };
+    var p = (currentUser && currentUser.profile) ? currentUser.profile : { goal: "all", time: "15" };
     var items = [];
-    if (p.goal === 'mouth' || p.goal === 'all') items.push({ key: 'mouth', label: '👄 口肌練習 1 組 (相片示範)', fn: "showMouthUI()" });
-    items.push({ key: 'tone', label: '🎵 廣東話聲調練習 1 組', fn: "showCantoneseToneUI()" });
-    if (p.goal === 'voice' || p.goal === 'all') {
-        items.push({ key: 'voice', label: '🎙️ 發聲開花 (練返聲線充足)', fn: "showGameUI('voice')" });
-        if (p.time !== '5') items.push({ key: 'blow', label: '🎈 慢慢吹氣球 10 次', fn: "showGameUI('blow')" });
+    if (p.goal === "mouth" || p.goal === "all") items.push({ key: "mouth", label: "👄 口肌練習 1 組 (相片示範)", fn: "showMouthUI()" });
+    items.push({ key: "tone", label: "🎵 廣東話聲調練習 1 組", fn: "showCantoneseToneUI()" });
+    if (p.goal === "voice" || p.goal === "all") {
+        items.push({ key: "voice", label: "🎙️ 發聲開花 (練返聲線充足)", fn: "showGameUI('voice')" });
+        if (p.time !== "5") items.push({ key: "blow", label: "🎈 慢慢吹氣球 10 次", fn: "showGameUI('blow')" });
     }
-    if (p.goal === 'cog' || p.goal === 'all') items.push({ key: 'cog', label: '🗣️ 睇相講名 3 題', fn: "showCogCatalog()" });
-    if (p.time === '30' || p.goal === 'all') items.push({ key: 'scene', label: '📍 生活出街對答 1 組', fn: "showSceneCatalog()" });
+    if (p.goal === "cog" || p.goal === "all") items.push({ key: "cog", label: "🗣️ 睇相講名 3 題", fn: "showCogCatalog()" });
+    if (p.time === "30" || p.goal === "all") items.push({ key: "scene", label: "📍 生活出街對答 1 組", fn: "showSceneCatalog()" });
 
     var today = new Date().toDateString();
-    var lastDay = localStorage.getItem('lohak_daily_day');
+    var lastDay = localStorage.getItem("lohak_daily_day");
     if (lastDay !== today) {
         dailyDone = { mouth: false, tone: false, cog: false, scene: false, voice: false, blow: false };
-        localStorage.setItem('lohak_daily_day', today);
+        localStorage.setItem("lohak_daily_day", today);
         saveLocal();
     }
 
@@ -2160,7 +2222,7 @@ function renderDailyPlan() {
             '<div class="daily-check ' + (dailyDone[it.key] ? 'done' : '') + '">' + (dailyDone[it.key] ? '✓' : '') + '</div>' +
             '<span style="' + (dailyDone[it.key] ? 'text-decoration:line-through;opacity:0.6;' : '') + '">' + it.label + '</span>' +
         '</div>';
-    }).join('') || '<p style="color:var(--apple-dark-gray);">今日全部達標，想練多陣可以自己揀！</p>';
+    }).join("") || '<p style="color:var(--apple-dark-gray);">今日全部達標，想練多陣可以自己揀！</p>';
 }
 
 function markDaily(key) {
@@ -2200,49 +2262,49 @@ function selectOpt(btn) {
 }
 
 function finishOnboarding() {
-    if (!onboardSel.goal) { toast('請先揀選最想改善嘅方向'); return; }
-    if (!onboardSel.time) { toast('請揀每日大概練幾耐'); return; }
+    if (!onboardSel.goal) { toast("請先揀選最想改善嘅方向"); return; }
+    if (!onboardSel.time) { toast("請揀每日大概練幾耐"); return; }
     currentUser.profile = Object.assign({}, onboardSel, { date: new Date().toISOString() });
     saveLocal();
     manualSync();
     closeAll();
     renderDailyPlan();
-    speak('好喇，計劃幫你安排好晒，我哋即刻開始今日練習！');
+    speak("好喇，計劃幫你安排好晒，我哋即刻開始今日練習！");
 }
 
 async function initFaceLandmarker() {
     if (faceLandmarker) return faceLandmarker;
-    showLoading('開緊 AI 鏡頭，稍等陣…');
+    showLoading("開緊 AI 鏡頭，稍等陣…");
     var isTensorOrLowEnd = /Pixel [678]|Mali|PowerVR/i.test(navigator.userAgent);
-    var preferredDelegate = isTensorOrLowEnd ? 'CPU' : 'GPU';
+    var preferredDelegate = isTensorOrLowEnd ? "CPU" : "GPU";
 
     var loadPromise = (async function() {
         try {
-            var vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0');
+            var vision = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0");
             var filesetResolver = await vision.FilesetResolver.forVisionTasks(
-                'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
+                "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
             );
             faceLandmarker = await vision.FaceLandmarker.createFromOptions(filesetResolver, {
                 baseOptions: {
-                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                    modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
                     delegate: preferredDelegate
                 },
-                runningMode: 'VIDEO',
+                runningMode: "VIDEO",
                 numFaces: 1,
                 outputFaceBlendshapes: true
             });
             return faceLandmarker;
         } catch (e) {
-            var vision2 = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0');
+            var vision2 = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0");
             var filesetResolver2 = await vision2.FilesetResolver.forVisionTasks(
-                'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
+                "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
             );
             faceLandmarker = await vision2.FaceLandmarker.createFromOptions(filesetResolver2, {
                 baseOptions: {
-                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-                    delegate: 'CPU'
+                    modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+                    delegate: "CPU"
                 },
-                runningMode: 'VIDEO',
+                runningMode: "VIDEO",
                 numFaces: 1,
                 outputFaceBlendshapes: true
             });
@@ -2272,7 +2334,7 @@ function setupImageZoom(containerId, imgId) {
     var scale = 1;
     var initialDistance = 0;
 
-    container.addEventListener('touchstart', function(e) {
+    container.addEventListener("touchstart", function(e) {
         if (e.touches.length === 2) {
             initialDistance = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
@@ -2281,7 +2343,7 @@ function setupImageZoom(containerId, imgId) {
         }
     }, { passive: true });
 
-    container.addEventListener('touchmove', function(e) {
+    container.addEventListener("touchmove", function(e) {
         if (e.touches.length === 2 && initialDistance > 0) {
             var currentDistance = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
@@ -2289,32 +2351,32 @@ function setupImageZoom(containerId, imgId) {
             );
             var factor = currentDistance / initialDistance;
             scale = Math.min(2.8, Math.max(1, scale * factor));
-            img.style.transform = 'scale(' + scale + ')';
+            img.style.transform = "scale(" + scale + ")";
             initialDistance = currentDistance;
         }
     }, { passive: true });
 
-    container.addEventListener('touchend', function(e) {
+    container.addEventListener("touchend", function(e) {
         if (e.touches.length < 2) {
             initialDistance = 0;
         }
     });
 
-    container.addEventListener('click', function() {
+    container.addEventListener("click", function() {
         scale = scale > 1.1 ? 1 : 1.6;
-        img.style.transform = 'scale(' + scale + ')';
+        img.style.transform = "scale(" + scale + ")";
     });
 }
 
 function showProgressUI() {
-    speak('開緊你嘅練習進度表');
+    speak("開緊你嘅練習進度表");
     var last7 = sessionHistory.filter(function(h) {
         return (Date.now() - new Date(h.date).getTime()) < 7 * 86400000;
     });
     var byType = {};
     last7.forEach(function(h) {
-        var rawName = h.trainingType || h.type || '日常練習';
-        var key = rawName.split('：')[0].split('(')[0].trim();
+        var rawName = h.trainingType || h.type || "日常練習";
+        var key = rawName.split("：")[0].split("(")[0].trim();
         byType[key] = (byType[key] || 0) + 1;
     });
     var maxC = Math.max.apply(null, Object.values(byType).concat([1]));
@@ -2325,7 +2387,7 @@ function showProgressUI() {
                 '<div class="prog-track"><div class="prog-fill" style="width:' + Math.round(e[1] / maxC * 100) + '%"></div></div>' +
                 '<div class="prog-val">' + e[1] + '次</div>' +
             '</div>';
-        }).join('')
+        }).join("")
         : '<p style="color:var(--apple-dark-gray);">呢 7 日暫時未有紀錄，今日一齊做第一次練習啦！</p>';
 
     setModal(
@@ -2341,23 +2403,23 @@ function showProgressUI() {
 }
 
 function shareToFamily() {
-    var name = currentUser ? currentUser.name : '長者';
+    var name = currentUser ? currentUser.name : "長者";
     var text = "【LohasCare 樂活智語】\n" + name + " 今日好乖好勤力，已經完成咗言語同口肌練習喇！\n累積金幣：" + goldCount + " 💰\n聲線好夠氣好穩定，繼續加油！";
     if (navigator.share) {
-        navigator.share({ title: '復康進度匯報', text: text }).catch(function() {});
+        navigator.share({ title: "復康進度匯報", text: text }).catch(function() {});
     } else {
-        window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+        window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
     }
 }
 
 function printReport() {
-    var name = currentUser ? currentUser.name : '個案';
+    var name = currentUser ? currentUser.name : "個案";
     var rows = sessionHistory.slice(-15).reverse().map(function(h) {
-        var rawName = h.trainingType || h.type || '日常練習';
-        var bioNote = (h.metrics && h.metrics.avgJitter) ? (' [音波微擾: ' + h.metrics.avgJitter + '%]') : '';
-        var scSummary = h.scoresSummary || (h.scores ? h.scores.join(', ') : '-');
-        return '<tr><td style="padding:6px;border:1px solid #ccc;">' + new Date(h.date).toLocaleDateString('zh-HK') + '</td><td style="padding:6px;border:1px solid #ccc;">' + rawName + '</td><td style="padding:6px;border:1px solid #ccc;">' + scSummary + '</td><td style="padding:6px;border:1px solid #ccc;">' + (h.note || '良好達標') + bioNote + '</td></tr>';
-    }).join('');
+        var rawName = h.trainingType || h.type || "日常練習";
+        var bioNote = (h.metrics && h.metrics.avgJitter) ? (" [音波微擾: " + h.metrics.avgJitter + "%]") : "";
+        var scSummary = h.scoresSummary || (h.scores ? h.scores.join(", ") : "-");
+        return '<tr><td style="padding:6px;border:1px solid #ccc;">' + new Date(h.date).toLocaleDateString("zh-HK") + '</td><td style="padding:6px;border:1px solid #ccc;">' + rawName + '</td><td style="padding:6px;border:1px solid #ccc;">' + scSummary + '</td><td style="padding:6px;border:1px solid #ccc;">' + (h.note || "良好達標") + bioNote + '</td></tr>';
+    }).join("");
 
     setModal(
         '<h2 style="font-size:1.5rem;margin-bottom:8px;">📋 臨床復康摘要報告 (治療師參考)</h2>' +
@@ -2373,7 +2435,7 @@ function printReport() {
 }
 
 function showRewardsUI() {
-    speak('歡迎嚟到金幣成就榜！');
+    speak("歡迎嚟到金幣成就榜！");
     setModal(
         '<h2 style="font-size:1.7rem;margin-bottom:8px;">🏆 金幣成就榜</h2>' +
         '<p style="font-size:2.4rem;font-weight:800;color:var(--gold);margin:10px 0;">💰 ' + goldCount + '</p>' +
@@ -2396,9 +2458,9 @@ function buildTrainerContext() {
     });
 
     return {
-        elderName: currentUser ? currentUser.name : '長者',
+        elderName: currentUser ? currentUser.name : "長者",
         streak: streak,
-        lastTrainingType: lastSession ? (lastSession.trainingType || lastSession.type || '日常練習') : '無',
+        lastTrainingType: lastSession ? (lastSession.trainingType || lastSession.type || "日常練習") : "無",
         hadFatigue: hadFatigue,
         goldNearUnlock: (150 - (goldCount % 150)) < 40
     };
@@ -2418,7 +2480,7 @@ function showTrainerChat() {
     }
 
     var bubbles = trainerChatLog.length
-        ? trainerChatLog.map(function(m) { return '<div class="chat-bubble ' + m.role + '">' + m.text + '</div>'; }).join('')
+        ? trainerChatLog.map(function(m) { return '<div class="chat-bubble ' + m.role + '">' + m.text + '</div>'; }).join("")
         : '<div class="chat-bubble bot">' + greeting + '</div>';
 
     setModal(
@@ -2437,20 +2499,20 @@ function showTrainerChat() {
 }
 
 function quickMsg(t) {
-    var inp = document.getElementById('trainer-input');
+    var inp = document.getElementById("trainer-input");
     if (inp) inp.value = t;
     sendTrainerMsg();
 }
 
 function sendTrainerMsg() {
-    var inp = document.getElementById('trainer-input');
+    var inp = document.getElementById("trainer-input");
     if (!inp) return;
     var msg = inp.value.trim();
     if (!msg) return;
-    inp.value = '';
+    inp.value = "";
 
-    trainerChatLog.push({ role: 'user', text: msg });
-    var box = document.getElementById('trainer-chat-box');
+    trainerChatLog.push({ role: "user", text: msg });
+    var box = document.getElementById("trainer-chat-box");
     if (box) {
         box.innerHTML += '<div class="chat-bubble user">' + msg + '</div>';
         box.scrollTop = box.scrollHeight;
@@ -2467,7 +2529,7 @@ function sendTrainerMsg() {
     }
 
     setTimeout(function() {
-        trainerChatLog.push({ role: 'bot', text: reply });
+        trainerChatLog.push({ role: "bot", text: reply });
         saveLocal();
         if (box) {
             box.innerHTML += '<div class="chat-bubble bot">' + reply + '</div>';
@@ -2478,25 +2540,27 @@ function sendTrainerMsg() {
 }
 
 function setModal(html) {
-    var container = document.getElementById('modal-container');
-    var body = document.getElementById('modal-body');
+    var container = document.getElementById("modal-container");
+    var body = document.getElementById("modal-body");
     if (container && body) {
-        container.style.display = 'flex';
+        container.style.display = "flex";
         body.innerHTML = html;
-        body.style.transform = 'scale(0.88)';
+        body.style.transform = "scale(0.88)";
         requestAnimationFrame(function() {
-            body.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1)';
-            body.style.transform = 'scale(1)';
+            body.style.transition = "transform 0.35s cubic-bezier(0.25,1,0.5,1)";
+            body.style.transform = "scale(1)";
         });
     }
 }
 
-// 系統初始化入口
+// ==============================================================
+// 12. 系統啟動初始化
+// ==============================================================
 window.onload = function () {
     loadA11y();
     loadLocal();
     setInterval(function() {
-        var el = document.getElementById('time');
+        var el = document.getElementById("time");
         if (el) el.innerText = new Date().toTimeString().slice(0, 5);
     }, 1000);
 };
