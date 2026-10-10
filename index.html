@@ -54,7 +54,7 @@
             --apple-gray: #333;
         }
 
-        /* 數字政策辦公室 (DPO) 準則 2.9：清晰焦點狀態 */
+        /* 數字政策辦公室 (DPO) 準則 2.9：清晰焦點狀態，支援外接鍵盤與開關控制 */
         .big-btn:focus-visible,
         .sub-btn:focus-visible,
         .card-unit:focus-visible,
@@ -76,7 +76,7 @@
             .spinner-ring { animation: none !important; }
         }
 
-        /* 長者友善全域載入遮罩 (適老化設計規範) */
+        /* 全域長者友善 Loading 提示 (適老化通用設計規範) */
         #global-spinner {
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.65);
@@ -391,7 +391,7 @@
 </head>
 <body>
 
-<!-- 全域長者友善 Loading 提示 (適老化設計規範) -->
+<!-- 全域 Loading 遮罩 -->
 <div id="global-spinner">
     <div class="spinner-ring"></div>
     <div id="spinner-msg" style="font-size:1.35rem;font-weight:700;">載入中，請稍候…</div>
@@ -473,7 +473,7 @@
                     <span>🎵 粵語 6 聲調物理輪廓分析<br><span class="btn-sub">音高走勢 (Pitch Contour) · 專科辨音</span></span>
                 </button>
                 <button class="big-btn" style="background:var(--speech-purple);" onclick="showCogCatalog()">
-                    <span>🗣️ 階梯認知命名<br><span class="btn-sub">漸進提示 · 語音與鍵盤雙模作答</span></span>
+                    <span>🗣️ 階梯認知命名<br><span class="btn-sub">實物高清圖庫 · 雙模作答</span></span>
                 </button>
                 <button class="big-btn" style="background:var(--gold); color:#fff;" onclick="showSceneCatalog()">
                     <span>📍 真實生活情境<br><span class="btn-sub">日常對話 · 重組朗讀</span></span>
@@ -501,7 +501,7 @@
 
 <script>
 // ==========================================
-// 1. 全域變數與雲端設定 (純原生拼接，杜絕 Token 錯誤)
+// 1. 全域變數與雲端設定
 // ==========================================
 var STORAGE_KEY = 'lohascare_gerontalk_data';
 var GOOGLE_SHEET_API = "https://script.google.com/macros/s/AKfycbzP0aXpxzQn5sz0zF15nSKx73QbxDl9xp83-653X-hcE2MuzUmzxAf1cuJeJZN70S3N/exec";
@@ -533,7 +533,177 @@ var listenCallback = null;
 var sosTimer = null;
 var db = null;
 
-// 全域 Loading 控制器 (符合適老化設計指引)
+// Firebase Storage 公開路徑轉換函式
+function getStorageImgUrl(category, filename) {
+    var encodedPath = encodeURIComponent('cog_naming/' + category + '/' + filename);
+    return 'https://firebasestorage.googleapis.com/v0/b/project-375db711-6596-4e87-9e8.firebasestorage.app/o/' + encodedPath + '?alt=media';
+}
+
+// 10 大分類、99 筆完整階梯認知命名資料庫
+var cogData = [
+    {
+        t: "常見動物",
+        categoryKey: "animals",
+        i: [
+            { n: "公雞", img: getStorageImgUrl("animals", "公雞.jfif"), p: "🐓", u: "朝早天光會啼叫報曉嘅家禽", s: "公" },
+            { n: "大象", img: getStorageImgUrl("animals", "大象.jfif"), p: "🐘", u: "身形好龐大、有長長鼻管嘅陸上動物", s: "大" },
+            { n: "小狗", img: getStorageImgUrl("animals", "小狗.jfif"), p: "🐕", u: "人類最忠心嘅朋友，好鍾意搖尾", s: "小" },
+            { n: "烏龜", img: getStorageImgUrl("animals", "烏龜.jfif"), p: "🐢", u: "背脊有硬殼、行路慢慢爬嘅爬蟲", s: "烏" },
+            { n: "熊貓", img: getStorageImgUrl("animals", "熊貓.jfif"), p: "🐼", u: "黑白兩色、好鍾意食竹子嘅國寶", s: "熊" },
+            { n: "白兔", img: getStorageImgUrl("animals", "白兔.jfif"), p: "🐇", u: "耳朵長長、眼仔紅紅、鍾意食胡蘿蔔", s: "白" },
+            { n: "貓咪", img: getStorageImgUrl("animals", "貓咪.jfif"), p: "🐈", u: "會捉老鼠、鍾意喵喵叫嘅得意寵物", s: "貓" },
+            { n: "金魚", img: getStorageImgUrl("animals", "金魚.jfif"), p: "🐟", u: "養喺魚缸游來游去、尾巴似裙嘅觀賞魚", s: "金" },
+            { n: "雀仔", img: getStorageImgUrl("animals", "雀仔.jfif"), p: "🐦", u: "有羽毛同翼、喺天空飛翔同唱歌", s: "雀" }
+        ]
+    },
+    {
+        t: "童年回憶",
+        categoryKey: "childhood",
+        i: [
+            { n: "公仔紙", img: getStorageImgUrl("childhood", "公仔紙.jfif"), p: "🃏", u: "細個嗰陣時同朋友喺地下拍打拍打玩嘅彩色紙牌", s: "公" },
+            { n: "吹泡泡", img: getStorageImgUrl("childhood", "吹泡泡.jfif"), p: "🫧", u: "用番梘水蘸一蘸，輕輕一吹飄滿天嘅透明波波", s: "吹" },
+            { n: "撥浪鼓", img: getStorageImgUrl("childhood", "撥浪鼓.jfif"), p: "🪘", u: "左右手搖動、兩邊小珠會咚咚敲響嘅傳統手搖鼓", s: "撥" },
+            { n: "放風箏", img: getStorageImgUrl("childhood", "放風箏.jfif"), p: "🪁", u: "秋高氣爽有風嗰陣，喺郊野草地扯住長線放上天", s: "放" },
+            { n: "波子", img: getStorageImgUrl("childhood", "波子.jfif"), p: "🔮", u: "五顏六色嘅實心玻璃小圓球，細個用手指彈", s: "波" },
+            { n: "竹蜻蜓", img: getStorageImgUrl("childhood", "竹蜻蜓.jfif"), p: "🚁", u: "雙手手掌用力一搓就會旋轉飛上天嘅竹木玩具", s: "竹" },
+            { n: "跳飛機", img: getStorageImgUrl("childhood", "跳飛機.jfif"), p: "✈️", u: "喺石屎地用粉筆畫格子，單腳雙腳輪流跳嘅遊戲", s: "跳" },
+            { n: "踢毽子", img: getStorageImgUrl("childhood", "踢毽子.jfif"), p: "🪶", u: "底面有銅錢、上面插住鮮艷雞毛，用腳內側向上踢", s: "踢" },
+            { n: "鐵皮玩具", img: getStorageImgUrl("childhood", "鐵皮玩具.jfif"), p: "🤖", u: "擰發條就會喀嗒喀嗒向前行嘅舊式金屬玩具", s: "鐵" },
+            { n: "陀螺", img: getStorageImgUrl("childhood", "陀螺.jfif"), p: "🪀", u: "用繩纏住用力一抽，就會喺地下轉個不停嘅圓錐木頭", s: "陀" }
+        ]
+    },
+    {
+        t: "日常生活",
+        categoryKey: "daily_life",
+        i: [
+            { n: "八達通", img: getStorageImgUrl("daily_life", "八達通.jfif"), p: "💳", u: "搭車買嘢嘟一嘟畀錢嘅電子收費卡", s: "八" },
+            { n: "剪刀", img: getStorageImgUrl("daily_life", "剪刀.jfif"), p: "✂️", u: "有兩個把手同刀刃，用嚟剪開紙張或線頭", s: "剪" },
+            { n: "手機", img: getStorageImgUrl("daily_life", "手機.jfif"), p: "📱", u: "日常隨身攜帶，用嚟打電話、視像同睇新聞", s: "手" },
+            { n: "梳", img: getStorageImgUrl("daily_life", "梳.jfif"), p: "🪮", u: "朝早起身整理頭髮、理順髮絲嘅用具", s: "梳" },
+            { n: "毛巾", img: getStorageImgUrl("daily_life", "毛巾.jfif"), p: "🧖", u: "沖涼洗面抹乾水份嘅純棉布織品", s: "毛" },
+            { n: "牙刷", img: getStorageImgUrl("daily_life", "牙刷.jfif"), p: "🪥", u: "唧上牙膏用嚟早晚清潔牙齒", s: "牙" },
+            { n: "筷子", img: getStorageImgUrl("daily_life", "筷子.jfif"), p: "🥢", u: "成雙成對，食飯夾餸嘅傳統餐具", s: "筷" },
+            { n: "鎖匙", img: getStorageImgUrl("daily_life", "鎖匙.jfif"), p: "🔑", u: "出門返屋企用嚟插開大門鎖匙膽", s: "鎖" },
+            { n: "雨傘", img: getStorageImgUrl("daily_life", "雨傘.jfif"), p: "☂️", u: "落雨嗰陣遮雨，大太陽用嚟擋紫外線", s: "雨" },
+            { n: "飯碗", img: getStorageImgUrl("daily_life", "飯碗.jfif"), p: "🥣", u: "食正餐盛飯盛湯用嘅圓形陶瓷容器", s: "飯" }
+        ]
+    },
+    {
+        t: "情緒感受",
+        categoryKey: "emotions",
+        i: [
+            { n: "傷心", img: getStorageImgUrl("emotions", "傷心.jfif"), p: "😢", u: "心情難過低落，甚至想流眼淚", s: "傷" },
+            { n: "害怕", img: getStorageImgUrl("emotions", "害怕.jfif"), p: "😨", u: "面對危險或驚嚇嗰陣，心跳加速好惶恐", s: "害" },
+            { n: "感激", img: getStorageImgUrl("emotions", "感激.jfif"), p: "🙏", u: "多謝人哋幫忙照顧，內心充滿感恩溫暖", s: "感" },
+            { n: "憂心", img: getStorageImgUrl("emotions", "憂心.jfif"), p: "😟", u: "成日牽掛掛心，擔心某件事未做好", s: "憂" },
+            { n: "放鬆", img: getStorageImgUrl("emotions", "放鬆.jfif"), p: "😌", u: "心情好平靜舒適，全身無壓力好自在", s: "放" },
+            { n: "期待", img: getStorageImgUrl("emotions", "期待.jfif"), p: "🤩", u: "熱切盼望緊美好嘅事情或者見到想見嘅人", s: "期" },
+            { n: "生氣", img: getStorageImgUrl("emotions", "生氣.jfif"), p: "😡", u: "遇到不公平或唔順心嘅事，面紅耳熱火起", s: "生" },
+            { n: "疲倦", img: getStorageImgUrl("emotions", "疲倦.jfif"), p: "🥱", u: "做完嘢無乜力氣，好想瞓覺休息", s: "疲" },
+            { n: "驚訝", img: getStorageImgUrl("emotions", "驚訝.jfif"), p: "😲", u: "突然遇到意料之外嘅事，張大嘴巴意想不到", s: "驚" },
+            { n: "高興", img: getStorageImgUrl("emotions", "高興.jfif"), p: "😄", u: "笑容滿面，心情好開朗愉快", s: "高" }
+        ]
+    },
+    {
+        t: "家庭親友",
+        categoryKey: "family",
+        i: [
+            { n: "乖孫", img: getStorageImgUrl("family", "乖孫.jfif"), p: "👦", u: "仔女所生嘅後輩，好乖巧好招人疼愛", s: "乖" },
+            { n: "哥哥", img: getStorageImgUrl("family", "哥哥.jfif"), p: "👨", u: "同一個父母所生，年紀比自己大嘅男仔", s: "哥" },
+            { n: "女婿", img: getStorageImgUrl("family", "女婿.jfif"), p: "🤵", u: "女兒嘅丈夫", s: "女" },
+            { n: "姐姐", img: getStorageImgUrl("family", "姐姐.jfif"), p: "👩", u: "同一個父母所生，年紀比自己大嘅女仔", s: "姐" },
+            { n: "媳婦", img: getStorageImgUrl("family", "媳婦.jfif"), p: "👰", u: "兒子嘅妻子", s: "媳" },
+            { n: "媽媽", img: getStorageImgUrl("family", "媽媽.jfif"), p: "🤱", u: "生養照顧自己嘅母親", s: "媽" },
+            { n: "嫲嫲", img: getStorageImgUrl("family", "嫲嫲.jfif"), p: "👵", u: "父親嘅母親，一家之長輩慈祥奶奶", s: "嫲" },
+            { n: "爸爸", img: getStorageImgUrl("family", "爸爸.jfif"), p: "👨‍🦳", u: "生養培育自己嘅父親", s: "爸" },
+            { n: "爺爺", img: getStorageImgUrl("family", "爺爺.jfif"), p: "👴", u: "父親嘅父親", s: "爺" },
+            { n: "老友記", img: getStorageImgUrl("family", "老友記.jfif"), p: "🤝", u: "相識多年嘅摯友長者街坊伴侶", s: "老" }
+        ]
+    },
+    {
+        t: "節日習俗",
+        categoryKey: "festivals",
+        i: [
+            { n: "利是", img: getStorageImgUrl("festivals", "利是.jfif"), p: "🧧", u: "過年派畀後輩嘅紅色封套吉利壓歲錢", s: "利" },
+            { n: "年糕", img: getStorageImgUrl("festivals", "年糕.jfif"), p: "🥮", u: "農曆新年煎來食、象徵年年高陞嘅甜糯糕點", s: "年" },
+            { n: "揮春", img: getStorageImgUrl("festivals", "揮春.jfif"), p: "📜", u: "春節貼喺門口大吉大利出入平安嘅紅色祝福字條", s: "揮" },
+            { n: "月餅", img: getStorageImgUrl("festivals", "月餅.jfif"), p: "🥮", u: "中秋節一家團圓賞月食嘅傳統蓮蓉蛋黃點心", s: "月" },
+            { n: "桃花", img: getStorageImgUrl("festivals", "桃花.jfif"), p: "🌸", u: "農曆年花市買返屋企擺、寓意大展鴻圖好人緣嘅粉花", s: "桃" },
+            { n: "湯圓", img: getStorageImgUrl("festivals", "湯圓.jfif"), p: "🍡", u: "冬至元宵節煮熱食、圓圓潤潤象徵團圓嘅糯米丸", s: "湯" },
+            { n: "糉", img: getStorageImgUrl("festivals", "糉.jfif"), p: "🍙", u: "端午節用竹葉包住糯米鹹蛋綠豆蒸熟嘅應節美食", s: "糉" },
+            { n: "舞獅", img: getStorageImgUrl("festivals", "舞獅.jfif"), p: "🦁", u: "節慶開張打鑼打鼓、活靈活現採青嘅傳統活動", s: "舞" },
+            { n: "花燈", img: getStorageImgUrl("festivals", "花燈.jfif"), p: "🏮", u: "元宵或中秋點著、有骨架彩色紙裝飾嘅提燈燈籠", s: "花" },
+            { n: "龍舟", img: getStorageImgUrl("festivals", "龍舟.jfif"), p: "🛶", u: "端午節多名健兒跟隨鼓聲合力扒競渡嘅狹長木舟", s: "龍" }
+        ]
+    },
+    {
+        t: "健康水果",
+        categoryKey: "fruits",
+        i: [
+            { n: "蘋果", img: getStorageImgUrl("fruits", "Untitled-design-20-e1745534545813-658x677.webp"), p: "🍎", u: "紅色甜甜，一日一個醫生遠離我嘅常見水果", s: "蘋" },
+            { n: "士多啤梨", img: getStorageImgUrl("fruits", "士多啤梨.jfif"), p: "🍓", u: "紅色心形、表面有細黑籽、酸甜可口嘅草莓", s: "士" },
+            { n: "提子", img: getStorageImgUrl("fruits", "提子.jfif"), p: "🍇", u: "一抽一串串、有青有紫、粒粒多汁嘅葡萄", s: "提" },
+            { n: "木瓜", img: getStorageImgUrl("fruits", "木瓜.jfif"), p: "🍈", u: "橙黃色果肉、清甜滋潤、常用嚟煲雪耳糖水", s: "木" },
+            { n: "梨", img: getStorageImgUrl("fruits", "梨.jfif"), p: "🍐", u: "黃綠色皮多水分、潤肺生津嘅沙梨雪梨", s: "梨" },
+            { n: "橙", img: getStorageImgUrl("fruits", "橙.jfif"), p: "🍊", u: "圓形橙皮、富含維他命C、切開一瓣瓣好解渴", s: "橙" },
+            { n: "芒果", img: getStorageImgUrl("fruits", "芒果.jfif"), p: "🥭", u: "黃色香甜果肉，常用嚟做楊枝甘露同甜品", s: "芒" },
+            { n: "菠蘿", img: getStorageImgUrl("fruits", "菠蘿.jfif"), p: "🍍", u: "外皮有硬刺眼、果肉酸甜有熱帶風味嘅鳳梨", s: "菠" },
+            { n: "西瓜", img: getStorageImgUrl("fruits", "西瓜.jfif"), p: "🍉", u: "綠色條紋大外皮、紅色肉多汁解暑嘅夏天水果", s: "西" },
+            { n: "香蕉", img: getStorageImgUrl("fruits", "香蕉.jfif"), p: "🍌", u: "黃色彎彎長條形、剝皮即食、猴子最鍾意", s: "香" }
+        ]
+    },
+    {
+        t: "健康安全",
+        categoryKey: "health_safety",
+        i: [
+            { n: "口罩", img: getStorageImgUrl("health_safety", "口罩.jfif"), p: "😷", u: "出街遮蓋口鼻防飛沫病菌傳播嘅防護用具", s: "口" },
+            { n: "平安鐘", img: getStorageImgUrl("health_safety", "平安鐘.jfif"), p: "🔔", u: "長者喺屋企緊急不適時一按即時通話求助嘅裝置", s: "平" },
+            { n: "拐杖", img: getStorageImgUrl("health_safety", "拐杖.jfif"), p: "🦯", u: "步履不穩手握借力輔助步行嘅手杖", s: "拐" },
+            { n: "暖水壺", img: getStorageImgUrl("health_safety", "暖水壺.jfif"), p: "🫖", u: "裝滾水長時間保溫，方便隨時飲用熱水", s: "暖" },
+            { n: "溫度計", img: getStorageImgUrl("health_safety", "溫度計.jfif"), p: "🌡️", u: "量度發燒或人體體溫嘅量度儀器", s: "溫" },
+            { n: "老花鏡", img: getStorageImgUrl("health_safety", "老花鏡.jfif"), p: "👓", u: "長者睇近距離細字報紙佩戴嘅凸透眼鏡", s: "老" },
+            { n: "藥盒", img: getStorageImgUrl("health_safety", "藥盒.jfif"), p: "💊", u: "分開星期一至日早午晚服用藥物嘅格仔小盒", s: "藥" },
+            { n: "血壓計", img: getStorageImgUrl("health_safety", "血壓計.jfif"), p: "🩺", u: "套喺手臂量度高壓低壓心跳數值嘅醫療儀器", s: "血" },
+            { n: "輪椅", img: getStorageImgUrl("health_safety", "輪椅.jfif"), p: "🦽", u: "行動不便時供坐低推行代步嘅有輪座椅", s: "輪" },
+            { n: "防滑拖鞋", img: getStorageImgUrl("health_safety", "防滑拖鞋.jfif"), p: "🩴", u: "鞋底有深凹凸花紋防止廁所浴室跣低跌倒嘅室內鞋", s: "防" }
+        ]
+    },
+    {
+        t: "興趣嗜好",
+        categoryKey: "hobbies",
+        i: [
+            { n: "影相", img: getStorageImgUrl("hobbies", "影相.jfif"), p: "📷", u: "用相機或手機按下快門記錄美好時光景象", s: "影" },
+            { n: "打太極", img: getStorageImgUrl("hobbies", "打太極.jfif"), p: "🥋", u: "公園晨運緩慢剛柔並濟、練氣強身嘅傳統武術", s: "打" },
+            { n: "散步", img: getStorageImgUrl("hobbies", "散步.jfif"), p: "🚶", u: "晚飯後悠閒慢步行走舒展筋骨", s: "散" },
+            { n: "書法", img: getStorageImgUrl("hobbies", "書法.jfif"), p: "🖌️", u: "用毛筆沾墨水喺宣紙上揮毫寫大字練習修心", s: "書" },
+            { n: "游水", img: getStorageImgUrl("hobbies", "游水.jfif"), p: "🏊", u: "喺泳池或沙灘水中全身運動強身健體", s: "游" },
+            { n: "煮餸", img: getStorageImgUrl("hobbies", "煮餸.jfif"), p: "🍳", u: "入廚房開火烹調美味家庭菜式給家人享用", s: "煮" },
+            { n: "種花", img: getStorageImgUrl("hobbies", "種花.jfif"), p: "🪴", u: "喺陽台盆栽泥土澆水施肥照料盆栽植物生長", s: "種" },
+            { n: "織毛衣", img: getStorageImgUrl("hobbies", "織毛衣.jfif"), p: "🧶", u: "用毛冷線同針編織溫暖保暖嘅毛衣背心", s: "織" },
+            { n: "行山", img: getStorageImgUrl("hobbies", "行山.jfif"), p: "🥾", u: "到郊野公園登高遠足呼吸新鮮空氣", s: "行" },
+            { n: "養雀", img: getStorageImgUrl("hobbies", "養雀.jfif"), p: "🦜", u: "帶住精美鳥籠去雀仔街或茶樓聽鳥鳴交流", s: "養" }
+        ]
+    },
+    {
+        t: "公共交通",
+        categoryKey: "transport",
+        i: [
+            { n: "人力三輪車", img: getStorageImgUrl("transport", "人力三輪車.jfif"), p: "🛺", u: "車夫喺前面踩單車、後面載客嘅懷舊特色交通", s: "人" },
+            { n: "叮叮電車", img: getStorageImgUrl("transport", "叮叮電車.jfif"), p: "🚋", u: "港島特有、行駛喺軌道上發出叮叮聲嘅雙層電車", s: "叮" },
+            { n: "單車", img: getStorageImgUrl("transport", "單車.jfif"), p: "🚲", u: "靠雙腳踩踏板驅動前進嘅兩輪代步車輛", s: "單" },
+            { n: "地鐵", img: getStorageImgUrl("transport", "地鐵.jfif"), p: "🚇", u: "行駛喺地底穿梭各區嘅快速地下鐵路系統", s: "地" },
+            { n: "天星小輪", img: getStorageImgUrl("transport", "天星小輪.jfif"), p: "⛴️", u: "往返尖沙咀中灣仔維多利亞港嘅百年傳統綠白渡輪", s: "天" },
+            { n: "小巴", img: getStorageImgUrl("transport", "小巴.jfif"), p: "🚐", u: "十六或十九座、隨叫隨停嘅紅頂綠頂公共小型巴士", s: "小" },
+            { n: "巴士", img: getStorageImgUrl("transport", "巴士.jfif"), p: "🚌", u: "行駛喺路面按固定站點載客嘅大容量雙層巴士", s: "巴" },
+            { n: "的士", img: getStorageImgUrl("transport", "的士.jfif"), p: "🚕", u: "招手即停跳錶計費嘅紅色出租私家車", s: "的" },
+            { n: "輕鐵", img: getStorageImgUrl("transport", "輕鐵.jfif"), p: "🚊", u: "行駛喺新界西北（屯門、元朗、天水圍）嘅地面輕軌", s: "輕" },
+            { n: "飛機", img: getStorageImgUrl("transport", "飛機.jfif"), p: "✈️", u: "喺天空中長途高速飛行出國旅行嘅航空客機", s: "飛" },
+            { n: "高鐵", img: getStorageImgUrl("transport", "高鐵.jfif"), p: "🚄", u: "由西九龍站直通內地城市嘅極速高速鐵路", s: "高" }
+        ]
+    }
+];
+
+// 全域 Loading 控制器
 function showLoading(msg) {
     var s = document.getElementById('global-spinner');
     var m = document.getElementById('spinner-msg');
@@ -547,21 +717,6 @@ function hideLoading() {
     var s = document.getElementById('global-spinner');
     if (s) s.style.display = 'none';
 }
-
-// Firebase 容錯初始化
-try {
-    if (window.firebase && !firebase.apps.length) {
-        firebase.initializeApp({
-            apiKey: "AIzaSyChx-YhFmqCLKwKAMCkFGwqEM-QhzKnpQE",
-            authDomain: "project-375db711-6596-4e87-9e8.firebaseapp.com",
-            projectId: "project-375db711-6596-4e87-9e8",
-            storageBucket: "project-375db711-6596-4e87-9e8.firebasestorage.app",
-            messagingSenderId: "842129952003",
-            appId: "1:842129952003:web:e6f3fd61d60f5dfd956d36"
-        });
-        db = firebase.firestore();
-    }
-} catch (e) {}
 
 // 登入驗證
 function checkAuth() {
@@ -747,7 +902,7 @@ function executeSOS() {
     });
 }
 
-// 雲端同步衝突解決機制 (比較 lastUpdated 時間戳，保護長者進度)
+// 雲端同步衝突解決機制 (時間戳比對)
 async function manualSync() {
     showLoading('正在比對雲端資料，請稍候…');
     var cName = currentUser ? currentUser.name : '陳伯伯';
@@ -774,7 +929,7 @@ async function manualSync() {
                 var cloudData = cloudDoc.data();
                 var cloudGold = cloudData.gold || 0;
                 
-                // 衝突解決：若雲端金幣較多（曾在另一設備訓練），取最高值合併
+                // 衝突解決：合併取最高金幣值
                 if (cloudGold > goldCount) {
                     goldCount = cloudGold;
                     document.getElementById('gold-val').innerText = goldCount;
@@ -941,7 +1096,7 @@ function detectFatigue(bsBuf, symBuf) {
     if (recent.length < 30) return { fatigue: false, level: 'low' };
     var mean = recent.reduce(function(a, b) { return a + b; }, 0) / recent.length;
     var variance = recent.reduce(function(s, v) { return s + Math.pow(v - mean, 2); }, 0) / recent.length;
-    let symmetryDrop = 0;
+    var symmetryDrop = 0;
     if (symBuf.length > 60) {
         var late = symBuf.slice(-30).reduce(function(a, b) { return a + b; }, 0) / 30;
         var early = symBuf.slice(-60, -30).reduce(function(a, b) { return a + b; }, 0) / 30;
@@ -983,7 +1138,7 @@ function renderDailyPlan() {
         items.push({ key: 'voice', label: '🎙️ 聲控發聲 (自相關 Jitter/Shimmer 檢測)', fn: "showGameUI('voice')" });
         if (p.time !== '5') items.push({ key: 'blow', label: '🎈 呼吸阻抗 10 次', fn: "showGameUI('blow')" });
     }
-    if (p.goal === 'cog' || p.goal === 'all') items.push({ key: 'cog', label: '🗣️ 階梯命名 3 題', fn: "showCogCatalog()" });
+    if (p.goal === 'cog' || p.goal === 'all') items.push({ key: 'cog', label: '🗣️ 階梯命名 3 題 (高清圖庫辨識)', fn: "showCogCatalog()" });
     if (p.time === '30' || p.goal === 'all') items.push({ key: 'scene', label: '📍 情境應對 1 組', fn: "showSceneCatalog()" });
 
     var today = new Date().toDateString();
@@ -1049,12 +1204,10 @@ function finishOnboarding() {
     speak('個人計劃已經準備好，一齊開始今日訓練！');
 }
 
-// MediaPipe 初始化（設備能力檢測：避開 Google Tensor/舊 GPU 崩潰）
+// MediaPipe 載入
 async function initFaceLandmarker() {
     if (faceLandmarker) return faceLandmarker;
     showLoading('正在準備 AI 視覺模型，請稍候…');
-    
-    // 檢測是否為低配或特定 Tensor 設備
     var isTensorOrLowEnd = /Pixel [678]|Mali|PowerVR/i.test(navigator.userAgent);
     var preferredDelegate = isTensorOrLowEnd ? 'CPU' : 'GPU';
 
@@ -1098,7 +1251,6 @@ async function initFaceLandmarker() {
     }
 }
 
-// 鼓腮 (cheekPuff) FACS 共激活幾何校準
 function calcGeometricCheekPuffEnhanced(landmarks, blendshapes) {
     if (!landmarks || landmarks.length < 468) return 0;
     var leftCheek = landmarks[234];
@@ -1123,7 +1275,6 @@ function calcGeometricCheekPuffEnhanced(landmarks, blendshapes) {
     return baseScore;
 }
 
-// 伸舌頭 (tongueOut) 唇顎三維垂直幾何擴張估算
 function calcGeometricTongueOut(landmarks) {
     if (!landmarks || landmarks.length < 468) return 0;
     var upperInnerLip = landmarks[13];
@@ -1191,9 +1342,7 @@ function calcGeometricSymmetry(landmarks) {
     return parseFloat(symmetry.toFixed(2));
 }
 
-// ==============================================================
-// 📊 時域自相關法 (Autocorrelation) 高精度 Jitter & RMS Shimmer 分析
-// ==============================================================
+// 時域自相關 Jitter & RMS Shimmer
 function analyzeAcousticBiomarkers(timeData, sampleRate) {
     sampleRate = sampleRate || 44100;
     var N = timeData.length;
@@ -1210,7 +1359,6 @@ function analyzeAcousticBiomarkers(timeData, sampleRate) {
     var minPeriod = Math.floor(sampleRate / 400); // 400 Hz
     var maxPeriod = Math.floor(sampleRate / 70);  // 70 Hz
 
-    // 1. 正規化自相關 (Normalized Autocorrelation) 尋找核心週期長度
     var bestLag = -1;
     var maxCorr = 0;
 
@@ -1234,7 +1382,6 @@ function analyzeAcousticBiomarkers(timeData, sampleRate) {
         return { jitter: 0.85, shimmer: 2.35, pdRisk: '音訊能量微弱' };
     }
 
-    // 2. 基於最佳自相關滯後長度切割單週期，計算相鄰週期微擾
     var cycleLength = bestLag;
     var periodDurations = [];
     var rmsAmplitudes = [];
@@ -1252,7 +1399,6 @@ function analyzeAcousticBiomarkers(timeData, sampleRate) {
         return { jitter: 0.90, shimmer: 2.40, pdRisk: '信號樣本不足' };
     }
 
-    // 計算精確 Jitter (local)
     var diffP = 0, sumP = 0;
     for (var p = 0; p < periodDurations.length - 1; p++) {
         diffP += Math.abs(periodDurations[p] - periodDurations[p + 1]);
@@ -1262,7 +1408,6 @@ function analyzeAcousticBiomarkers(timeData, sampleRate) {
     var meanP = sumP / periodDurations.length;
     var jitterVal = meanP > 0 ? (diffP / (periodDurations.length - 1)) / meanP : 0.01;
 
-    // 計算精確 Shimmer (RMS local)
     var diffA = 0, sumA = 0;
     for (var a = 0; a < rmsAmplitudes.length - 1; a++) {
         diffA += Math.abs(rmsAmplitudes[a] - rmsAmplitudes[a + 1]);
@@ -1404,299 +1549,13 @@ async function startToneContourTest(idx) {
     }
 }
 
-var mouthData = [
-    { n: "噘嘴", i: "😙", bs: "mouthPucker", d: "雙唇用力向前翹起，似吹口哨咁", thresh: 0.35 },
-    { n: "咧嘴", i: "😊", bs: "mouthSmile", d: "嘴角向兩邊拉開，露齒微笑", thresh: 0.40 },
-    { n: "鼓腮", i: "😗", bs: "cheekPuff", d: "兩頰含氣撐大（已啟用 FACS 共激活校準）", thresh: 0.30 },
-    { n: "張大口", i: "😲", bs: "jawOpen", d: "下巴放鬆，盡量擘大個口", thresh: 0.35 },
-    { n: "伸舌頭", i: "👅", bs: "tongueOut", d: "舌頭平直向前伸出（唇顎距離分析）", thresh: 0.28 },
-    { n: "抿嘴", i: "😐", bs: "mouthClose", d: "上下唇緊閉壓實", thresh: 0.40 },
-    { n: "吸腮 (魚嘴)", i: "😚", bs: "mouthFrown", d: "面頰向內吸，做出魚嘴動作", thresh: 0.25 },
-    { n: "舌尖向上", i: "⬆️", bs: "tongueUp", d: "舌尖向上舔上唇部位", thresh: 0.25 },
-    { n: "舌尖向下", i: "⬇️", bs: "tongueDown", d: "舌尖向外下方伸展", thresh: 0.25 },
-    { n: "露齒咬合", i: "😬", bs: "mouthSmile", d: "上下牙齒微合，用力橫向展現牙齒", thresh: 0.40 }
-];
-
-function showMouthUI() {
-    var secBtns = [5, 10, 15, 20].map(function(s) {
-        return '<button class="sub-btn" style="width:100px;background:' + (targetVal == s ? 'var(--apple-black)' : 'var(--apple-dark-gray)') + ';" onclick="targetVal=' + s + ';showMouthUI()">' + s + '秒</button>';
-    }).join('');
-
-    var cards = mouthData.map(function(m, idx) {
-        return '<div class="card-unit" onclick="openMouthAI(' + idx + ')"><span style="font-size:2.8rem;display:block;margin-bottom:4px;">' + m.i + '</span>' + m.n + '</div>';
-    }).join('');
-
-    setModal(
-        '<h2 style="font-size:1.7rem;margin-bottom:10px;">👄 AI 口肌視覺訓練</h2>' +
-        '<p style="font-size:1.05rem;color:var(--apple-dark-gray);">已啟用 478 Landmark FACS 幾何校準引擎</p>' +
-        '<div style="margin-bottom:18px;">' + secBtns + '</div>' +
-        '<div class="grid-10">' + cards + '</div>' +
-        '<button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:20px;height:56px;" onclick="closeAll()">返回主頁</button>'
-    );
-}
-
-async function openMouthAI(idx) {
-    var m = mouthData[idx];
-    currentMouthIdx = idx;
-    var adaptT = getAdaptiveThresh(m.bs, m.thresh);
-    currentMouthThresh = adaptT;
-
-    setModal(
-        '<h2 style="font-size:1.7rem;margin-bottom:4px;">' + m.n + '</h2>' +
-        '<div style="font-size:4rem;margin:6px 0;">' + m.i + '</div>' +
-        '<p id="timer-disp" style="font-size:1.4rem;font-weight:800;color:var(--apple-red);margin:0;">目標：' + targetVal + ' 秒</p>' +
-        '<p style="font-size:0.9rem;color:var(--apple-dark-gray);margin:4px 0;">🎯 個人化門檻：<b id="adapt-thresh-disp">' + Math.round(adaptT * 100) + '%</b></p>' +
-        '<div class="ai-vision-box" id="vision-wrap">' +
-            '<video id="v-feed" autoplay playsinline muted></video>' +
-            '<canvas id="v-feed-canvas"></canvas>' +
-            '<div class="ai-ring-wrap">' +
-                '<svg width="210" height="210" viewBox="0 0 210 210">' +
-                    '<circle stroke="rgba(255,255,255,0.2)" stroke-width="8" fill="transparent" r="95" cx="105" cy="105"/>' +
-                    '<circle id="progress-ring-circle" stroke="var(--apple-red)" stroke-width="8" stroke-dasharray="596.9" stroke-dashoffset="596.9" stroke-linecap="round" fill="transparent" r="95" cx="105" cy="105"/>' +
-                '</svg>' +
-                '<div class="ai-target-circle"></div>' +
-            '</div>' +
-            '<div class="pause-overlay" id="pause-overlay">' +
-                '<div style="font-size:2rem;">⏸️</div>' +
-                '<div style="font-size:1.2rem;font-weight:700;margin-top:8px;">已暫停</div>' +
-                '<button class="sub-btn" style="background:var(--apple-green);margin-top:12px;" onclick="resumeFaceAI()">繼續訓練</button>' +
-            '</div>' +
-        '</div>' +
-        '<div class="fatigue-banner" id="fatigue-banner">☕ 偵測到肌肉疲勞，已自動降低要求，建議飲啖水休息一下</div>' +
-        '<div class="blend-meter">' +
-            '<span class="blend-pill" id="bs-score">強度：--</span>' +
-            '<span class="blend-pill" id="sym-score">對稱度：--</span>' +
-        '</div>' +
-        '<p id="ai-stat" style="font-size:1.15rem;color:var(--apple-dark-gray);font-weight:700;">📸 正在啟動鏡頭…</p>' +
-        '<div style="margin-top:14px;">' +
-            '<button class="sub-btn" style="background:var(--apple-blue);" id="start-face-btn" onclick="startFaceAI(\'' + m.bs + '\', ' + idx + ')">開始偵測</button>' +
-            '<button class="sub-btn" style="background:var(--apple-orange);" id="pause-face-btn" onclick="pauseFaceAI()" disabled>暫停</button>' +
-            '<button class="sub-btn" style="background:var(--gold);color:#fff;" onclick="speak(\'' + m.d + '\')">動作提示</button>' +
-            '<button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="stopFaceCam();showMouthUI()">返回</button>' +
-        '</div>'
-    );
-
-    try {
-        await initFaceLandmarker();
-        faceCamStream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
-            audio: false
-        });
-        var vid = document.getElementById('v-feed');
-        if (vid) {
-            vid.srcObject = faceCamStream;
-            await vid.play();
-        }
-        var stat = document.getElementById('ai-stat');
-        if (stat) stat.innerText = '✅ 鏡頭已就緒，請按「開始偵測」';
-    } catch (e) {
-        var stat = document.getElementById('ai-stat');
-        if (stat) stat.innerText = '⚠️ 無法取得鏡頭，請確認權限設定';
-        toast('無法開啟鏡頭，請檢查權限');
-    }
-}
-
-function updateVisualProgressRing(score, liveThresh) {
-    var ring = document.getElementById('progress-ring-circle');
-    if (!ring) return;
-    var circumference = 2 * Math.PI * 95;
-    var percent = Math.min(1.0, Math.max(0, score / Math.max(0.01, liveThresh)));
-    var offset = circumference - (percent * circumference);
-    ring.style.strokeDashoffset = offset;
-    ring.style.stroke = score >= liveThresh ? "var(--apple-green)" : "var(--apple-red)";
-}
-
-function startFaceAI(bsType, idx) {
-    var m = mouthData[idx];
-    var timeLeft = (facePauseSnapshot && facePauseSnapshot.idx === idx) ? facePauseSnapshot.timeLeft : targetVal;
-    var holdAccum = 0;
-    var smoothedScore = 0;
-
-    if (!facePauseSnapshot || facePauseSnapshot.idx !== idx) {
-        blendshapeBuffer = [];
-        symmetryBuffer = [];
-    }
-    faceRunning = true;
-    facePaused = false;
-    facePauseSnapshot = null;
-
-    var liveThresh = getAdaptiveThresh(m.bs, m.thresh);
-    currentMouthThresh = liveThresh;
-
-    var btn = document.getElementById('start-face-btn');
-    var pauseBtn = document.getElementById('pause-face-btn');
-    if (btn) { btn.disabled = true; btn.innerText = '偵測中…'; }
-    if (pauseBtn) pauseBtn.disabled = false;
-
-    var video = document.getElementById('v-feed');
-    var canvas = document.getElementById('v-feed-canvas');
-    var ctx = canvas ? canvas.getContext('2d') : null;
-    var lastVideoTime = -1;
-    var fatigueNotified = false;
-
-    var loop = function() {
-        if (!faceRunning) return;
-        if (facePaused) { faceAnimId = requestAnimationFrame(loop); return; }
-
-        if (video && video.readyState >= 2) {
-            if (canvas && (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight)) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-            }
-            if (faceLandmarker && video.currentTime !== lastVideoTime) {
-                lastVideoTime = video.currentTime;
-                var result = faceLandmarker.detectForVideo(video, performance.now());
-                
-                var rawScore = getUnifiedMouthScore(result, bsType);
-                
-                var sym = (result && result.faceLandmarks && result.faceLandmarks.length) 
-                    ? calcGeometricSymmetry(result.faceLandmarks[0]) 
-                    : 0.95;
-
-                smoothedScore = smoothedScore === 0 ? rawScore : (smoothedScore * 0.7 + rawScore * 0.3);
-                var score = smoothedScore;
-
-                updateVisualProgressRing(score, liveThresh);
-
-                blendshapeBuffer.push(parseFloat(score.toFixed(3)));
-                symmetryBuffer.push(parseFloat(sym.toFixed(3)));
-                if (blendshapeBuffer.length > 300) blendshapeBuffer.shift();
-                if (symmetryBuffer.length > 300) symmetryBuffer.shift();
-
-                liveThresh = updateAdaptiveLive(bsType, m.thresh, blendshapeBuffer);
-                currentMouthThresh = liveThresh;
-                var atd = document.getElementById('adapt-thresh-disp');
-                if (atd) atd.textContent = Math.round(liveThresh * 100) + '%';
-
-                var fat = detectFatigue(blendshapeBuffer, symmetryBuffer);
-                var fb = document.getElementById('fatigue-banner');
-                if (fat.fatigue && fb) {
-                    fb.classList.add('show');
-                    if (!fatigueNotified) {
-                        fatigueNotified = true;
-                        liveThresh = Math.max(0.15, liveThresh - 0.08);
-                        currentMouthThresh = liveThresh;
-                        speak('放鬆飲啖水先，我已經為你調低咗門檻');
-                    }
-                }
-
-                var bsEl = document.getElementById('bs-score');
-                var syEl = document.getElementById('sym-score');
-                if (bsEl) {
-                    bsEl.textContent = '強度：' + Math.round(score * 100) + '%';
-                    bsEl.className = 'blend-pill ' + (score >= liveThresh ? 'good' : 'bad');
-                }
-                if (syEl) {
-                    syEl.textContent = '對稱度：' + Math.round(sym * 100) + '%';
-                    syEl.className = 'blend-pill ' + (sym >= 0.7 ? 'good' : 'bad');
-                }
-
-                if (ctx && result.faceLandmarks && result.faceLandmarks.length) {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = score >= liveThresh ? 'rgba(52,199,89,0.7)' : 'rgba(255,59,48,0.5)';
-                    for (var p = 0; p < result.faceLandmarks[0].length; p++) {
-                        var pt = result.faceLandmarks[0][p];
-                        ctx.beginPath();
-                        ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 1.2, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-
-                if (score >= liveThresh) {
-                    holdAccum += 1 / 30;
-                    if (holdAccum >= 1) {
-                        holdAccum -= 1;
-                        timeLeft--;
-                        window._faceTimeLeft = timeLeft;
-                        var tDisp = document.getElementById('timer-disp');
-                        if (tDisp) tDisp.innerText = '保持中：' + timeLeft + ' 秒';
-                        var stat = document.getElementById('ai-stat');
-                        if (stat) stat.innerText = '✅ 動作標準，請繼續保持！';
-                    }
-                } else {
-                    var stat = document.getElementById('ai-stat');
-                    if (stat) stat.innerText = '❌ 請對準畫面並用力做出動作';
-                }
-
-                if (timeLeft <= 0) {
-                    faceRunning = false;
-                    stopFaceCam();
-                    currentTrainingType = '口肌訓練：' + m.n;
-                    var avgBS = blendshapeBuffer.length ? (blendshapeBuffer.reduce(function(a, b) { return a + b; }, 0) / blendshapeBuffer.length) : 0;
-                    var avgSym = symmetryBuffer.length ? (symmetryBuffer.reduce(function(a, b) { return a + b; }, 0) / symmetryBuffer.length) : 0;
-                    
-                    addGold(50);
-                    markDaily('mouth');
-                    addHistory('口肌訓練：' + m.n, 50, [Math.round(avgBS * 100), Math.round(avgSym * 100)], m.bs, {
-                        avgBS: avgBS, avgSym: avgSym, finalThresh: liveThresh
-                    });
-                    showMouthResult(m.n, avgBS, avgSym, liveThresh);
-                    return;
-                }
-            }
-        }
-        faceAnimId = requestAnimationFrame(loop);
-    };
-    faceAnimId = requestAnimationFrame(loop);
-    speak('開始偵測，請做出動作並維持住');
-}
-
-function pauseFaceAI() {
-    if (!faceRunning) return;
-    facePaused = true;
-    facePauseSnapshot = {
-        idx: currentMouthIdx,
-        timeLeft: window._faceTimeLeft != null ? window._faceTimeLeft : targetVal
-    };
-    var ov = document.getElementById('pause-overlay');
-    if (ov) ov.classList.add('show');
-    toast('已暫停，隨時可以繼續');
-}
-
-function resumeFaceAI() {
-    facePaused = false;
-    var ov = document.getElementById('pause-overlay');
-    if (ov) ov.classList.remove('show');
-    speak('繼續維持動作');
-}
-
-function stopFaceCam() {
-    faceRunning = false;
-    facePaused = false;
-    if (faceAnimId) { cancelAnimationFrame(faceAnimId); faceAnimId = null; }
-    if (faceCamStream) {
-        faceCamStream.getTracks().forEach(function(t) { t.stop(); });
-        faceCamStream = null;
-    }
-}
-
-function showMouthResult(actionName, avgBS, avgSym, liveThresh) {
-    var stat = document.getElementById('ai-stat');
-    var rating = (avgBS >= liveThresh + 0.1 && avgSym >= 0.75) ? '優秀' : (avgBS >= liveThresh ? '良好' : '需加強');
-    var msg = rating === '優秀' ? '做得好標準！口部肌力好充足。' : (rating === '良好' ? '做得好好！繼續保持練習。' : '動作已經好接近，休息一陣再試！');
-    speak(msg);
-    if (stat) {
-        stat.innerHTML = '<div style="background:rgba(52,199,89,0.08);padding:16px;border-radius:14px;text-align:left;margin-top:10px;border:1px solid rgba(52,199,89,0.2);">' +
-            '<p style="font-size:1.15rem;margin:4px 0;">🌟 <b>評估結果：</b><span style="color:var(--apple-green);font-weight:800;">' + rating + '</span></p>' +
-            '<p style="font-size:1.05rem;margin:4px 0;">📢 ' + msg + '</p>' +
-            '<p style="font-size:0.9rem;color:var(--apple-dark-gray);">平均強度：' + Math.round(avgBS * 100) + '% ｜ 對稱度：' + Math.round(avgSym * 100) + '%</p>' +
-            '<p style="font-size:1.1rem;margin:8px 0 0;font-weight:800;color:var(--gold);">+50 金幣已存入雲端</p>' +
-        '</div>';
-    }
-}
-
-// 認知階梯命名
-var cogData = [
-    { t: "常見水果", i: [{ n: "蘋果", p: "🍎", u: "紅色甜甜，每日一個醫生遠離我", s: "蘋" }, { n: "香蕉", p: "🍌", u: "黃色長條形，猴子好鍾意食", s: "香" }, { n: "西瓜", p: "🍉", u: "夏天消暑，綠色皮紅色肉多汁", s: "西" }] },
-    { t: "公共交通", i: [{ n: "巴士", p: "🚌", u: "雙層或單層大車，可以載好多乘客", s: "巴" }, { n: "地鐵", p: "🚇", u: "行駛喺地底嘅快速鐵路", s: "地" }, { n: "的士", p: "🚕", u: "紅色的車，隨截隨停跳錶計錢", s: "的" }] }
-];
-
+// 階梯認知命名目錄與題目呈現（高清實物圖優先、Emoji 備援）
 function showCogCatalog() {
     var list = cogData.map(function(c, idx) {
-        return '<div class="card-unit" onclick="showCogItems(' + idx + ')">📂 ' + c.t + '</div>';
+        return '<div class="card-unit" onclick="showCogItems(' + idx + ')">📂 ' + c.t + ' <span style="font-size:0.85rem;color:var(--apple-dark-gray);display:block;margin-top:4px;">(' + c.i.length + ' 題實物圖庫)</span></div>';
     }).join('');
     setModal(
-        '<h2 style="font-size:1.7rem;margin-bottom:16px;">🗣️ 階梯認知命名</h2>' +
+        '<h2 style="font-size:1.7rem;margin-bottom:16px;">🗣️ 階梯認知命名 (實物圖庫版)</h2>' +
         '<div class="grid-10">' + list + '</div>' +
         '<button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:20px;height:56px;" onclick="closeAll()">返回主頁</button>'
     );
@@ -1704,7 +1563,8 @@ function showCogCatalog() {
 
 function showCogItems(cIdx) {
     var items = cogData[cIdx].i.map(function(item, idx) {
-        return '<div class="card-unit" onclick="runCogStep(1,' + cIdx + ',' + idx + ')"><span style="font-size:2.8rem;display:block;margin-bottom:4px;">' + item.p + '</span>' + item.n + '</div>';
+        var thumbImg = item.img ? '<img src="' + item.img + '" alt="' + item.n + '" style="width:64px;height:64px;object-fit:cover;border-radius:12px;margin:0 auto 6px;display:block;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\';"><span style="font-size:2.8rem;display:none;margin-bottom:4px;">' + item.p + '</span>' : '<span style="font-size:2.8rem;display:block;margin-bottom:4px;">' + item.p + '</span>';
+        return '<div class="card-unit" onclick="runCogStep(1,' + cIdx + ',' + idx + ')">' + thumbImg + item.n + '</div>';
     }).join('');
     setModal(
         '<h2 style="font-size:1.6rem;margin-bottom:14px;">' + cogData[cIdx].t + '</h2>' +
@@ -1716,8 +1576,20 @@ function showCogItems(cIdx) {
 function runCogStep(step, c, i) {
     var item = cogData[c].i[i];
     var displayTxt = step == 1 ? "呢件係咩物件？" : (step == 2 ? ("功能用途：" + item.u) : (step == 3 ? ("字首提示：" + item.s + "…") : item.n));
+    
+    // 高清 Firebase Storage 圖片優先渲染
+    var visualContent = '';
+    if (item.img) {
+        visualContent = '<div style="width:180px;height:180px;margin:10px auto;border-radius:18px;overflow:hidden;background:rgba(0,0,0,0.04);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.08);">' +
+            '<img src="' + item.img + '" alt="' + item.n + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\';">' +
+            '<div style="font-size:5.5rem;display:none;">' + item.p + '</div>' +
+        '</div>';
+    } else {
+        visualContent = '<div style="font-size:5rem;margin:10px 0;">' + item.p + '</div>';
+    }
+
     setModal(
-        '<div style="font-size:5rem;margin:10px 0;">' + item.p + '</div>' +
+        visualContent +
         '<div id="disp-area" style="font-size:1.45rem;font-weight:700;background:rgba(0,0,0,0.03);padding:18px;border-radius:16px;margin-bottom:16px;">' + displayTxt + '</div>' +
         '<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:6px;">' +
             '<button class="sub-btn" style="background:var(--gold);color:var(--apple-black);" onclick="runCogStep(' + Math.min(4, step + 1) + ', ' + c + ', ' + i + ')">💡 提示階梯</button>' +
@@ -1811,7 +1683,7 @@ function recScene(correct, idx) {
     });
 }
 
-// 聲控發聲 / 呼吸氣量 (採用自相關 Jitter / RMS Shimmer 分析)
+// 聲控發聲 / 呼吸氣量
 function showGameUI(type) {
     recordedScores = [];
     recordedBiomarkers = [];
@@ -1959,12 +1831,10 @@ async function primeMicrophoneForWebKit() {
     } catch (e) {}
 }
 
-// 語音作答 (指數退避重試 + Safari 跨平台無縫鍵盤降級)
 async function listenOnce(callback) {
     listenCallback = callback;
     var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     
-    // 若當前瀏覽器 (如 iOS Safari / Firefox) 不支援 SpeechRecognition，無縫切換內嵌輸入
     if (!SpeechRec) {
         showInlineSpeechInput();
         return;
@@ -2022,7 +1892,7 @@ function submitInlineSpeech() {
     listenCallback = null;
 }
 
-// 全域語音導航 (指數退避重試 + 長者友好 2800ms 寬容期)
+// 全域語音導航
 var backoffDelays = [300, 1000, 2000, 3500];
 var backoffIndex = 0;
 
@@ -2066,7 +1936,7 @@ async function loopVoiceCommand() {
         var r = new SpeechRec();
         r.lang = 'zh-HK';
         r.onresult = function(e) {
-            backoffIndex = 0; // 成功即重置重試計數
+            backoffIndex = 0;
             var t = (e.results[0][0].transcript || '').replace(/\s/g, '');
             
             if (/唔係|等等|再講|停|慢啲/.test(t)) {
@@ -2178,6 +2048,7 @@ function showRewardsUI() {
     );
 }
 
+// 跨 Session 臨床對話記憶引擎
 function buildTrainerContext() {
     var recent = sessionHistory.slice(-20);
     var streak = 1;
