@@ -537,22 +537,159 @@ window.cantoneseToneData = [
     { tone: 6, char: "事", desc: "第6聲 (陽去) · 中低平調", targetSlope: "flat_low" }
 ];
 
+function getCogImgUrl(cat, file) {
+    return "https://firebasestorage.googleapis.com/v0/b/" + window.BUCKET + "/o/cog_naming%2F" + cat + "%2F" + encodeURIComponent(file) + "?alt=media";
+}
+
+// 串接 Firebase Storage 之真實 10 大類別生活圖片
 window.cogData = [
     {
-        cat: "日常生活用品",
+        cat: "日常用品",
         i: [
-            { n: "茶杯", p: "🍵", u: "裝水或者熱茶飲", s: "茶", img: "" },
-            { n: "匙羹", p: "🥄", u: "畢湯或者食飯用", s: "匙", img: "" },
-            { n: "牙刷", p: "🪥", u: "早晚用嚟刷乾淨啲牙齒", s: "牙", img: "" },
-            { n: "眼鏡", p: "👓", u: "睇嘢唔清戴嚟睇報紙電視", s: "眼", img: "" }
+            { n: "八達通", p: "💳", u: "搭車買嘢嘟一嘟畀錢", s: "八", img: getCogImgUrl("daily_life", "八達通.jfif") },
+            { n: "剪刀", p: "✂️", u: "剪開膠袋或者線頭", s: "剪", img: getCogImgUrl("daily_life", "剪刀.jfif") },
+            { n: "手機", p: "📱", u: "同仔女打電話傾偈", s: "手", img: getCogImgUrl("daily_life", "手機.jfif") },
+            { n: "梳", p: "🪮", u: "朝早起身梳齊啲頭髮", s: "梳", img: getCogImgUrl("daily_life", "梳.jfif") },
+            { n: "毛巾", p: "🧖", u: "沖涼洗面抹乾抹淨", s: "毛", img: getCogImgUrl("daily_life", "毛巾.jfif") },
+            { n: "牙刷", p: "🪥", u: "早晚擠牙膏刷乾淨啲牙", s: "牙", img: getCogImgUrl("daily_life", "牙刷.jfif") },
+            { n: "筷子", p: "🥢", u: "食飯夾餸用嘅餐具", s: "筷", img: getCogImgUrl("daily_life", "筷子.jfif") },
+            { n: "鎖匙", p: "🔑", u: "出門口開門鎖門用", s: "鎖", img: getCogImgUrl("daily_life", "鎖匙.jfif") },
+            { n: "雨傘", p: "☂️", u: "落雨或者大太陽嗰陣開", s: "雨", img: getCogImgUrl("daily_life", "雨傘.jfif") },
+            { n: "飯碗", p: "🍚", u: "畢飯裝湯食飯必備", s: "飯", img: getCogImgUrl("daily_life", "飯碗.jfif") }
         ]
     },
     {
-        cat: "常見生果食物",
+        cat: "交通工具",
         i: [
-            { n: "香蕉", p: "🍌", u: "黃色、甜甜地好容易咬嘅生果", s: "香", img: "" },
-            { n: "蘋果", p: "🍎", u: "圓形紅卜卜好健康嘅生果", s: "蘋", img: "" },
-            { n: "白飯", p: "🍚", u: "每日三餐必食嘅主食", s: "白", img: "" }
+            { n: "的士", p: "🚕", u: "紅色或綠色載你直達目的地", s: "的", img: getCogImgUrl("transport", "的士.jfif") },
+            { n: "巴士", p: "🚌", u: "雙層載好多人周圍去嘅公共交通", s: "巴", img: getCogImgUrl("transport", "巴士.jfif") },
+            { n: "小巴", p: "🚐", u: "十六或十九座綠頂或紅頂客車", s: "小", img: getCogImgUrl("transport", "小巴.jfif") },
+            { n: "地鐵", p: "🚇", u: "地下走嘅列車，港鐵", s: "地", img: getCogImgUrl("transport", "地鐵.jfif") },
+            { n: "叮叮電車", p: "🚋", u: "喺港島街上行慢悠悠嘅雙層車", s: "叮", img: getCogImgUrl("transport", "叮叮電車.jfif") },
+            { n: "天星小輪", p: "⛴️", u: "往返中環尖沙咀嘅渡海輪", s: "天", img: getCogImgUrl("transport", "天星小輪.jfif") },
+            { n: "單車", p: "🚲", u: "踩踏板向前行嘅兩輪車", s: "單", img: getCogImgUrl("transport", "單車.jfif") },
+            { n: "飛機", p: "✈️", u: "天上面飛去外地旅行搭", s: "飛", img: getCogImgUrl("transport", "飛機.jfif") },
+            { n: "高鐵", p: "🚄", u: "西九龍出發高速直達內地", s: "高", img: getCogImgUrl("transport", "高鐵.jfif") },
+            { n: "輕鐵", p: "🚊", u: "新界屯門元朗路面行走嘅列車", s: "輕", img: getCogImgUrl("transport", "輕鐵.jfif") }
+        ]
+    },
+    {
+        cat: "水果",
+        i: [
+            { n: "香蕉", p: "🍌", u: "黃色甜甜地容易咬嘅長形生果", s: "香", img: getCogImgUrl("fruits", "香蕉.jfif") },
+            { n: "橙", p: "🍊", u: "圓形多汁豐富維他命C", s: "橙", img: getCogImgUrl("fruits", "橙.jfif") },
+            { n: "西瓜", p: "🍉", u: "夏天消暑紅肉多汁大生果", s: "西", img: getCogImgUrl("fruits", "西瓜.jfif") },
+            { n: "蘋果", p: "🍎", u: "日日食一個醫生遠離我", s: "蘋", img: getCogImgUrl("fruits", "Untitled-design-20-e1745534545813-658x677.webp") },
+            { n: "士多啤梨", p: "🍓", u: "紅卜卜表面有小黑點嘅酸甜生果", s: "士", img: getCogImgUrl("fruits", "士多啤梨.jfif") },
+            { n: "芒果", p: "🥭", u: "黃色香甜濃郁嘅熱帶生果", s: "芒", img: getCogImgUrl("fruits", "芒果.jfif") },
+            { n: "提子", p: "🍇", u: "一串串紫色或綠色一粒粒食", s: "提", img: getCogImgUrl("fruits", "提子.jfif") },
+            { n: "木瓜", p: "🍈", u: "橙紅肉好清甜滋潤有助消化", s: "木", img: getCogImgUrl("fruits", "木瓜.jfif") },
+            { n: "梨", p: "🍐", u: "好爽口清甜解渴生津嘅生果", s: "梨", img: getCogImgUrl("fruits", "梨.jfif") },
+            { n: "菠蘿", p: "🍍", u: "外皮刺手金黃多汁嘅生果", s: "菠", img: getCogImgUrl("fruits", "菠蘿.jfif") }
+        ]
+    },
+    {
+        cat: "動物朋友",
+        i: [
+            { n: "小狗", p: "🐕", u: "人類最好朋友，會汪汪叫守屋", s: "小", img: getCogImgUrl("animals", "小狗.jfif") },
+            { n: "貓咪", p: "🐈", u: "會喵喵叫鍾意捉老鼠嘅寵物", s: "貓", img: getCogImgUrl("animals", "貓咪.jfif") },
+            { n: "金魚", p: "🐟", u: "魚缸游嚟游去好靚嘅觀賞魚", s: "金", img: getCogImgUrl("animals", "金魚.jfif") },
+            { n: "烏龜", p: "🐢", u: "爬得好慢背住重重嘅硬殼", s: "烏", img: getCogImgUrl("animals", "烏龜.jfif") },
+            { n: "白兔", p: "🐇", u: "對耳好長鍾意食紅蘿蔔", s: "白", img: getCogImgUrl("animals", "白兔.jfif") },
+            { n: "雀仔", p: "🐦", u: "喺樹上吱吱喳喳叫會飛嘅鳥類", s: "雀", img: getCogImgUrl("animals", "雀仔.jfif") },
+            { n: "公雞", p: "🐓", u: "朝早天光啼叫報曉嘅家禽", s: "公", img: getCogImgUrl("animals", "公雞.jfif") },
+            { n: "大象", p: "🐘", u: "條鼻好長對耳好似把扇咁大", s: "大", img: getCogImgUrl("animals", "大象.jfif") },
+            { n: "熊貓", p: "🐼", u: "黑白兩色鍾意食竹葉嘅國寶", s: "熊", img: getCogImgUrl("animals", "熊貓.jfif") }
+        ]
+    },
+    {
+        cat: "健康與安全",
+        i: [
+            { n: "口罩", p: "😷", u: "出街戴住保護口鼻防細菌感染", s: "口", img: getCogImgUrl("health_safety", "口罩.jfif") },
+            { n: "拐杖", p: "🦯", u: "行路借力支撐防跌倒嘅輔具", s: "拐", img: getCogImgUrl("health_safety", "拐杖.jfif") },
+            { n: "血壓計", p: "🩺", u: "每日定時量度心跳同血壓數值", s: "血", img: getCogImgUrl("health_safety", "血壓計.jfif") },
+            { n: "藥盒", p: "💊", u: "分開早午晚分清楚每日食嘅藥", s: "藥", img: getCogImgUrl("health_safety", "藥盒.jfif") },
+            { n: "老花鏡", p: "👓", u: "睇報紙或者睇手機字體清晰啲", s: "老", img: getCogImgUrl("health_safety", "老花鏡.jfif") },
+            { n: "平安鐘", p: "🔔", u: "屋企跌倒有緊急事撳掣求助", s: "平", img: getCogImgUrl("health_safety", "平安鐘.jfif") },
+            { n: "輪椅", p: "🧑‍🦽", u: "出門方便代步坐住推行嘅座椅", s: "輪", img: getCogImgUrl("health_safety", "輪椅.jfif") },
+            { n: "暖水壺", p: "🫖", u: "裝住熱水隨時飲保溫保暖", s: "暖", img: getCogImgUrl("health_safety", "暖水壺.jfif") },
+            { n: "溫度計", p: "🌡️", u: "發燒嗰陣量度體溫", s: "溫", img: getCogImgUrl("health_safety", "溫度計.jfif") },
+            { n: "防滑拖鞋", p: "🩴", u: "沖涼房地下跣著住防跌倒", s: "防", img: getCogImgUrl("health_safety", "防滑拖鞋.jfif") }
+        ]
+    },
+    {
+        cat: "節慶活動",
+        i: [
+            { n: "利是", p: "🧧", u: "過年派畀晚輩長輩討吉利嘅紅封包", s: "利", img: getCogImgUrl("festivals", "利是.jfif") },
+            { n: "揮春", p: "📜", u: "新年貼喺門口寫住身體健康嘅紅紙", s: "揮", img: getCogImgUrl("festivals", "揮春.jfif") },
+            { n: "年糕", p: "🥞", u: "春節煎嚟食步步高陞嘅甜點", s: "年", img: getCogImgUrl("festivals", "年糕.jfif") },
+            { n: "月餅", p: "🥮", u: "中秋節賞月全家分甘同味", s: "月", img: getCogImgUrl("festivals", "月餅.jfif") },
+            { n: "糉", p: "🍙", u: "端午節用竹葉包糯米食嘅傳統食物", s: "糉", img: getCogImgUrl("festivals", "糉.jfif") },
+            { n: "湯圓", p: "🍡", u: "冬至元宵煮一碗全家團團圓圓", s: "湯", img: getCogImgUrl("festivals", "湯圓.jfif") },
+            { n: "花燈", p: "🏮", u: "中秋晚會點起色彩繽紛嘅燈籠", s: "花", img: getCogImgUrl("festivals", "花燈.jfif") },
+            { n: "舞獅", p: "🦁", u: "開市節慶敲鑼打鼓熱鬧助興表演", s: "舞", img: getCogImgUrl("festivals", "舞獅.jfif") },
+            { n: "龍舟", p: "🚣", u: "端午節海面健兒划槳競渡", s: "龍", img: getCogImgUrl("festivals", "龍舟.jfif") },
+            { n: "桃花", p: "🌸", u: "農曆年花市買返屋企行大運", s: "桃", img: getCogImgUrl("festivals", "桃花.jfif") }
+        ]
+    },
+    {
+        cat: "兒時回憶",
+        i: [
+            { n: "跳飛機", p: "✈️", u: "地下畫格仔掟沙包跳跳下玩", s: "跳", img: getCogImgUrl("childhood", "跳飛機.jfif") },
+            { n: "波子", p: "🔮", u: "玻璃珠彈嚟彈去童年地道遊戲", s: "波", img: getCogImgUrl("childhood", "波子.jfif") },
+            { n: "公仔紙", p: "🃏", u: "一張張拍地拍飛比高低嘅紙牌", s: "公", img: getCogImgUrl("childhood", "公仔紙.jfif") },
+            { n: "放風箏", p: "🪁", u: "好天草地起風嗰陣放上天飛", s: "放", img: getCogImgUrl("childhood", "放風箏.jfif") },
+            { n: "踢毽子", p: "🪶", u: "用腳踢帶羽毛嘅毽鍛鍊身手", s: "踢", img: getCogImgUrl("childhood", "踢毽子.jfif") },
+            { n: "陀螺", p: "🪵", u: "用繩纏住抽打喺地下旋轉", s: "陀", img: getCogImgUrl("childhood", "陀螺.jfif") },
+            { n: "吹泡泡", p: "🫧", u: "番梘水吹出彩虹泡泡", s: "吹", img: getCogImgUrl("childhood", "吹泡泡.jfif") },
+            { n: "竹蜻蜓", p: "🎋", u: "兩手搓一搓飛上天嘅竹木玩具", s: "竹", img: getCogImgUrl("childhood", "竹蜻蜓.jfif") },
+            { n: "撥浪鼓", p: "🥁", u: "搖起兩粒珠仔敲鼓響嘅童年樂器", s: "撥", img: getCogImgUrl("childhood", "撥浪鼓.jfif") },
+            { n: "鐵皮玩具", p: "🤖", u: "擰上鏈條會行會跳嘅懷舊鐵皮車", s: "鐵", img: getCogImgUrl("childhood", "鐵皮玩具.jfif") }
+        ]
+    },
+    {
+        cat: "興趣樂事",
+        i: [
+            { n: "打太極", p: "🧘", u: "朝早公園慢動作強身健體晨運", s: "打", img: getCogImgUrl("hobbies", "打太極.jfif") },
+            { n: "散步", p: "🚶", u: "飯後公園慢慢行下舒展筋骨", s: "散", img: getCogImgUrl("hobbies", "散步.jfif") },
+            { n: "書法", p: "🖌️", u: "文房四寶寫毛筆字修心養性", s: "書", img: getCogImgUrl("hobbies", "書法.jfif") },
+            { n: "種花", p: "🪴", u: "露台淋水養花草綠化生活", s: "種", img: getCogImgUrl("hobbies", "種花.jfif") },
+            { n: "煮餸", p: "🍳", u: "落廚煲靚湯煮好餸慰勞屋企人", s: "煮", img: getCogImgUrl("hobbies", "煮餸.jfif") },
+            { n: "影相", p: "📷", u: "帶相機記錄身邊美麗景色", s: "影", img: getCogImgUrl("hobbies", "影相.jfif") },
+            { n: "游水", p: "🏊", u: "泳池水中浮游減輕關節負擔", s: "游", img: getCogImgUrl("hobbies", "游水.jfif") },
+            { n: "行山", p: "⛰️", u: "周末親近大自然登高遠足", s: "行", img: getCogImgUrl("hobbies", "行山.jfif") },
+            { n: "織毛衣", p: "🧶", u: "親手織溫暖冷衫畀仔女孫仔", s: "織", img: getCogImgUrl("hobbies", "織毛衣.jfif") },
+            { n: "養雀", p: "🦜", u: "雀籠提去雀仔街同雀友品茶", s: "養", img: getCogImgUrl("hobbies", "養雀.jfif") }
+        ]
+    },
+    {
+        cat: "家庭親情",
+        i: [
+            { n: "爸爸", p: "👨", u: "撐起家庭遮風擋雨嘅慈父", s: "爸", img: getCogImgUrl("family", "爸爸.jfif") },
+            { n: "媽媽", p: "👩", u: "悉心照料家頭細務嘅慈母", s: "媽", img: getCogImgUrl("family", "媽媽.jfif") },
+            { n: "爺爺", p: "👴", u: "慈祥長輩教導晚輩做人道理", s: "爺", img: getCogImgUrl("family", "爺爺.jfif") },
+            { n: "嫲嫲", p: "👵", u: "痛錫孫仔孫女好煮得嘅長輩", s: "嫲", img: getCogImgUrl("family", "嫲嫲.jfif") },
+            { n: "乖孫", p: "🧒", u: "得意乖巧活潑好動嘅孫仔女", s: "乖", img: getCogImgUrl("family", "乖孫.jfif") },
+            { n: "哥哥", p: "👦", u: "照顧弟妹嘅家庭好兄長", s: "哥", img: getCogImgUrl("family", "哥哥.jfif") },
+            { n: "姐姐", p: "👧", u: "體貼細心照顧家人嘅好姐姐", s: "姐", img: getCogImgUrl("family", "姐姐.jfif") },
+            { n: "女婿", p: "🤵", u: "女兒的好伴侶孝順長輩", s: "女", img: getCogImgUrl("family", "女婿.jfif") },
+            { n: "媳婦", p: "👰", u: "娶入家門同甘共苦的好家人", s: "媳", img: getCogImgUrl("family", "媳婦.jfif") },
+            { n: "老友記", p: "🤝", u: "長者中心識嘅志同道合好朋友", s: "老", img: getCogImgUrl("family", "老友記.jfif") }
+        ]
+    },
+    {
+        cat: "心情與情緒",
+        i: [
+            { n: "高興", p: "😄", u: "眉開眼笑心花怒放好開心", s: "高", img: getCogImgUrl("emotions", "高興.jfif") },
+            { n: "傷心", p: "😢", u: "難過流淚情緒低落需要關懷", s: "傷", img: getCogImgUrl("emotions", "傷心.jfif") },
+            { n: "生氣", p: "😡", u: "好憤怒需要深呼吸放鬆心情", s: "生", img: getCogImgUrl("emotions", "生氣.jfif") },
+            { n: "害怕", p: "😨", u: "驚慌失措需要安全感同安慰", s: "害", img: getCogImgUrl("emotions", "害怕.jfif") },
+            { n: "放鬆", p: "😌", u: "聽音樂飲啖茶身心平靜舒泰", s: "放", img: getCogImgUrl("emotions", "放鬆.jfif") },
+            { n: "疲倦", p: "🥱", u: "打晒呵欠做完運動要小睡休息", s: "疲", img: getCogImgUrl("emotions", "疲倦.jfif") },
+            { n: "期待", p: "🤩", u: "等緊同屋企人放假飲茶好興奮", s: "期", img: getCogImgUrl("emotions", "期待.jfif") },
+            { n: "感激", p: "🙏", u: "多謝身邊人悉心照顧嘅感恩心", s: "感", img: getCogImgUrl("emotions", "感激.jfif") },
+            { n: "驚訝", p: "😲", u: "突然收到驚喜禮物意想不到", s: "驚", img: getCogImgUrl("emotions", "驚訝.jfif") },
+            { n: "憂心", p: "😟", u: "擔心健康牽掛晚輩心中不安", s: "憂", img: getCogImgUrl("emotions", "憂心.jfif") }
         ]
     }
 ];
@@ -701,7 +838,7 @@ window.sceneData = [
 ];
 
 // ==============================================================
-// 2. Firebase 安全動態載入（相容 runcode.htm 避免腳本標籤提早閉合）
+// 2. Firebase 安全動態載入
 // ==============================================================
 var db = null;
 (function initFirebaseSafely() {
@@ -1969,7 +2106,7 @@ function confirmSOS() {
     setModal(
         '<div style="padding:10px;">' +
             '<div style="font-size:4rem;color:var(--apple-red);margin-bottom:10px;">⚠️</div>' +
-            '<h2 style="font-size:1.8rem;margin-0 0 10px;color:var(--apple-red);">你係咪覺得唔舒服要搵人？</h2>' +
+            '<h2 style="font-size:1.8rem;margin:0 0 10px;color:var(--apple-red);">你係咪覺得唔舒服要搵人？</h2>' +
             '<p style="font-size:1.15rem;color:var(--apple-dark-gray);line-height:1.4;">撳「確認求助」會即刻傳短訊畀屋企人或當席社工。<br>唔小心撳到唔緊要，倒數 <b id="sos-countdown" style="font-size:1.4rem;color:var(--apple-red);">' + count + '</b> 秒會自動取消。</p>' +
             '<div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap;">' +
                 '<button class="sub-btn" style="background:var(--apple-red);font-size:1.2rem;min-width:160px;height:60px;" onclick="executeSOS()">🚨 確認求助</button>' +
