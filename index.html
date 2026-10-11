@@ -1183,7 +1183,7 @@ function getUnifiedMouthScore(result, bsType, canvasWidth, canvasHeight) {
 }
 
 // ==============================================================
-// 舌尖專用：人工確認 + 降挫敗機制
+// 舌尖專用：人工確認 + 降挫敗機制（完整版）
 // ==============================================================
 window.showTongueManualConfirm = function(m, avgBS, avgSym, liveThresh, reason) {
     var title = reason === "timeout" 
@@ -1325,6 +1325,7 @@ window.openMouthAI = async function(idx) {
         '</div>'
     );
 
+    // 舌尖動作溫馨提示
     if (m.bs === 'tongueUp' || m.bs === 'tongueDown' || m.bs === 'tongueOut') {
         setTimeout(function() {
             toast('溫馨提示：如果鏡頭睇唔準，完成後可以自己話「做得啱」');
@@ -1508,7 +1509,7 @@ window.startFaceAI = function(bsType, idx) {
                     if (stat) stat.innerText = "❌ 照住相片對準畫面，用力做出動作";
                 }
 
-                // 替換後的完成邏輯
+                // 完成邏輯（舌尖專用降挫敗機制）
                 if (timeLeft <= 0) {
                     faceRunning = false;
                     stopFaceCam();
@@ -1522,8 +1523,8 @@ window.startFaceAI = function(bsType, idx) {
                     currentTrainingType = '口肌訓練：' + m.n;
 
                     // ===== 舌尖專用降挫敗邏輯 =====
-                    var isTongue = (m.bs === 'tongueOut' || m.bs === 'tongueUp' || m.bs === 'tongueDown');
-                    if (isTongue && avgBS < liveThresh * 0.85) {
+                    var isTongueAction = (m.bs === 'tongueOut' || m.bs === 'tongueUp' || m.bs === 'tongueDown');
+                    if (isTongueAction && avgBS < liveThresh * 0.85) {
                         // AI 評分明顯偏低 → 彈出人工確認
                         showTongueManualConfirm(m, avgBS, avgSym, liveThresh, 'low_score');
                         return;
@@ -2649,7 +2650,7 @@ function showProgressUI() {
         '<div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">' +
             '<button class="sub-btn" style="background:var(--apple-green);" onclick="shareToFamily()">📲 分享畀屋企人</button>' +
             '<button class="sub-btn" style="background:var(--apple-blue);" onclick="printReport()">📋 檢視臨床摘要</button>' +
-            '<button class="sub-btn" style="background:var(--apple-black);" onclick="closeAll()">返去主頁</button>'
+            '<button class="sub-btn" style="background:var(--apple-black);" onclick="closeAll()">返去主頁</button>' +
         '</div>'
     );
 }
