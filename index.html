@@ -384,8 +384,9 @@
         .home-free { display: none; flex-direction: column; gap: 14px; width: 100%; }
         .home-free.show { display: flex; }
 
-        .daily-plan { background: linear-gradient(135deg, rgba(0,180,216,0.08), rgba(155,93,229,0.08)); border: 1px solid rgba(0,180,216,0.2); border-radius: var(--radius-md); padding: 16px; margin-bottom: 8px; text-align: left; width: 100%; }
-        .daily-plan h3 { margin: 0 0 8px; font-size: 1.15rem; }
+        .daily-plan { background: linear-gradient(135deg, rgba(0,113,227,0.08), rgba(155,93,229,0.08)); border: 1.5px solid rgba(0,113,227,0.2); border-radius: 20px; padding: 16px; margin-bottom: 4px; text-align: left; width: 100%; }
+        .daily-plan h3 { margin: 0; font-size: 1.15rem; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .daily-plan .auto-badge { font-size: 0.75rem; font-weight: 700; color: var(--apple-blue); background: rgba(0,113,227,0.12); padding: 4px 10px; border-radius: 8px; white-space: nowrap; }
         .daily-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 1rem; font-weight: 600; cursor: pointer; }
         .daily-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--apple-dark-gray); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
         .daily-check.done { background: var(--apple-green); border-color: var(--apple-green); color: #fff; }
@@ -396,6 +397,33 @@
         .daily-progress-fill {
             height: 100%; background: linear-gradient(90deg, var(--ai-blue), var(--apple-green)); transition: width 0.5s; border-radius: 5px;
         }
+
+        /* SwiftUI-inspired personalized tip */
+        .personalized-tip {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 16px; border-radius: 18px; width: 100%;
+            background: linear-gradient(90deg, rgba(255,149,0,0.12), rgba(255,204,0,0.08));
+            border: 1.5px solid rgba(255,149,0,0.3);
+            text-align: left;
+        }
+        .personalized-tip .tip-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+        .personalized-tip .tip-title { font-size: 1.05rem; font-weight: 800; margin: 0 0 4px; }
+        .personalized-tip .tip-text { font-size: 0.95rem; font-weight: 500; color: var(--apple-dark-gray); margin: 0; line-height: 1.4; }
+
+        /* Header redesign closer to SwiftUI */
+        header {
+            background: var(--paper);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.07);
+            padding: 14px 16px 12px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .header-title-block { margin: 4px 0 8px; }
+        .header-app-name { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.03em; margin: 0; }
+        .header-tagline { font-size: 0.95rem; font-weight: 600; color: #3d6b8c; margin: 2px 0 0; }
+        body.high-contrast .header-tagline { color: #ccc; }
 
         .zoomable-container {
             width: 220px; height: 220px;
@@ -478,15 +506,19 @@
     <div class="voice-mode-bar" id="voice-mode-bar">🎙️ 語音操作模式開咗喇 — 你可以同我講「開口肌」「開聲控」「睇進度」，想慢啲可以講「等等」</div>
     <header>
         <div id="time">00:00</div>
+        <div class="header-title-block">
+            <div class="header-app-name">Lohascare GeronTalk</div>
+            <div class="header-tagline">樂活智語 · 專科適應性言語復康系統</div>
+        </div>
         <div class="header-meta">
             <div>個案：<span id="u-name" style="color:var(--apple-black);font-weight:700;">---</span></div>
             <div>💰 金幣：<span id="gold-val" style="color:var(--gold);font-weight:800;">0</span></div>
         </div>
         <div class="header-btns">
             <button class="apple-pill-btn sos" onclick="confirmSOS()" aria-label="緊急求助">🆘 求助</button>
-            <button class="apple-pill-btn primary" onclick="showProgressUI()">📊 我嘅進度</button>
-            <button class="apple-pill-btn" onclick="manualSync()">💾 存入雲端</button>
-            <button class="apple-pill-btn" id="voice-toggle-btn" onclick="toggleVoiceMode()">🎙️ 語音操作</button>
+            <button class="apple-pill-btn primary" onclick="showProgressUI()">📊 進度</button>
+            <button class="apple-pill-btn" onclick="showDisclaimerModal()">📜 條款</button>
+            <button class="apple-pill-btn" id="voice-toggle-btn" onclick="toggleVoiceMode()">🎙️ 語音</button>
             <button class="apple-pill-btn danger" onclick="doLogout()">登出</button>
         </div>
         <div class="a11y-bar">
@@ -498,8 +530,20 @@
 
     <div class="nav-scroll">
         <div class="nav-grid">
+            <!-- 個人化提示卡片 (對齊 SwiftUI) -->
+            <div class="personalized-tip" id="personalized-tip-box">
+                <div class="tip-icon">✨</div>
+                <div>
+                    <p class="tip-title">今日個人化訓練建議</p>
+                    <p class="tip-text" id="personalized-tip-text">今日系統根據你昨日聲調表現，加強第 2、3 聲練習</p>
+                </div>
+            </div>
+
             <div class="daily-plan" id="daily-plan-box">
-                <h3>📋 今日建議你做嘅練習</h3>
+                <h3>
+                    <span>📋 今日建議你做嘅練習</span>
+                    <span class="auto-badge">系統自動調整</span>
+                </h3>
                 <div class="daily-progress-bar"><div class="daily-progress-fill" id="daily-progress-fill" style="width:0%"></div></div>
                 <p id="daily-progress-text" style="font-size:0.9rem;color:var(--apple-dark-gray);margin:0 0 8px;">完成度：0%</p>
                 <div id="daily-plan-items"><p style="color:var(--apple-dark-gray);font-size:0.95rem;">等陣，排緊練習…</p></div>
@@ -507,16 +551,19 @@
 
             <div class="home-core" id="home-core">
                 <button class="big-btn" style="background:var(--apple-blue);" onclick="startDailyTraining()">
-                    <span>▶️ 今日一鍵開始<br><span class="btn-sub">治療師為你安排好 · 由未完成項目開始</span></span>
+                    <span>▶️ 今日練習<br><span class="btn-sub">治療師為你安排好 · 一撳就開始</span></span>
                 </button>
                 <button class="big-btn" style="background:var(--speech-purple);" onclick="toggleFreePractice()">
-                    <span>📂 自選練習<br><span class="btn-sub">口肌 · 聲調 · 聲控 · 認字講嘢</span></span>
+                    <span id="free-practice-label">📂 自選練習<br><span class="btn-sub">口肌 · 聲調 · 認字講嘢 · 生活對答</span></span>
                 </button>
                 <button class="big-btn" style="background:var(--apple-green);" onclick="showProgressUI()">
                     <span>📊 我嘅進度<br><span class="btn-sub">睇返成效 · 分享畀仔女或社工</span></span>
                 </button>
                 <button class="big-btn" style="background:linear-gradient(135deg,#9b5de5,#00b4d8);" onclick="showTrainerChat()">
                     <span>💬 智語傾偈夥伴<br><span class="btn-sub">吹下水 · 暖下把口 · 互相打氣</span></span>
+                </button>
+                <button class="big-btn" style="background:#337f73;" onclick="showTherapistShare()">
+                    <span>👨‍⚕️ 分享畀治療師／家人<br><span class="btn-sub">一鍵匯出進度報告 · 邀請社工查看</span></span>
                 </button>
             </div>
 
@@ -597,7 +644,26 @@ window.cogData = [
             { n: "大象", p: "🐘", u: "有長長鼻子、耳仔好大嘅動物", s: "大", img: buildStorageUrl("animals", "大象.jfif") },
             { n: "小狗", p: "🐕", u: "會汪汪叫、好忠心睇門口嘅寵物", s: "狗", img: buildStorageUrl("animals", "小狗.jfif") },
             { n: "烏龜", p: "🐢", u: "背住厚厚硬殼、爬得好慢嘅動物", s: "烏", img: buildStorageUrl("animals", "烏龜.jfif") },
-            { n: "熊貓", p: "🐼", u: "黑白兩色、好鍾意食竹葉嘅國寶", s: "熊", img: buildStorageUrl("animals", "熊貓.jfif") }
+            { n: "熊貓", p: "🐼", u: "黑白兩色、好鍾意食竹葉嘅國寶", s: "熊", img: buildStorageUrl("animals", "熊貓.jfif") },
+            { n: "白兔", p: "🐇", u: "耳仔長長、對眼紅紅、鍾意食紅蘿蔔", s: "白", img: buildStorageUrl("animals", "白兔.jfif") },
+            { n: "貓咪", p: "🐈", u: "會喵喵叫、行路好輕巧嘅寵物", s: "貓", img: buildStorageUrl("animals", "貓咪.jfif") },
+            { n: "金魚", p: "🐟", u: "游喺魚缸入面、尾巴飄飄好靚嘅觀賞魚", s: "金", img: buildStorageUrl("animals", "金魚.jfif") },
+            { n: "雀仔", p: "🐦", u: "有羽毛同翼、會喺樹上吱吱叫飛翔", s: "雀", img: buildStorageUrl("animals", "雀仔.jfif") }
+        ]
+    },
+    {
+        cat: "童年回憶",
+        i: [
+            { n: "公仔紙", p: "🃏", u: "細個放學幾分錢一張、用手拍拍玩嘅紙牌", s: "公", img: buildStorageUrl("childhood", "公仔紙.jfif") },
+            { n: "吹泡泡", p: "🫧", u: "用肥皂水同圈圈吹出透明彩虹光球", s: "吹", img: buildStorageUrl("childhood", "吹泡泡.jfif") },
+            { n: "撥浪鼓", p: "🪘", u: "搖動會發出咚咚聲、哄細路開心嘅傳統玩具", s: "撥", img: buildStorageUrl("childhood", "撥浪鼓.jfif") },
+            { n: "放風箏", p: "🪁", u: "拉住長線、趁大風放上藍天飛翔", s: "風", img: buildStorageUrl("childhood", "放風箏.jfif") },
+            { n: "波子", p: "🔮", u: "一粒粒晶瑩剔透、喺地下彈嚟彈去嘅玻璃珠", s: "波", img: buildStorageUrl("childhood", "波子.jfif") },
+            { n: "竹蜻蜓", p: "🪵", u: "雙手一搓就旋轉飛上天嘅竹製玩具", s: "竹", img: buildStorageUrl("childhood", "竹蜻蜓.jfif") },
+            { n: "跳飛機", p: "✈️", u: "用粉筆喺地畫格子、單腳雙腳輪流跳嘅遊戲", s: "跳", img: buildStorageUrl("childhood", "跳飛機.jfif") },
+            { n: "踢毽子", p: "🪶", u: "有幾條彩色羽毛、用腳內側向上踢嘅運動", s: "踢", img: buildStorageUrl("childhood", "踢毽子.jfif") },
+            { n: "鐵皮玩具", p: "🤖", u: "上鏈之後會郁動行走嘅懷舊金屬玩具", s: "鐵", img: buildStorageUrl("childhood", "鐵皮玩具.jfif") },
+            { n: "陀螺", p: "🪀", u: "用繩纏住用力一抽、喺地下高速旋轉", s: "陀", img: buildStorageUrl("childhood", "陀螺.jfif") }
         ]
     },
     {
@@ -606,18 +672,119 @@ window.cogData = [
             { n: "八達通", p: "💳", u: "出街搭車買餸一嘟就得嘅感應付款卡", s: "八", img: buildStorageUrl("daily_life", "八達通.jfif") },
             { n: "剪刀", p: "✂️", u: "有兩個把手同刀鋒、用嚟剪開紙張布料", s: "剪", img: buildStorageUrl("daily_life", "剪刀.jfif") },
             { n: "手機", p: "📱", u: "隨身攜帶、打電話睇新聞同視像通話", s: "手", img: buildStorageUrl("daily_life", "手機.jfif") },
+            { n: "梳", p: "🪮", u: "梳理頭髮、整理儀容", s: "梳", img: buildStorageUrl("daily_life", "梳.jfif") },
+            { n: "毛巾", p: "🧖", u: "洗面抹身抹汗用嘅純棉布織品", s: "毛", img: buildStorageUrl("daily_life", "毛巾.jfif") },
+            { n: "牙刷", p: "🪥", u: "每日早晚擠牙膏用嚟清潔牙齒", s: "牙", img: buildStorageUrl("daily_life", "牙刷.jfif") },
+            { n: "筷子", p: "🥢", u: "成雙成對、夾餸食飯嘅傳統餐具", s: "筷", img: buildStorageUrl("daily_life", "筷子.jfif") },
             { n: "鎖匙", p: "🔑", u: "金屬製、插開大門防盜門", s: "鎖", img: buildStorageUrl("daily_life", "鎖匙.jfif") },
-            { n: "雨傘", p: "☂️", u: "落雨或者大太陽出街擔起擋風雨防曬", s: "雨", img: buildStorageUrl("daily_life", "雨傘.jfif") }
+            { n: "雨傘", p: "☂️", u: "落雨或者大太陽出街擔起擋風雨防曬", s: "雨", img: buildStorageUrl("daily_life", "雨傘.jfif") },
+            { n: "飯碗", p: "🍚", u: "盛載白飯、湯水用嘅陶瓷餐具", s: "飯", img: buildStorageUrl("daily_life", "飯碗.jfif") }
+        ]
+    },
+    {
+        cat: "情緒表情",
+        i: [
+            { n: "傷心", p: "😢", u: "遇到難過嘅事情、流眼淚心情低落", s: "傷", img: buildStorageUrl("emotions", "傷心.jfif") },
+            { n: "害怕", p: "😨", u: "見到危險或者恐懼嘅事情感到驚慌", s: "害", img: buildStorageUrl("emotions", "害怕.jfif") },
+            { n: "感激", p: "🙏", u: "真心多謝人哋嘅幫忙、內心充滿謝意", s: "感", img: buildStorageUrl("emotions", "感激.jfif") },
+            { n: "憂心", p: "😟", u: "掛住屋企人或身體情況、放唔低心頭大石", s: "憂", img: buildStorageUrl("emotions", "憂心.jfif") },
+            { n: "放鬆", p: "😌", u: "深呼吸坐低、個人覺得好平靜舒服", s: "放", img: buildStorageUrl("emotions", "放鬆.jfif") },
+            { n: "期待", p: "🤩", u: "好想快啲見到仔女或旅行、心裏面充滿希望", s: "期", img: buildStorageUrl("emotions", "期待.jfif") },
+            { n: "生氣", p: "😠", u: "遇到不公平或者唔順眼嘅事動怒火", s: "生", img: buildStorageUrl("emotions", "生氣.jfif") },
+            { n: "疲倦", p: "🥱", u: "做完運動或者行完街個人好想恰陣瞓覺", s: "疲", img: buildStorageUrl("emotions", "疲倦.jfif") },
+            { n: "驚訝", p: "😲", u: "見到意想不到嘅大驚喜睜大雙眼", s: "驚", img: buildStorageUrl("emotions", "驚訝.jfif") },
+            { n: "高興", p: "😄", u: "好開心、嘴角上揚笑逐顏開", s: "高", img: buildStorageUrl("emotions", "高興.jfif") }
         ]
     },
     {
         cat: "家庭親情",
         i: [
+            { n: "乖孫", p: "👦", u: "仔女嘅仔女、精靈活潑好錫長輩", s: "乖", img: buildStorageUrl("family", "乖孫.jfif") },
+            { n: "哥哥", p: "🧑", u: "屋企中年紀大過自己嘅男同胞", s: "哥", img: buildStorageUrl("family", "哥哥.jfif") },
+            { n: "女婿", p: "👨", u: "個女嘅丈夫、半個仔咁親", s: "女", img: buildStorageUrl("family", "女婿.jfif") },
+            { n: "姐姐", p: "👩", u: "年紀比自己大嘅親生姊姊", s: "姐", img: buildStorageUrl("family", "姐姐.jfif") },
+            { n: "媳婦", p: "👰", u: "個仔嘅太太、嫁入屋企嘅賢內助", s: "媳", img: buildStorageUrl("family", "媳婦.jfif") },
             { n: "媽媽", p: "🤱", u: "生養照顧自己長大、世上最偉大嘅母親", s: "媽", img: buildStorageUrl("family", "媽媽.jfif") },
+            { n: "嫲嫲", p: "👵", u: "父親嘅母親、慈祥關懷孫輩", s: "嫲", img: buildStorageUrl("family", "嫲嫲.jfif") },
             { n: "爸爸", p: "👨", u: "屋企撐起成頭家嘅父親", s: "爸", img: buildStorageUrl("family", "爸爸.jfif") },
             { n: "爺爺", p: "👴", u: "父親嘅父親、備受尊敬嘅長輩", s: "爺", img: buildStorageUrl("family", "爺爺.jfif") },
-            { n: "嫲嫲", p: "👵", u: "父親嘅母親、慈祥關懷孫輩", s: "嫲", img: buildStorageUrl("family", "嫲嫲.jfif") },
             { n: "老友記", p: "🤝", u: "一齊行街傾偈、相識幾十年嘅同齡好友", s: "老", img: buildStorageUrl("family", "老友記.jfif") }
+        ]
+    },
+    {
+        cat: "傳統節慶",
+        i: [
+            { n: "利是", p: "🧧", u: "過年長輩派畀後輩嘅紅色好意頭封包", s: "利", img: buildStorageUrl("festivals", "利是.jfif") },
+            { n: "年糕", p: "🥮", u: "新年煎嚟食、寓意年年高陞嘅甜點", s: "年", img: buildStorageUrl("festivals", "年糕.jfif") },
+            { n: "揮春", p: "🏮", u: "貼喺大門兩邊、寫滿吉祥字句嘅紅紙", s: "揮", img: buildStorageUrl("festivals", "揮春.jfif") },
+            { n: "月餅", p: "🥮", u: "八月十五中秋節賞月食嘅傳統圓形糕點", s: "月", img: buildStorageUrl("festivals", "月餅.jfif") },
+            { n: "桃花", p: "🌸", u: "新春年宵市場買返屋企擺放嘅粉紅吉祥花卉", s: "桃", img: buildStorageUrl("festivals", "桃花.jfif") },
+            { n: "湯圓", p: "🥣", u: "冬至或元宵全家食、象徵團團圓圓嘅甜品", s: "湯", img: buildStorageUrl("festivals", "湯圓.jfif") },
+            { n: "糉", p: "🍙", u: "五月初五端午節食、用竹葉包住糯米鹹蛋肉", s: "糉", img: buildStorageUrl("festivals", "糉.jfif") },
+            { n: "舞獅", p: "🦁", u: "熱鬧敲鑼打鼓、靈活採青慶祝嘅民間技藝", s: "舞", img: buildStorageUrl("festivals", "舞獅.jfif") },
+            { n: "花燈", p: "🏮", u: "中秋同元宵節提住玩嘅彩色發光燈飾", s: "花", img: buildStorageUrl("festivals", "花燈.jfif") },
+            { n: "龍舟", p: "🛶", u: "端午節健兒合力擊鼓划槳嘅水上競渡長舟", s: "龍", img: buildStorageUrl("festivals", "龍舟.jfif") }
+        ]
+    },
+    {
+        cat: "新鮮蔬果",
+        i: [
+            { n: "士多啤梨", p: "🍓", u: "紅卜卜、酸酸甜甜、表面有小黑籽嘅生果", s: "士", img: buildStorageUrl("fruits", "士多啤梨.jfif") },
+            { n: "提子", p: "🍇", u: "一串串圓形紫色或綠色、清甜多汁", s: "提", img: buildStorageUrl("fruits", "提子.jfif") },
+            { n: "木瓜", p: "🍈", u: "橙紅色肉、清甜滑溜兼潤肺通便", s: "木", img: buildStorageUrl("fruits", "木瓜.jfif") },
+            { n: "梨", p: "🍐", u: "多汁清甜、可以用嚟煲雪耳糖水潤喉", s: "梨", img: buildStorageUrl("fruits", "梨.jfif") },
+            { n: "橙", p: "🍊", u: "圓形橙色皮、豐富維他命C、好易剝皮食", s: "橙", img: buildStorageUrl("fruits", "橙.jfif") },
+            { n: "芒果", p: "🥭", u: "香甜濃郁黃色肉、夏天熱門生果", s: "芒", img: buildStorageUrl("fruits", "芒果.jfif") },
+            { n: "菠蘿", p: "🍍", u: "外皮有刺、果肉酸甜金黃", s: "菠", img: buildStorageUrl("fruits", "菠蘿.jfif") },
+            { n: "西瓜", p: "🍉", u: "好大個綠色條紋外皮、紅肉消暑解渴", s: "西", img: buildStorageUrl("fruits", "西瓜.jfif") },
+            { n: "香蕉", p: "🍌", u: "黃色彎彎像月亮、軟綿綿好易咬兼通便", s: "香", img: buildStorageUrl("fruits", "香蕉.jfif") },
+            { n: "蘋果", p: "🍎", u: "紅卜卜圓形、脆甜多汁、一日一個好健康", s: "蘋", img: buildStorageUrl("fruits", "蘋果.jfif") }
+        ]
+    },
+    {
+        cat: "健康護理",
+        i: [
+            { n: "口罩", p: "😷", u: "戴喺口鼻防病毒病菌與灰塵飛沫", s: "口", img: buildStorageUrl("health_safety", "口罩.jfif") },
+            { n: "平安鐘", p: "🔔", u: "長者喺屋企有事一按即刻接通求救中心", s: "平", img: buildStorageUrl("health_safety", "平安鐘.jfif") },
+            { n: "拐杖", p: "🦯", u: "出街行路幫手支撐平衡防跌倒", s: "拐", img: buildStorageUrl("health_safety", "拐杖.jfif") },
+            { n: "暖水壺", p: "🫖", u: "保溫鎖熱、隨時飲到溫熱開水", s: "暖", img: buildStorageUrl("health_safety", "暖水壺.jfif") },
+            { n: "溫度計", p: "🌡️", u: "夾喺腋下或探額頭量度有冇發燒發冷", s: "溫", img: buildStorageUrl("health_safety", "溫度計.jfif") },
+            { n: "老花鏡", p: "👓", u: "睇細字報紙或者睇藥水標籤專用眼鏡", s: "老", img: buildStorageUrl("health_safety", "老花鏡.jfif") },
+            { n: "藥盒", p: "💊", u: "分開早午晚分格放每日藥丸嘅收納盒", s: "藥", img: buildStorageUrl("health_safety", "藥盒.jfif") },
+            { n: "血壓計", p: "🩺", u: "綁喺手臂按掣量度上壓下壓與心跳", s: "血", img: buildStorageUrl("health_safety", "血壓計.jfif") },
+            { n: "輪椅", p: "♿", u: "方便行動不便長者出行代步嘅推動座椅", s: "輪", img: buildStorageUrl("health_safety", "輪椅.jfif") },
+            { n: "防滑拖鞋", p: "🩴", u: "鞋底有深紋防水橡膠、防止喺浴室廚房跣倒", s: "防", img: buildStorageUrl("health_safety", "防滑拖鞋.jfif") }
+        ]
+    },
+    {
+        cat: "興趣樂活",
+        i: [
+            { n: "影相", p: "📷", u: "用相機或手機記錄美麗風景同家人笑容", s: "影", img: buildStorageUrl("hobbies", "影相.jfif") },
+            { n: "打太極", p: "🥋", u: "朝早喺公園慢慢推手動作柔和嘅養生武術", s: "太", img: buildStorageUrl("hobbies", "打太極.jfif") },
+            { n: "散步", p: "🚶", u: "每日飯後慢步公園、活動筋骨呼吸新鮮空氣", s: "散", img: buildStorageUrl("hobbies", "散步.jfif") },
+            { n: "書法", p: "🖌️", u: "用毛筆沾墨水、喺宣紙上寫毛筆字修身養性", s: "書", img: buildStorageUrl("hobbies", "書法.jfif") },
+            { n: "游水", p: "🏊", u: "喺泳池浮水運動、全身伸展對關節極好", s: "游", img: buildStorageUrl("hobbies", "游水.jfif") },
+            { n: "煮餸", p: "🍳", u: "落鑊炒餸煲湯、煮美味飯菜畀家人食", s: "煮", img: buildStorageUrl("hobbies", "煮餸.jfif") },
+            { n: "種花", p: "🪴", u: "喺露台澆水施肥、照料盆栽開花展綠意", s: "種", img: buildStorageUrl("hobbies", "種花.jfif") },
+            { n: "織毛衣", p: "🧶", u: "拿住毛冷針手織溫暖頸巾背心", s: "織", img: buildStorageUrl("hobbies", "織毛衣.jfif") },
+            { n: "行山", p: "⛰️", u: "同朋友郊遊行山徑、飽覽自然美景", s: "行", img: buildStorageUrl("hobbies", "行山.jfif") },
+            { n: "養雀", p: "🦜", u: "提住木鳥籠去雀仔街、聽清脆鳥鳴好悠閒", s: "養", img: buildStorageUrl("hobbies", "養雀.jfif") }
+        ]
+    },
+    {
+        cat: "交通工具",
+        i: [
+            { n: "人力三輪車", p: "🛺", u: "懷舊人力踩踏代步、後面坐客嘅三輪車", s: "人", img: buildStorageUrl("transport", "人力三輪車.jfif") },
+            { n: "叮叮電車", p: "🚋", u: "行駛喺香港島地面雙層軌道、會叮叮響嘅交通工具", s: "電", img: buildStorageUrl("transport", "叮叮電車.jfif") },
+            { n: "單車", p: "🚲", u: "用腳踩腳踏、雙輪行駛嘅代步工具", s: "單", img: buildStorageUrl("transport", "單車.jfif") },
+            { n: "地鐵", p: "🚇", u: "地底高速穿梭港九新界嘅鐵路列車", s: "地", img: buildStorageUrl("transport", "地鐵.jfif") },
+            { n: "天星小輪", p: "⛴️", u: "往返尖沙咀與中環灣仔、歷史悠久嘅渡海客輪", s: "天", img: buildStorageUrl("transport", "天星小輪.jfif") },
+            { n: "小巴", p: "🚐", u: "十六至十九座、隨招隨停嘅紅色或綠色專線巴士", s: "小", img: buildStorageUrl("transport", "小巴.jfif") },
+            { n: "巴士", p: "🚌", u: "市面最普遍嘅雙層大型公共載客汽車", s: "巴", img: buildStorageUrl("transport", "巴士.jfif") },
+            { n: "的士", p: "🚕", u: "揚手即停、按咪錶收費嘅紅色／綠色出租汽車", s: "的", img: buildStorageUrl("transport", "的士.jfif") },
+            { n: "輕鐵", p: "🚊", u: "服務屯門同元朗市鎮路面行駛嘅輕型軌道車", s: "輕", img: buildStorageUrl("transport", "輕鐵.jfif") },
+            { n: "飛機", p: "✈️", u: "長途遠行飛越雲層飛上天嘅大型客運航機", s: "飛", img: buildStorageUrl("transport", "飛機.jfif") },
+            { n: "高鐵", p: "🚅", u: "由西九龍站直通內地城市嘅極速鐵路列車", s: "高", img: buildStorageUrl("transport", "高鐵.jfif") }
         ]
     }
 ];
@@ -631,7 +798,10 @@ window.sceneData = [
             "到咗喇，喺前面落車得唔得？",
             "幾多錢呀？",
             "唔該找贖。",
-            "唔該晒，司機。"
+            "唔該晒，司機。",
+            "可唔可以喺前面個燈位停一停？",
+            "呢度落車近唔近地鐵站？",
+            "麻煩開慢啲，我唔趕時間。"
         ]
     },
     {
@@ -641,7 +811,11 @@ window.sceneData = [
             "呢個幾多錢一斤？",
             "可唔可以幫我攞個膠袋？",
             "唔該，我想買半斤豬肉。",
-            "我想用八達通畀錢。"
+            "呢啲生果新唔新鮮？",
+            "有冇特價呀？",
+            "唔該，幫我秤一秤。",
+            "我想用八達通畀錢。",
+            "唔該晒，我自己攞就得喇。"
         ]
     },
     {
@@ -651,7 +825,53 @@ window.sceneData = [
             "我瞓得唔好，成晚醒。",
             "呢隻藥要食幾多次？",
             "有冇副作用呀？",
+            "唔該，我想攞多啲藥。",
+            "我下次幾時覆診？",
+            "使唔使戒口？",
+            "我血壓有冇問題？",
             "唔該晒，醫生。"
+        ]
+    },
+    {
+        t: "茶樓飲茶點心",
+        q: [
+            "唔該，兩位呀。",
+            "有冇靠窗嘅位？",
+            "唔該，一壺普洱。",
+            "我想叫蝦餃、燒賣同叉燒包。",
+            "唔該，俾多一籠鳳爪。",
+            "啲點心嚟齊未呀？",
+            "唔該，加多一壺水。",
+            "埋單唔該。",
+            "可唔可以分開兩張單？"
+        ]
+    },
+    {
+        t: "銀行／便利店",
+        q: [
+            "唔該，我想攞錢。",
+            "我想打簿。",
+            "呢部提款機收唔收手續費？",
+            "唔該，我想入錢。",
+            "我想買張電話卡。",
+            "唔該，幫我增值八達通。",
+            "有冇報紙賣？",
+            "唔該，我想買支水。",
+            "唔該晒，唔使袋喇。"
+        ]
+    },
+    {
+        t: "搭巴士／港鐵",
+        q: [
+            "唔該，呢架車去唔去旺角？",
+            "去地鐵站要搭幾個站？",
+            "唔該，我想問出口喺邊度？",
+            "呢度有冇電梯？",
+            "唔該，我想買張單程票。",
+            "長者八達通有冇優惠？",
+            "唔該，落車要唔要按鐘？",
+            "呢班車幾耐一班？",
+            "唔該，邊個出口近街市？"
         ]
     },
     {
@@ -660,8 +880,54 @@ window.sceneData = [
             "喂，係我呀，你食咗飯未？",
             "你今晚返唔返嚟食飯？",
             "我今日去咗覆診，醫生話冇乜大礙。",
+            "你得閒打返俾我。",
+            "我電話就快冇電，講住先。",
             "天氣轉涼，記住著多件衫。",
+            "你聽日使唔使返工？",
+            "我得閒會去公園行下。",
             "好喇，唔阻你喇，拜拜。"
+        ]
+    },
+    {
+        t: "公園同朋友傾偈",
+        q: [
+            "早晨呀，今日咁早嘅？",
+            "你食咗早餐未呀？",
+            "近排身體點呀？",
+            "你個孫仔讀幾年級喇？",
+            "今日天氣幾好，行下都好。",
+            "你平時喺邊度做運動？",
+            "聽日一齊飲茶好唔好？",
+            "我差唔多要返屋企煮飯喇。",
+            "好，下次再傾，拜拜。"
+        ]
+    },
+    {
+        t: "買藥／藥房",
+        q: [
+            "唔該，我想買頭痛藥。",
+            "呢隻藥一日食幾次？",
+            "有冇啲冇咁傷胃嘅藥？",
+            "我想買咳水。",
+            "呢隻藥使唔使醫生紙？",
+            "有冇藥膏搽關節痛？",
+            "唔該，我想買膠布。",
+            "呢啲藥可唔可以同血壓藥一齊食？",
+            "唔該晒，總共幾多錢？"
+        ]
+    },
+    {
+        t: "餐廳食晏",
+        q: [
+            "唔該，一位呀。",
+            "有冇今日嘅午餐？",
+            "我想叫個叉燒飯。",
+            "唔該，少飯。",
+            "凍檸茶少甜。",
+            "唔該，俾杯熱水我。",
+            "可唔可以拎走？",
+            "埋單唔該。",
+            "唔該晒，食物好好食。"
         ]
     }
 ];
@@ -1309,35 +1575,35 @@ window.startFaceAI = function(bsType, idx) {
                         var tip = window.currentTongueTipPoint.tongueTip;
                         var isAligned = window.currentTongueTipPoint.isAligned;
 
-                        // === 超大綠色追蹤圈（長者易見）===
+                        // === 綠色追蹤圈：加粗線條，大小適中 ===
                         ctx.beginPath();
-                        ctx.arc(tip.x, tip.y, 42, 0, Math.PI * 2);
+                        ctx.arc(tip.x, tip.y, 30, 0, Math.PI * 2);
                         ctx.strokeStyle = isAligned ? "rgba(52,199,89,0.95)" : "rgba(255,149,0,0.92)";
-                        ctx.lineWidth = 8;
+                        ctx.lineWidth = 11;  // 明顯加粗
                         ctx.stroke();
 
                         // 內層半透明填充
                         ctx.beginPath();
-                        ctx.arc(tip.x, tip.y, 38, 0, Math.PI * 2);
-                        ctx.fillStyle = isAligned ? "rgba(52,199,89,0.22)" : "rgba(255,149,0,0.18)";
+                        ctx.arc(tip.x, tip.y, 26, 0, Math.PI * 2);
+                        ctx.fillStyle = isAligned ? "rgba(52,199,89,0.20)" : "rgba(255,149,0,0.16)";
                         ctx.fill();
 
-                        // 中心士多啤梨 🍓（取代細黑圈，加大）
+                        // 中心士多啤梨 🍓（縮小至適中）
                         ctx.save();
                         ctx.translate(tip.x, tip.y);
-                        ctx.scale(-1, 1); // 鏡像校正，防止左右相反
-                        ctx.font = "48px -apple-system, BlinkMacSystemFont, sans-serif";
+                        ctx.scale(-1, 1);
+                        ctx.font = "28px -apple-system, BlinkMacSystemFont, sans-serif";
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
-                        ctx.fillText("🍓", 0, 3);
+                        ctx.fillText("🍓", 0, 2);
                         ctx.restore();
 
-                        // 方向提示 emoji（偏右上方）
+                        // 方向提示 emoji
                         var iconTxt = bsType === "tongueUp" ? "⬆️" : (bsType === "tongueDown" ? "⬇️" : "👅");
                         ctx.save();
-                        ctx.translate(tip.x + 48, tip.y - 10);
+                        ctx.translate(tip.x + 38, tip.y - 6);
                         ctx.scale(-1, 1);
-                        ctx.font = "26px -apple-system, BlinkMacSystemFont, sans-serif";
+                        ctx.font = "20px -apple-system, BlinkMacSystemFont, sans-serif";
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
                         ctx.fillText(iconTxt, 0, 0);
@@ -2283,9 +2549,15 @@ function detectFatigue(bsBuf, symBuf) {
 
 function toggleFreePractice() {
     var free = document.getElementById("home-free");
+    var label = document.getElementById("free-practice-label");
     if (!free) return;
     free.classList.toggle("show");
-    if (free.classList.contains("show")) speak("想自己揀邊樣練習？");
+    if (free.classList.contains("show")) {
+        if (label) label.innerHTML = '⬆️ 收起自選練習<br><span class="btn-sub">口肌 · 聲調 · 認字講嘢 · 生活對答</span>';
+        speak("想自己揀邊樣練習？");
+    } else {
+        if (label) label.innerHTML = '📂 自選練習<br><span class="btn-sub">口肌 · 聲調 · 認字講嘢 · 生活對答</span>';
+    }
 }
 
 function startDailyTraining() {
@@ -2725,9 +2997,93 @@ function setModal(html) {
 // ==============================================================
 // 12. 系統啟動初始化
 // ==============================================================
+
+// ========== SwiftUI 對齊：個人化提示、免責、治療師分享 ==========
+function updatePersonalizedTip() {
+    var tips = [
+        "今日系統根據你昨日聲調表現，加強第 2、3 聲練習",
+        "你口肌靈活度有進步，今日加多一組雙唇練習",
+        "生活對答練習建議今日重點練「去街市」場景",
+        "聲調穩定度提升中，今日加入第 4、6 聲對比練習",
+        "今日建議先做口肌再練聲調，效果會更好"
+    ];
+    var el = document.getElementById("personalized-tip-text");
+    if (el) el.textContent = tips[Math.floor(Math.random() * tips.length)];
+}
+
+function showDisclaimerModal() {
+    setModal(
+        '<div style="text-align:left;">' +
+        '<h2 style="font-size:1.5rem;margin-bottom:12px;text-align:center;">使用條款及私隱政策</h2>' +
+        '<div style="background:rgba(255,59,48,0.08);border:1.5px solid rgba(255,59,48,0.3);border-radius:14px;padding:14px;margin-bottom:14px;">' +
+            '<p style="font-weight:800;color:var(--apple-red);margin:0 0 8px;">⚠️ 重要醫療免責聲明</p>' +
+            '<p style="font-size:0.95rem;margin:0;line-height:1.45;">本應用程式所提供之發音練習、語音輔助及日常對話內容，<b>僅供認知訓練、社交陪伴及生活輔助參考之用，絕非專業醫療診斷、治療建議或言語治療評估</b>。</p>' +
+            '<p style="font-size:0.9rem;color:var(--apple-dark-gray);margin:8px 0 0;line-height:1.4;">若長者出現吞嚥困難、突發性失語、中風徵兆或認知障礙急速惡化，請即向註冊醫生或專業言語治療師求診。</p>' +
+        '</div>' +
+        '<div style="background:rgba(0,0,0,0.04);border-radius:14px;padding:14px;margin-bottom:14px;">' +
+            '<p style="font-weight:800;margin:0 0 8px;">🔒 私隱權保障政策</p>' +
+            '<p style="font-size:0.9rem;margin:0 0 6px;">• 語音識別僅用於即時辨識發音是否清晰，絕不會轉售予第三方。</p>' +
+            '<p style="font-size:0.9rem;margin:0;">• 數據以安全加密通道傳輸，保障個人私隱。</p>' +
+        '</div>' +
+        '<button class="sub-btn" style="background:var(--apple-blue);width:100%;height:54px;" onclick="agreeDisclaimer()">我明白並同意上述條款</button>' +
+        '<button class="sub-btn" style="background:var(--apple-dark-gray);width:100%;margin-top:8px;" onclick="closeAll()">關閉</button>' +
+        '</div>'
+    );
+}
+
+function agreeDisclaimer() {
+    localStorage.setItem("lohak_disclaimer_agreed", "1");
+    closeAll();
+    toast("多謝同意條款，可以開始練習喇");
+}
+
+function showTherapistShare() {
+    var name = currentUser ? currentUser.name : "長者";
+    var dateStr = new Date().toLocaleDateString("zh-HK");
+    var report = "📋【Lohascare 樂活智語 · 言語復康訓練週報】\n" +
+        "報告日期：" + dateStr + "\n" +
+        "個案：" + name + "\n" +
+        "----------------------------------\n" +
+        "【本週訓練進度摘要】\n" +
+        "• 累計完成練習：" + sessionHistory.length + " 次\n" +
+        "• 目前獎勵金幣：" + goldCount + " 枚\n" +
+        "• 口肌／聲調／生活對答練習持續進行中\n" +
+        "----------------------------------\n" +
+        "⚠️ 本報告數據由演算法自動統計，僅供居家復康參考，絕非臨床醫療診斷。";
+
+    setModal(
+        '<h2 style="font-size:1.5rem;margin-bottom:8px;">👨‍⚕️ 分享畀治療師／家人</h2>' +
+        '<p style="font-size:1rem;color:var(--apple-dark-gray);margin-bottom:14px;">將長者日常嘅口肌、聲調同生活對答練習紀錄，一鍵匯出分享。</p>' +
+        '<div style="background:rgba(0,0,0,0.04);border-radius:14px;padding:14px;text-align:left;font-size:0.9rem;white-space:pre-wrap;max-height:220px;overflow-y:auto;margin-bottom:14px;">' + report.replace(/\n/g, "<br>") + '</div>' +
+        '<button class="sub-btn" style="background:var(--apple-blue);width:100%;height:54px;" onclick="shareReportText()">📤 輸出並分享訓練週報</button>' +
+        '<button class="sub-btn" style="background:rgba(0,0,0,0.1);color:var(--apple-black);width:100%;margin-top:8px;" onclick="copyReportText()">複製進度文字至剪貼簿</button>' +
+        '<button class="sub-btn" style="background:var(--apple-dark-gray);width:100%;margin-top:8px;" onclick="closeAll()">返去主頁</button>'
+    );
+    window._lastReportText = report.replace(/\\n/g, "\n");
+}
+
+function shareReportText() {
+    var text = window._lastReportText || "";
+    if (navigator.share) {
+        navigator.share({ title: "Lohascare 復康進度週報", text: text }).catch(function(){});
+    } else {
+        window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+    }
+}
+
+function copyReportText() {
+    var text = window._lastReportText || "";
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function(){ toast("✅ 已複製完整報告"); });
+    } else {
+        toast("請手動選取文字複製");
+    }
+}
+
 window.onload = function () {
     loadA11y();
     loadLocal();
+    updatePersonalizedTip();
     setInterval(function() {
         var el = document.getElementById("time");
         if (el) el.innerText = new Date().toTimeString().slice(0, 5);
@@ -2736,6 +3092,11 @@ window.onload = function () {
     // 預載語音
     if ("speechSynthesis" in window) {
         window.speechSynthesis.getVoices();
+    }
+
+    // 首次使用顯示免責聲明
+    if (localStorage.getItem("lohak_disclaimer_agreed") !== "1") {
+        setTimeout(function(){ showDisclaimerModal(); }, 600);
     }
 };
 </script>
