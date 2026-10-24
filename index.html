@@ -218,14 +218,15 @@
         .ai-ring-wrap {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 210px; height: 210px;
+            width: 280px; height: 280px;
             pointer-events: none; z-index: 3;
         }
         .ai-target-circle {
-            position: absolute; inset: 5px;
-            border: 4px dashed rgba(255, 59, 48, 0.6); border-radius: 50%;
+            position: absolute; inset: 6px;
+            border: 9px dashed rgba(52, 199, 89, 0.85); border-radius: 50%;
             pointer-events: none;
-            animation: rotateDashed 20s linear infinite;
+            animation: rotateDashed 18s linear infinite;
+            box-shadow: 0 0 16px rgba(52, 199, 89, 0.45);
         }
         @keyframes rotateDashed {
             from { transform: rotate(0deg); }
@@ -835,7 +836,8 @@ function playGentleChime() {
 function updateVisualProgressRing(score, thresh) {
     var circle = document.getElementById("progress-ring-circle");
     if (!circle) return;
-    var maxOffset = 596.9;
+    // 對應最新 SVG r=128 的圓周長 ≈ 2 * π * 128 ≈ 804.2
+    var maxOffset = 804.2;
     var ratio = Math.min(1.0, score / Math.max(0.01, thresh));
     circle.style.strokeDashoffset = maxOffset * (1 - ratio);
     circle.style.stroke = score >= thresh ? "var(--apple-green)" : "var(--apple-red)";
@@ -874,6 +876,7 @@ function analyzeAcousticBiomarkers(timeData, sampleRate) {
 function detectTongueLandmarkAndScore(landmarks, canvasWidth, canvasHeight, direction) {
     if (!landmarks || landmarks.length < 468) return { score: 0, tongueTip: null, isAligned: false };
 
+    // 使用更多 landmarks 提升穩定性
     var upperInner = landmarks[13];
     var lowerInner = landmarks[14];
     var lowerOuter = landmarks[17];
@@ -881,6 +884,10 @@ function detectTongueLandmarkAndScore(landmarks, canvasWidth, canvasHeight, dire
     var rightCorner = landmarks[308];
     var chin = landmarks[152];
     var nose = landmarks[1];
+    // 額外點：上唇外側、下唇外側
+    var upperOuter = landmarks[12] || upperInner;
+    var mouthLeft = landmarks[61] || leftCorner;
+    var mouthRight = landmarks[291] || rightCorner;
 
     var noseChinDist = Math.abs(chin.y - nose.y);
     if (noseChinDist < 0.001) return { score: 0, tongueTip: null, isAligned: false };
@@ -889,7 +896,8 @@ function detectTongueLandmarkAndScore(landmarks, canvasWidth, canvasHeight, dire
     var mouthCenterX = (leftCorner.x + rightCorner.x) / 2;
     var lipOpenRatio = Math.abs(lowerInner.y - upperInner.y) / noseChinDist;
 
-    var outScore = Math.min(1.0, Math.max(0, (lipOpenRatio - 0.06) * 5.0));
+    // 開口程度分數（長者較易達標）
+    var outScore = Math.min(1.0, Math.max(0, (lipOpenRatio - 0.04) * 6.0));
 
     var tongueTipY = mouthCenterY;
     var tongueTipX = mouthCenterX;
@@ -897,29 +905,34 @@ function detectTongueLandmarkAndScore(landmarks, canvasWidth, canvasHeight, dire
     var directionScore = 0;
 
     if (direction === "tongueUp") {
-        var upOffset = (mouthCenterY - upperInner.y);
-        tongueTipY = upperInner.y - (upOffset * 0.8) - (lipOpenRatio * 0.04);
+        // 更積極估算舌尖向上位置：從上唇再往上推
+        var upOffset = Math.max(0.01, mouthCenterY - upperInner.y);
+        tongueTipY = upperInner.y - (upOffset * 1.35) - (lipOpenRatio * 0.06);
         tongueTipX = mouthCenterX;
 
+        // 計算向上位移比例
         var upDisplacement = (mouthCenterY - tongueTipY) / noseChinDist;
-        directionScore = Math.min(1.0, Math.max(0, (upDisplacement - 0.02) * 8.0));
-        isAligned = directionScore >= 0.35 && outScore >= 0.25;
+        // 更敏感的評分曲線，長者較易達標
+        directionScore = Math.min(1.0, Math.max(0, (upDisplacement - 0.015) * 9.5));
+        isAligned = directionScore >= 0.28 && outScore >= 0.18;
     } else if (direction === "tongueDown") {
         var downOffset = Math.abs(lowerOuter.y - mouthCenterY);
-        tongueTipY = lowerOuter.y + (downOffset * 0.9) + (lipOpenRatio * 0.05);
+        tongueTipY = lowerOuter.y + (downOffset * 1.15) + (lipOpenRatio * 0.07);
         tongueTipX = mouthCenterX;
 
         var downDisplacement = (tongueTipY - mouthCenterY) / noseChinDist;
-        directionScore = Math.min(1.0, Math.max(0, (downDisplacement - 0.04) * 7.5));
-        isAligned = directionScore >= 0.35 && outScore >= 0.25;
+        directionScore = Math.min(1.0, Math.max(0, (downDisplacement - 0.03) * 8.5));
+        isAligned = directionScore >= 0.28 && outScore >= 0.18;
     } else {
-        tongueTipY = (lowerInner.y + lowerOuter.y) / 2;
+        // tongueOut
+        tongueTipY = (lowerInner.y + lowerOuter.y) / 2 + (lipOpenRatio * 0.03);
         tongueTipX = mouthCenterX;
         directionScore = outScore;
-        isAligned = directionScore >= 0.35;
+        isAligned = directionScore >= 0.28;
     }
 
-    var finalScore = outScore * 0.3 + directionScore * 0.7;
+    // 最終分數：方向佔更大比重
+    var finalScore = outScore * 0.25 + directionScore * 0.75;
 
     return {
         score: Math.min(1.0, finalScore),
@@ -1127,9 +1140,9 @@ window.openMouthAI = async function(idx) {
             '<video id="v-feed" autoplay playsinline muted></video>' +
             '<canvas id="v-feed-canvas"></canvas>' +
             '<div class="ai-ring-wrap">' +
-                '<svg width="210" height="210" viewBox="0 0 210 210">' +
-                    '<circle stroke="rgba(255,255,255,0.2)" stroke-width="8" fill="transparent" r="95" cx="105" cy="105"/>' +
-                    '<circle id="progress-ring-circle" stroke="var(--apple-red)" stroke-width="8" stroke-dasharray="596.9" stroke-dashoffset="596.9" stroke-linecap="round" fill="transparent" r="95" cx="105" cy="105"/>' +
+                '<svg width="280" height="280" viewBox="0 0 280 280">' +
+                    '<circle stroke="rgba(255,255,255,0.28)" stroke-width="12" fill="transparent" r="128" cx="140" cy="140"/>' +
+                    '<circle id="progress-ring-circle" stroke="var(--apple-red)" stroke-width="12" stroke-dasharray="804.2" stroke-dashoffset="804.2" stroke-linecap="round" fill="transparent" r="128" cx="140" cy="140"/>' +
                 '</svg>' +
                 '<div class="ai-target-circle"></div>' +
             '</div>' +
@@ -1296,22 +1309,35 @@ window.startFaceAI = function(bsType, idx) {
                         var tip = window.currentTongueTipPoint.tongueTip;
                         var isAligned = window.currentTongueTipPoint.isAligned;
 
+                        // === 超大綠色追蹤圈（長者易見）===
                         ctx.beginPath();
-                        ctx.arc(tip.x, tip.y, 14, 0, Math.PI * 2);
-                        ctx.strokeStyle = isAligned ? "var(--apple-green)" : "var(--apple-orange)";
-                        ctx.lineWidth = 3;
+                        ctx.arc(tip.x, tip.y, 42, 0, Math.PI * 2);
+                        ctx.strokeStyle = isAligned ? "rgba(52,199,89,0.95)" : "rgba(255,149,0,0.92)";
+                        ctx.lineWidth = 8;
                         ctx.stroke();
 
+                        // 內層半透明填充
                         ctx.beginPath();
-                        ctx.arc(tip.x, tip.y, 7, 0, Math.PI * 2);
-                        ctx.fillStyle = isAligned ? "var(--apple-green)" : "var(--apple-red)";
+                        ctx.arc(tip.x, tip.y, 38, 0, Math.PI * 2);
+                        ctx.fillStyle = isAligned ? "rgba(52,199,89,0.22)" : "rgba(255,149,0,0.18)";
                         ctx.fill();
 
+                        // 中心士多啤梨 🍓（取代細黑圈，加大）
+                        ctx.save();
+                        ctx.translate(tip.x, tip.y);
+                        ctx.scale(-1, 1); // 鏡像校正，防止左右相反
+                        ctx.font = "48px -apple-system, BlinkMacSystemFont, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText("🍓", 0, 3);
+                        ctx.restore();
+
+                        // 方向提示 emoji（偏右上方）
                         var iconTxt = bsType === "tongueUp" ? "⬆️" : (bsType === "tongueDown" ? "⬇️" : "👅");
                         ctx.save();
-                        ctx.translate(tip.x + 24, tip.y + 8);
+                        ctx.translate(tip.x + 48, tip.y - 10);
                         ctx.scale(-1, 1);
-                        ctx.font = "24px -apple-system, BlinkMacSystemFont, sans-serif";
+                        ctx.font = "26px -apple-system, BlinkMacSystemFont, sans-serif";
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
                         ctx.fillText(iconTxt, 0, 0);
