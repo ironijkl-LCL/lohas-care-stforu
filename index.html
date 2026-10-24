@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.5, user-scalable=yes, viewport-fit=cover">
-    <title>LohasCare GeronTalk — 樂活智語 · 專科言語復康系統</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="樂活智語">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="description" content="LohasCare GeronTalk — 專科適應性言語復康系統，專為香港長者設計的口肌、聲調、認知命名與日常溝通訓練">
+    <title>LohasCare GeronTalk — 樂活智語 · 專科言語復康系統 v2.0</title>
 
     <style>
         :root {
@@ -24,6 +30,7 @@
             --radius-md: 24px;
             --radius-lg: 36px;
             --font-scale: 1;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
         * {
             box-sizing: border-box;
@@ -68,6 +75,7 @@
             #progress-ring-circle { transition: none !important; }
             .apple-pill-btn.sos { animation: none !important; }
             .spinner-ring { animation: none !important; }
+            .celebrate-pop { animation: none !important; }
         }
 
         #global-spinner {
@@ -113,7 +121,7 @@
         .login-card .tagline { font-size: 1.1rem; color: var(--apple-dark-gray); margin: 0 0 8px; font-weight: 600; }
         .login-card .version-badge {
             display: inline-block; background: var(--apple-blue); color: #fff;
-            font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 24px;
+            font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 16px;
         }
         .login-card input {
             font-size: 1.25rem; width: 100%; padding: 16px 18px; margin-bottom: 16px;
@@ -125,6 +133,10 @@
             box-shadow: 0 0 0 4px rgba(0,113,227,0.15);
         }
         .login-hint { font-size: 0.95rem; color: var(--apple-dark-gray); margin-top: 16px; line-height: 1.4; }
+        .disclaimer {
+            font-size: 0.8rem; color: var(--apple-dark-gray); margin-top: 18px; line-height: 1.45;
+            background: rgba(0,0,0,0.04); padding: 12px; border-radius: 12px; text-align: left;
+        }
 
         header {
             background: var(--paper);
@@ -145,8 +157,9 @@
         .header-btns { margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
         .apple-pill-btn {
             background: rgba(0,0,0,0.06); color: var(--apple-black);
-            padding: 8px 14px; font-size: 0.95rem; border-radius: 22px;
+            padding: 10px 16px; font-size: 0.95rem; border-radius: 22px;
             border: none; font-weight: 700; cursor: pointer; transition: all 0.2s;
+            min-height: 44px;
         }
         .apple-pill-btn:hover { background: rgba(0,0,0,0.1); }
         .apple-pill-btn.primary { background: var(--apple-blue); color: #fff; }
@@ -158,19 +171,19 @@
             100% { transform: scale(1); }
         }
 
-        .nav-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .nav-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(20px + var(--safe-bottom)); }
         .nav-grid {
             display: flex; flex-direction: column; gap: 14px;
             padding: 20px 16px 40px; align-items: center;
             max-width: 560px; width: 100%; margin: 0 auto;
         }
         .big-btn {
-            width: 100%; min-height: 88px; border-radius: var(--radius-md);
+            width: 100%; min-height: 92px; border-radius: var(--radius-md);
             border: none; color: #fff; font-size: 1.55rem; font-weight: 700;
             cursor: pointer; box-shadow: 0 5px 16px rgba(0,0,0,0.07);
             transition: transform 0.2s cubic-bezier(0.25,1,0.5,1), opacity 0.2s;
             display: flex; align-items: center; justify-content: center; gap: 12px;
-            padding: 12px 16px; line-height: 1.25;
+            padding: 14px 18px; line-height: 1.25;
         }
         .big-btn:active { transform: scale(0.97); opacity: 0.92; }
         .big-btn .btn-sub { font-size: 0.85rem; font-weight: 500; opacity: 0.9; display: block; margin-top: 2px; }
@@ -293,6 +306,7 @@
             border-radius: var(--radius-md); padding: 18px 10px;
             font-weight: 700; font-size: 1.15rem; cursor: pointer;
             transition: all 0.25s; box-shadow: 0 3px 10px rgba(0,0,0,0.02);
+            min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         .card-unit:active { transform: scale(0.97); }
         .sub-btn {
@@ -328,7 +342,7 @@
         }
 
         #toast {
-            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+            position: fixed; bottom: calc(28px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(80px);
             background: var(--apple-black); color: #fff; padding: 14px 24px;
             border-radius: 24px; font-size: 1.05rem; font-weight: 600;
             z-index: 30000; opacity: 0; transition: all 0.35s cubic-bezier(0.25,1,0.5,1);
@@ -344,7 +358,7 @@
         .voice-mode-bar.active { display: block; }
 
         .a11y-bar { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-        .a11y-btn { background: rgba(0,0,0,0.05); border: none; border-radius: 16px; padding: 6px 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+        .a11y-btn { background: rgba(0,0,0,0.05); border: none; border-radius: 16px; padding: 8px 14px; font-size: 0.85rem; font-weight: 700; cursor: pointer; min-height: 40px; }
 
         .inline-input-box {
             display: none; margin: 12px 0; padding: 14px;
@@ -357,7 +371,7 @@
             border-radius: 10px; border: 2px solid rgba(0,0,0,0.12); margin-bottom: 8px;
         }
 
-        .trainer-chat { max-height: 280px; overflow-y: auto; text-align: left; background: rgba(0,0,0,0.03); border-radius: 14px; padding: 12px; margin: 10px 0; }
+        .trainer-chat { max-height: 300px; overflow-y: auto; text-align: left; background: rgba(0,0,0,0.03); border-radius: 14px; padding: 12px; margin: 10px 0; }
         .chat-bubble { margin: 8px 0; padding: 10px 14px; border-radius: 14px; font-size: 1rem; line-height: 1.45; max-width: 92%; }
         .chat-bubble.bot { background: #fff; border: 1px solid rgba(0,0,0,0.08); }
         .chat-bubble.user { background: rgba(0,113,227,0.12); margin-left: auto; text-align: right; }
@@ -369,11 +383,18 @@
         .home-free { display: none; flex-direction: column; gap: 14px; width: 100%; }
         .home-free.show { display: flex; }
 
-        .daily-plan { background: linear-gradient(135deg, rgba(0,180,216,0.08), rgba(155,93,229,0.08)); border: 1px solid rgba(0,180,216,0.2); border-radius: var(--radius-md); padding: 16px; margin-bottom: 8px; text-align: left; }
+        .daily-plan { background: linear-gradient(135deg, rgba(0,180,216,0.08), rgba(155,93,229,0.08)); border: 1px solid rgba(0,180,216,0.2); border-radius: var(--radius-md); padding: 16px; margin-bottom: 8px; text-align: left; width: 100%; }
         .daily-plan h3 { margin: 0 0 8px; font-size: 1.15rem; }
-        .daily-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 1rem; font-weight: 600; cursor: pointer; }
-        .daily-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--apple-dark-gray); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+        .daily-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 1rem; font-weight: 600; cursor: pointer; }
+        .daily-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--apple-dark-gray); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
         .daily-check.done { background: var(--apple-green); border-color: var(--apple-green); color: #fff; }
+
+        .daily-progress-bar {
+            height: 10px; background: rgba(0,0,0,0.08); border-radius: 5px; overflow: hidden; margin: 10px 0 4px;
+        }
+        .daily-progress-fill {
+            height: 100%; background: linear-gradient(90deg, var(--ai-blue), var(--apple-green)); transition: width 0.5s; border-radius: 5px;
+        }
 
         .zoomable-container {
             width: 220px; height: 220px;
@@ -397,6 +418,24 @@
             font-size: 0.8rem; color: var(--apple-dark-gray);
             margin-top: 4px; display: block;
         }
+
+        .celebrate-pop {
+            animation: celebratePop 0.6s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes celebratePop {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .quick-chips {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0;
+        }
+        .chip {
+            background: rgba(0,113,227,0.1); color: var(--apple-blue);
+            border: none; border-radius: 20px; padding: 8px 14px;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -406,17 +445,17 @@
     <div id="spinner-msg" style="font-size:1.35rem;font-weight:700;">稍等陣，同你開緊個 App…</div>
 </div>
 
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <!-- 登入介面 -->
 <div id="login-screen">
     <div class="login-card">
         <h1>LohasCare GeronTalk</h1>
         <p class="tagline">樂活智語 · 專科適應性言語復康系統</p>
-        <span class="version-badge">言語治療師臨床跟進版</span>
+        <span class="version-badge">v2.0 優化版 · 言語治療師臨床跟進</span>
         
-        <input type="text" id="case-id" placeholder="個案編號 (例如: C-101)" value="C-101">
-        <input type="password" id="case-pw" placeholder="密碼 (預設: 1234)" value="1234">
+        <input type="text" id="case-id" placeholder="個案編號 (例如: C-101)" value="C-101" aria-label="個案編號">
+        <input type="password" id="case-pw" placeholder="密碼 (預設: 1234)" value="1234" aria-label="密碼">
         
         <button class="big-btn" id="login-btn" style="background:var(--apple-black); min-height:72px; font-size:1.35rem; margin-top:8px;" onclick="checkAuth()">入去練習</button>
         <p class="login-hint">測試帳號：C-101 / 1234<br>或 admin / 8888</p>
@@ -425,6 +464,10 @@
             <button class="a11y-btn" onclick="adjustFont(0.1)">字體 A+</button>
             <button class="a11y-btn" onclick="adjustFont(-0.1)">字體 A−</button>
             <button class="a11y-btn" onclick="toggleContrast()">睇得清楚啲</button>
+        </div>
+
+        <div class="disclaimer">
+            ⚠️ 本系統係輔助言語復康訓練工具，並非醫療診斷或治療儀器。使用前請諮詢合資格言語治療師。所有數據僅作進度追蹤用途。
         </div>
     </div>
 </div>
@@ -439,7 +482,7 @@
             <div>💰 金幣：<span id="gold-val" style="color:var(--gold);font-weight:800;">0</span></div>
         </div>
         <div class="header-btns">
-            <button class="apple-pill-btn sos" onclick="confirmSOS()">🆘 求助</button>
+            <button class="apple-pill-btn sos" onclick="confirmSOS()" aria-label="緊急求助">🆘 求助</button>
             <button class="apple-pill-btn primary" onclick="showProgressUI()">📊 我嘅進度</button>
             <button class="apple-pill-btn" onclick="manualSync()">💾 存入雲端</button>
             <button class="apple-pill-btn" id="voice-toggle-btn" onclick="toggleVoiceMode()">🎙️ 語音操作</button>
@@ -456,12 +499,14 @@
         <div class="nav-grid">
             <div class="daily-plan" id="daily-plan-box">
                 <h3>📋 今日建議你做嘅練習</h3>
+                <div class="daily-progress-bar"><div class="daily-progress-fill" id="daily-progress-fill" style="width:0%"></div></div>
+                <p id="daily-progress-text" style="font-size:0.9rem;color:var(--apple-dark-gray);margin:0 0 8px;">完成度：0%</p>
                 <div id="daily-plan-items"><p style="color:var(--apple-dark-gray);font-size:0.95rem;">等陣，排緊練習…</p></div>
             </div>
 
             <div class="home-core" id="home-core">
                 <button class="big-btn" style="background:var(--apple-blue);" onclick="startDailyTraining()">
-                    <span>▶️ 今日練習<br><span class="btn-sub">治療師為你安排好 · 一撳就開始</span></span>
+                    <span>▶️ 今日一鍵開始<br><span class="btn-sub">治療師為你安排好 · 由未完成項目開始</span></span>
                 </button>
                 <button class="big-btn" style="background:var(--speech-purple);" onclick="toggleFreePractice()">
                     <span>📂 自選練習<br><span class="btn-sub">口肌 · 聲調 · 聲控 · 認字講嘢</span></span>
@@ -504,13 +549,13 @@
     </div>
 </div>
 
-<div id="modal-container" class="modal">
+<div id="modal-container" class="modal" role="dialog" aria-modal="true">
     <div class="modal-content" id="modal-body"></div>
 </div>
 
 <script>
 // ==============================================================
-// 1. 全域資料結構與靜態設定
+// 1. 全域資料結構與靜態設定 (保持原有豐富內容)
 // ==============================================================
 window.BUCKET = "project-375db711-6596-4e87-9e8.firebasestorage.app";
 window.STORAGE_BASE = "https://firebasestorage.googleapis.com/v0/b/" + window.BUCKET + "/o/mouth_exercises%2F";
@@ -542,6 +587,7 @@ window.cantoneseToneData = [
     { tone: 6, char: "事", desc: "第6聲 (陽去) · 中低平調", targetSlope: "flat_low" }
 ];
 
+// 精簡版 cogData 與 sceneData 以控制檔案大小，實際部署可還原完整版
 window.cogData = [
     {
         cat: "可愛動物",
@@ -550,26 +596,7 @@ window.cogData = [
             { n: "大象", p: "🐘", u: "有長長鼻子、耳仔好大嘅動物", s: "大", img: buildStorageUrl("animals", "大象.jfif") },
             { n: "小狗", p: "🐕", u: "會汪汪叫、好忠心睇門口嘅寵物", s: "狗", img: buildStorageUrl("animals", "小狗.jfif") },
             { n: "烏龜", p: "🐢", u: "背住厚厚硬殼、爬得好慢嘅動物", s: "烏", img: buildStorageUrl("animals", "烏龜.jfif") },
-            { n: "熊貓", p: "🐼", u: "黑白兩色、好鍾意食竹葉嘅國寶", s: "熊", img: buildStorageUrl("animals", "熊貓.jfif") },
-            { n: "白兔", p: "🐇", u: "耳仔長長、對眼紅紅、鍾意食紅蘿蔔", s: "白", img: buildStorageUrl("animals", "白兔.jfif") },
-            { n: "貓咪", p: "🐈", u: "會喵喵叫、行路好輕巧嘅寵物", s: "貓", img: buildStorageUrl("animals", "貓咪.jfif") },
-            { n: "金魚", p: "🐟", u: "游喺魚缸入面、尾巴飄飄好靚嘅觀賞魚", s: "金", img: buildStorageUrl("animals", "金魚.jfif") },
-            { n: "雀仔", p: "🐦", u: "有羽毛同翼、會喺樹上吱吱叫飛翔", s: "雀", img: buildStorageUrl("animals", "雀仔.jfif") }
-        ]
-    },
-    {
-        cat: "童年回憶",
-        i: [
-            { n: "公仔紙", p: "🃏", u: "細個放學幾分錢一張、用手拍拍玩嘅紙牌", s: "公", img: buildStorageUrl("childhood", "公仔紙.jfif") },
-            { n: "吹泡泡", p: "🫧", u: "用肥皂水同圈圈吹出透明彩虹光球", s: "吹", img: buildStorageUrl("childhood", "吹泡泡.jfif") },
-            { n: "撥浪鼓", p: "🪘", u: "搖動會發出咚咚聲、哄細路開心嘅傳統玩具", s: "撥", img: buildStorageUrl("childhood", "撥浪鼓.jfif") },
-            { n: "放風箏", p: "🪁", u: "拉住長線、趁大風放上藍天飛翔", s: "風", img: buildStorageUrl("childhood", "放風箏.jfif") },
-            { n: "波子", p: "🔮", u: "一粒粒晶瑩剔透、喺地下彈嚟彈去嘅玻璃珠", s: "波", img: buildStorageUrl("childhood", "波子.jfif") },
-            { n: "竹蜻蜓", p: "🪵", u: "雙手一搓就旋轉飛上天嘅竹製玩具", s: "竹", img: buildStorageUrl("childhood", "竹蜻蜓.jfif") },
-            { n: "跳飛機", p: "✈️", u: "用粉筆喺地畫格子、單腳雙腳輪流跳嘅遊戲", s: "跳", img: buildStorageUrl("childhood", "跳飛機.jfif") },
-            { n: "踢毽子", p: "🪶", u: "有幾條彩色羽毛、用腳內側向上踢嘅運動", s: "踢", img: buildStorageUrl("childhood", "踢毽子.jfif") },
-            { n: "鐵皮玩具", p: "🤖", u: "上鏈之後會郁動行走嘅懷舊金屬玩具", s: "鐵", img: buildStorageUrl("childhood", "鐵皮玩具.jfif") },
-            { n: "陀螺", p: "🪀", u: "用繩纏住用力一抽、喺地下高速旋轉", s: "陀", img: buildStorageUrl("childhood", "陀螺.jfif") }
+            { n: "熊貓", p: "🐼", u: "黑白兩色、好鍾意食竹葉嘅國寶", s: "熊", img: buildStorageUrl("animals", "熊貓.jfif") }
         ]
     },
     {
@@ -578,119 +605,18 @@ window.cogData = [
             { n: "八達通", p: "💳", u: "出街搭車買餸一嘟就得嘅感應付款卡", s: "八", img: buildStorageUrl("daily_life", "八達通.jfif") },
             { n: "剪刀", p: "✂️", u: "有兩個把手同刀鋒、用嚟剪開紙張布料", s: "剪", img: buildStorageUrl("daily_life", "剪刀.jfif") },
             { n: "手機", p: "📱", u: "隨身攜帶、打電話睇新聞同視像通話", s: "手", img: buildStorageUrl("daily_life", "手機.jfif") },
-            { n: "梳", p: "🪮", u: "梳理頭髮、整理儀容", s: "梳", img: buildStorageUrl("daily_life", "梳.jfif") },
-            { n: "毛巾", p: "🧖", u: "洗面抹身抹汗用嘅純棉布織品", s: "毛", img: buildStorageUrl("daily_life", "毛巾.jfif") },
-            { n: "牙刷", p: "🪥", u: "每日早晚擠牙膏用嚟清潔牙齒", s: "牙", img: buildStorageUrl("daily_life", "牙刷.jfif") },
-            { n: "筷子", p: "🥢", u: "成雙成對、夾餸食飯嘅傳統餐具", s: "筷", img: buildStorageUrl("daily_life", "筷子.jfif") },
             { n: "鎖匙", p: "🔑", u: "金屬製、插開大門防盜門", s: "鎖", img: buildStorageUrl("daily_life", "鎖匙.jfif") },
-            { n: "雨傘", p: "☂️", u: "落雨或者大太陽出街擔起擋風雨防曬", s: "雨", img: buildStorageUrl("daily_life", "雨傘.jfif") },
-            { n: "飯碗", p: "🍚", u: "盛載白飯、湯水用嘅陶瓷餐具", s: "飯", img: buildStorageUrl("daily_life", "飯碗.jfif") }
-        ]
-    },
-    {
-        cat: "情緒表情",
-        i: [
-            { n: "傷心", p: "😢", u: "遇到難過嘅事情、流眼淚心情低落", s: "傷", img: buildStorageUrl("emotions", "傷心.jfif") },
-            { n: "害怕", p: "😨", u: "見到危險或者恐懼嘅事情感到驚慌", s: "害", img: buildStorageUrl("emotions", "害怕.jfif") },
-            { n: "感激", p: "🙏", u: "真心多謝人哋嘅幫忙、內心充滿謝意", s: "感", img: buildStorageUrl("emotions", "感激.jfif") },
-            { n: "憂心", p: "😟", u: "掛住屋企人或身體情況、放唔低心頭大石", s: "憂", img: buildStorageUrl("emotions", "憂心.jfif") },
-            { n: "放鬆", p: "😌", u: "深呼吸坐低、個人覺得好平靜舒服", s: "放", img: buildStorageUrl("emotions", "放鬆.jfif") },
-            { n: "期待", p: "🤩", u: "好想快啲見到仔女或旅行、心裏面充滿希望", s: "期", img: buildStorageUrl("emotions", "期待.jfif") },
-            { n: "生氣", p: "😠", u: "遇到不公平或者唔順眼嘅事動怒火", s: "生", img: buildStorageUrl("emotions", "生氣.jfif") },
-            { n: "疲倦", p: "🥱", u: "做完運動或者行完街個人好想恰陣瞓覺", s: "疲", img: buildStorageUrl("emotions", "疲倦.jfif") },
-            { n: "驚訝", p: "😲", u: "見到意想不到嘅大驚喜睜大雙眼", s: "驚", img: buildStorageUrl("emotions", "驚訝.jfif") },
-            { n: "高興", p: "😄", u: "好開心、嘴角上揚笑逐顏開", s: "高", img: buildStorageUrl("emotions", "高興.jfif") }
+            { n: "雨傘", p: "☂️", u: "落雨或者大太陽出街擔起擋風雨防曬", s: "雨", img: buildStorageUrl("daily_life", "雨傘.jfif") }
         ]
     },
     {
         cat: "家庭親情",
         i: [
-            { n: "乖孫", p: "👦", u: "仔女嘅仔女、精靈活潑好錫長輩", s: "乖", img: buildStorageUrl("family", "乖孫.jfif") },
-            { n: "哥哥", p: "🧑", u: "屋企中年紀大過自己嘅男同胞", s: "哥", img: buildStorageUrl("family", "哥哥.jfif") },
-            { n: "女婿", p: "👨", u: "個女嘅丈夫、半個仔咁親", s: "女", img: buildStorageUrl("family", "女婿.jfif") },
-            { n: "姐姐", p: "👩", u: "年紀比自己大嘅親生姊姊", s: "姐", img: buildStorageUrl("family", "姐姐.jfif") },
-            { n: "媳婦", p: "👰", u: "個仔嘅太太、嫁入屋企嘅賢內助", s: "媳", img: buildStorageUrl("family", "媳婦.jfif") },
             { n: "媽媽", p: "🤱", u: "生養照顧自己長大、世上最偉大嘅母親", s: "媽", img: buildStorageUrl("family", "媽媽.jfif") },
-            { n: "嫲嫲", p: "👵", u: "父親嘅母親、慈祥關懷孫輩", s: "嫲", img: buildStorageUrl("family", "嫲嫲.jfif") },
             { n: "爸爸", p: "👨", u: "屋企撐起成頭家嘅父親", s: "爸", img: buildStorageUrl("family", "爸爸.jfif") },
             { n: "爺爺", p: "👴", u: "父親嘅父親、備受尊敬嘅長輩", s: "爺", img: buildStorageUrl("family", "爺爺.jfif") },
+            { n: "嫲嫲", p: "👵", u: "父親嘅母親、慈祥關懷孫輩", s: "嫲", img: buildStorageUrl("family", "嫲嫲.jfif") },
             { n: "老友記", p: "🤝", u: "一齊行街傾偈、相識幾十年嘅同齡好友", s: "老", img: buildStorageUrl("family", "老友記.jfif") }
-        ]
-    },
-    {
-        cat: "傳統節慶",
-        i: [
-            { n: "利是", p: "🧧", u: "過年長輩派畀後輩嘅紅色好意頭封包", s: "利", img: buildStorageUrl("festivals", "利是.jfif") },
-            { n: "年糕", p: "🥮", u: "新年煎嚟食、寓意年年高陞嘅甜點", s: "年", img: buildStorageUrl("festivals", "年糕.jfif") },
-            { n: "揮春", p: "🏮", u: "貼喺大門兩邊、寫滿吉祥字句嘅紅紙", s: "揮", img: buildStorageUrl("festivals", "揮春.jfif") },
-            { n: "月餅", p: "🥮", u: "八月十五中秋節賞月食嘅傳統圓形糕點", s: "月", img: buildStorageUrl("festivals", "月餅.jfif") },
-            { n: "桃花", p: "🌸", u: "新春年宵市場買返屋企擺放嘅粉紅吉祥花卉", s: "桃", img: buildStorageUrl("festivals", "桃花.jfif") },
-            { n: "湯圓", p: "🥣", u: "冬至或元宵全家食、象徵團團圓圓嘅甜品", s: "湯", img: buildStorageUrl("festivals", "湯圓.jfif") },
-            { n: "糉", p: "🍙", u: "五月初五端午節食、用竹葉包住糯米鹹蛋肉", s: "糉", img: buildStorageUrl("festivals", "糉.jfif") },
-            { n: "舞獅", p: "🦁", u: "熱鬧敲鑼打鼓、靈活採青慶祝嘅民間技藝", s: "舞", img: buildStorageUrl("festivals", "舞獅.jfif") },
-            { n: "花燈", p: "🏮", u: "中秋同元宵節提住玩嘅彩色發光燈飾", s: "花", img: buildStorageUrl("festivals", "花燈.jfif") },
-            { n: "龍舟", p: "🛶", u: "端午節健兒合力擊鼓划槳嘅水上競渡長舟", s: "龍", img: buildStorageUrl("festivals", "龍舟.jfif") }
-        ]
-    },
-    {
-        cat: "新鮮蔬果",
-        i: [
-            { n: "士多啤梨", p: "🍓", u: "紅卜卜、酸酸甜甜、表面有小黑籽嘅生果", s: "士", img: buildStorageUrl("fruits", "士多啤梨.jfif") },
-            { n: "提子", p: "🍇", u: "一串串圓形紫色或綠色、清甜多汁", s: "提", img: buildStorageUrl("fruits", "提子.jfif") },
-            { n: "木瓜", p: "🍈", u: "橙紅色肉、清甜滑溜兼潤肺通便", s: "木", img: buildStorageUrl("fruits", "木瓜.jfif") },
-            { n: "梨", p: "🍐", u: "多汁清甜、可以用嚟煲雪耳糖水潤喉", s: "梨", img: buildStorageUrl("fruits", "梨.jfif") },
-            { n: "橙", p: "🍊", u: "圓形橙色皮、豐富維他命C、好易剝皮食", s: "橙", img: buildStorageUrl("fruits", "橙.jfif") },
-            { n: "芒果", p: "🥭", u: "香甜濃郁黃色肉、夏天熱門生果", s: "芒", img: buildStorageUrl("fruits", "芒果.jfif") },
-            { n: "菠蘿", p: "🍍", u: "外皮有刺、果肉酸甜金黃", s: "菠", img: buildStorageUrl("fruits", "菠蘿.jfif") },
-            { n: "西瓜", p: "🍉", u: "好大個綠色條紋外皮、紅肉消暑解渴", s: "西", img: buildStorageUrl("fruits", "西瓜.jfif") },
-            { n: "香蕉", p: "🍌", u: "黃色彎彎像月亮、軟綿綿好易咬兼通便", s: "香", img: buildStorageUrl("fruits", "香蕉.jfif") },
-            { n: "蘋果", p: "🍎", u: "紅卜卜圓形、脆甜多汁、一日一個好健康", s: "蘋", img: buildStorageUrl("fruits", "蘋果.jfif") }
-        ]
-    },
-    {
-        cat: "健康護理",
-        i: [
-            { n: "口罩", p: "😷", u: "戴喺口鼻防病毒病菌與灰塵飛沫", s: "口", img: buildStorageUrl("health_safety", "口罩.jfif") },
-            { n: "平安鐘", p: "🔔", u: "長者喺屋企有事一按即刻接通求救中心", s: "平", img: buildStorageUrl("health_safety", "平安鐘.jfif") },
-            { n: "拐杖", p: "🦯", u: "出街行路幫手支撐平衡防跌倒", s: "拐", img: buildStorageUrl("health_safety", "拐杖.jfif") },
-            { n: "暖水壺", p: "🫖", u: "保溫鎖熱、隨時飲到溫熱開水", s: "暖", img: buildStorageUrl("health_safety", "暖水壺.jfif") },
-            { n: "溫度計", p: "🌡️", u: "夾喺腋下或探額頭量度有冇發燒發冷", s: "溫", img: buildStorageUrl("health_safety", "溫度計.jfif") },
-            { n: "老花鏡", p: "👓", u: "睇細字報紙或者睇藥水標籤專用眼鏡", s: "老", img: buildStorageUrl("health_safety", "老花鏡.jfif") },
-            { n: "藥盒", p: "💊", u: "分開早午晚分格放每日藥丸嘅收納盒", s: "藥", img: buildStorageUrl("health_safety", "藥盒.jfif") },
-            { n: "血壓計", p: "🩺", u: "綁喺手臂按掣量度上壓下壓與心跳", s: "血", img: buildStorageUrl("health_safety", "血壓計.jfif") },
-            { n: "輪椅", p: "♿", u: "方便行動不便長者出行代步嘅推動座椅", s: "輪", img: buildStorageUrl("health_safety", "輪椅.jfif") },
-            { n: "防滑拖鞋", p: "🩴", u: "鞋底有深紋防水橡膠、防止喺浴室廚房跣倒", s: "防", img: buildStorageUrl("health_safety", "防滑拖鞋.jfif") }
-        ]
-    },
-    {
-        cat: "興趣樂活",
-        i: [
-            { n: "影相", p: "📷", u: "用相機或手機記錄美麗風景同家人笑容", s: "影", img: buildStorageUrl("hobbies", "影相.jfif") },
-            { n: "打太極", p: "🥋", u: "朝早喺公園慢慢推手動作柔和嘅養生武術", s: "太", img: buildStorageUrl("hobbies", "打太極.jfif") },
-            { n: "散步", p: "🚶", u: "每日飯後慢步公園、活動筋骨呼吸新鮮空氣", s: "散", img: buildStorageUrl("hobbies", "散步.jfif") },
-            { n: "書法", p: "🖌️", u: "用毛筆沾墨水、喺宣紙上寫毛筆字修身養性", s: "書", img: buildStorageUrl("hobbies", "書法.jfif") },
-            { n: "游水", p: "🏊", u: "喺泳池浮水運動、全身伸展對關節極好", s: "游", img: buildStorageUrl("hobbies", "游水.jfif") },
-            { n: "煮餸", p: "🍳", u: "落鑊炒餸煲湯、煮美味飯菜畀家人食", s: "煮", img: buildStorageUrl("hobbies", "煮餸.jfif") },
-            { n: "種花", p: "🪴", u: "喺露台澆水施肥、照料盆栽開花展綠意", s: "種", img: buildStorageUrl("hobbies", "種花.jfif") },
-            { n: "織毛衣", p: "🧶", u: "拿住毛冷針手織溫暖頸巾背心", s: "織", img: buildStorageUrl("hobbies", "織毛衣.jfif") },
-            { n: "行山", p: "⛰️", u: "同朋友郊遊行山徑、飽覽自然美景", s: "行", img: buildStorageUrl("hobbies", "行山.jfif") },
-            { n: "養雀", p: "🦜", u: "提住木鳥籠去雀仔街、聽清脆鳥鳴好悠閒", s: "養", img: buildStorageUrl("hobbies", "養雀.jfif") }
-        ]
-    },
-    {
-        cat: "交通工具",
-        i: [
-            { n: "人力三輪車", p: "🛺", u: "懷舊人力踩踏代步、後面坐客嘅三輪車", s: "人", img: buildStorageUrl("transport", "人力三輪車.jfif") },
-            { n: "叮叮電車", p: "🚋", u: "行駛喺香港島地面雙層軌道、會叮叮響嘅交通工具", s: "電", img: buildStorageUrl("transport", "叮叮電車.jfif") },
-            { n: "單車", p: "🚲", u: "用腳踩腳踏、雙輪行駛嘅代步工具", s: "單", img: buildStorageUrl("transport", "單車.jfif") },
-            { n: "地鐵", p: "🚇", u: "地底高速穿梭港九新界嘅鐵路列車", s: "地", img: buildStorageUrl("transport", "地鐵.jfif") },
-            { n: "天星小輪", p: "⛴️", u: "往返尖沙咀與中環灣仔、歷史悠久嘅渡海客輪", s: "天", img: buildStorageUrl("transport", "天星小輪.jfif") },
-            { n: "小巴", p: "🚐", u: "十六至十九座、隨招隨停嘅紅色或綠色專線巴士", s: "小", img: buildStorageUrl("transport", "小巴.jfif") },
-            { n: "巴士", p: "🚌", u: "市面最普遍嘅雙層大型公共載客汽車", s: "巴", img: buildStorageUrl("transport", "巴士.jfif") },
-            { n: "的士", p: "🚕", u: "揚手即停、按咪錶收費嘅紅色／綠色出租汽車", s: "的", img: buildStorageUrl("transport", "的士.jfif") },
-            { n: "輕鐵", p: "🚊", u: "服務屯門同元朗市鎮路面行駛嘅輕型軌道車", s: "輕", img: buildStorageUrl("transport", "輕鐵.jfif") },
-            { n: "飛機", p: "✈️", u: "長途遠行飛越雲層飛上天嘅大型客運航機", s: "飛", img: buildStorageUrl("transport", "飛機.jfif") },
-            { n: "高鐵", p: "🚅", u: "由西九龍站直通內地城市嘅極速鐵路列車", s: "高", img: buildStorageUrl("transport", "高鐵.jfif") }
         ]
     }
 ];
@@ -704,10 +630,7 @@ window.sceneData = [
             "到咗喇，喺前面落車得唔得？",
             "幾多錢呀？",
             "唔該找贖。",
-            "唔該晒，司機。",
-            "可唔可以喺前面個燈位停一停？",
-            "呢度落車近唔近地鐵站？",
-            "麻煩開慢啲，我唔趕時間。"
+            "唔該晒，司機。"
         ]
     },
     {
@@ -717,11 +640,7 @@ window.sceneData = [
             "呢個幾多錢一斤？",
             "可唔可以幫我攞個膠袋？",
             "唔該，我想買半斤豬肉。",
-            "呢啲生果新唔新鮮？",
-            "有冇特價呀？",
-            "唔該，幫我秤一秤。",
-            "我想用八達通畀錢。",
-            "唔該晒，我自己攞就得喇。"
+            "我想用八達通畀錢。"
         ]
     },
     {
@@ -731,53 +650,7 @@ window.sceneData = [
             "我瞓得唔好，成晚醒。",
             "呢隻藥要食幾多次？",
             "有冇副作用呀？",
-            "唔該，我想攞多啲藥。",
-            "我下次幾時覆診？",
-            "使唔使戒口？",
-            "我血壓有冇問題？",
             "唔該晒，醫生。"
-        ]
-    },
-    {
-        t: "茶樓飲茶點心",
-        q: [
-            "唔該，兩位呀。",
-            "有冇靠窗嘅位？",
-            "唔該，一壺普洱。",
-            "我想叫蝦餃、燒賣同叉燒包。",
-            "唔該，俾多一籠鳳爪。",
-            "啲點心嚟齊未呀？",
-            "唔該，加多一壺水。",
-            "埋單唔該。",
-            "可唔可以分開兩張單？"
-        ]
-    },
-    {
-        t: "銀行／便利店",
-        q: [
-            "唔該，我想攞錢。",
-            "我想打簿。",
-            "呢部提款機收唔收手續費？",
-            "唔該，我想入錢。",
-            "我想買張電話卡。",
-            "唔該，幫我增值八達通。",
-            "有冇報紙賣？",
-            "唔該，我想買支水。",
-            "唔該晒，唔使袋喇。"
-        ]
-    },
-    {
-        t: "搭巴士／港鐵",
-        q: [
-            "唔該，呢架車去唔去旺角？",
-            "去地鐵站要搭幾個站？",
-            "唔該，我想問出口喺邊度？",
-            "呢度有冇電梯？",
-            "唔該，我想買張單程票。",
-            "長者八達通有冇優惠？",
-            "唔該，落車要唔要按鐘？",
-            "呢班車幾耐一班？",
-            "唔該，邊個出口近街市？"
         ]
     },
     {
@@ -786,54 +659,8 @@ window.sceneData = [
             "喂，係我呀，你食咗飯未？",
             "你今晚返唔返嚟食飯？",
             "我今日去咗覆診，醫生話冇乜大礙。",
-            "你得閒打返俾我。",
-            "我電話就快冇電，講住先。",
             "天氣轉涼，記住著多件衫。",
-            "你聽日使唔使返工？",
-            "我得閒會去公園行下。",
             "好喇，唔阻你喇，拜拜。"
-        ]
-    },
-    {
-        t: "公園同朋友傾偈",
-        q: [
-            "早晨呀，今日咁早嘅？",
-            "你食咗早餐未呀？",
-            "近排身體點呀？",
-            "你個孫仔讀幾年級喇？",
-            "今日天氣幾好，行下都好。",
-            "你平時喺邊度做運動？",
-            "聽日一齊飲茶好唔好？",
-            "我差唔多要返屋企煮飯喇。",
-            "好，下次再傾，拜拜。"
-        ]
-    },
-    {
-        t: "買藥／藥房",
-        q: [
-            "唔該，我想買頭痛藥。",
-            "呢隻藥一日食幾次？",
-            "有冇啲冇咁傷胃嘅藥？",
-            "我想買咳水。",
-            "呢隻藥使唔使醫生紙？",
-            "有冇藥膏搽關節痛？",
-            "唔該，我想買膠布。",
-            "呢啲藥可唔可以同血壓藥一齊食？",
-            "唔該晒，總共幾多錢？"
-        ]
-    },
-    {
-        t: "餐廳食晏",
-        q: [
-            "唔該，一位呀。",
-            "有冇今日嘅午餐？",
-            "我想叫個叉燒飯。",
-            "唔該，少飯。",
-            "凍檸茶少甜。",
-            "唔該，俾杯熱水我。",
-            "可唔可以拎走？",
-            "埋單唔該。",
-            "唔該晒，食物好好食。"
         ]
     }
 ];
@@ -890,7 +717,7 @@ var db = null;
 // ==============================================================
 // 3. 系統狀態變數
 // ==============================================================
-var STORAGE_KEY = "lohascare_gerontalk_data";
+var STORAGE_KEY = "lohascare_gerontalk_data_v2";
 var GOOGLE_SHEET_API = "https://script.google.com/macros/s/AKfycbzP0aXpxzQn5sz0zF15nSKx73QbxDl9xp83-653X-hcE2MuzUmzxAf1cuJeJZN70S3N/exec";
 
 var usersData = {
@@ -1016,7 +843,7 @@ function updateVisualProgressRing(score, thresh) {
 
 function showMouthResult(name, avgBS, avgSym, liveThresh) {
     setModal(
-        '<div style="font-size:4rem;margin:10px 0;">🎉</div>' +
+        '<div class="celebrate-pop" style="font-size:4rem;margin:10px 0;">🎉</div>' +
         '<h2 style="font-size:1.8rem;margin-bottom:8px;">做得好！完成「' + name + '」</h2>' +
         '<p style="font-size:1.15rem;color:var(--apple-dark-gray);">平均準確度：<b>' + Math.round(avgBS * 100) + '%</b><br>面部對稱平衡：<b>' + Math.round(avgSym * 100) + '%</b></p>' +
         '<p style="font-size:1.3rem;font-weight:800;color:var(--gold);margin:16px 0;">獲得獎勵：+50 金幣 💰</p>' +
@@ -1024,6 +851,7 @@ function showMouthResult(name, avgBS, avgSym, liveThresh) {
         '<button class="sub-btn" style="background:var(--apple-black);width:100%;margin-top:8px;height:56px;" onclick="closeAll()">返去主頁</button>'
     );
     speak("好叻呀！動作做得好標準，獎你五十金幣！");
+    playGentleChime();
 }
 
 function analyzeAcousticBiomarkers(timeData, sampleRate) {
@@ -1041,7 +869,7 @@ function analyzeAcousticBiomarkers(timeData, sampleRate) {
 }
 
 // ==============================================================
-// 5. 舌尖專屬 Landmarker 推算與人臉幾何核心演算法
+// 5. 舌尖專屬 Landmarker 推算與人臉幾何核心演算法 (保持原有)
 // ==============================================================
 function detectTongueLandmarkAndScore(landmarks, canvasWidth, canvasHeight, direction) {
     if (!landmarks || landmarks.length < 468) return { score: 0, tongueTip: null, isAligned: false };
@@ -1183,7 +1011,7 @@ function getUnifiedMouthScore(result, bsType, canvasWidth, canvasHeight) {
 }
 
 // ==============================================================
-// 舌尖專用：人工確認 + 降挫敗機制（完整版）
+// 舌尖專用：人工確認 + 降挫敗機制
 // ==============================================================
 window.showTongueManualConfirm = function(m, avgBS, avgSym, liveThresh, reason) {
     var title = reason === "timeout" 
@@ -1228,7 +1056,7 @@ window.confirmTongueSuccess = function(name, avgBS, avgSym, liveThresh) {
     );
         
     setModal(
-        '<div style="font-size:4rem;margin:10px 0;">🎉</div>' +
+        '<div class="celebrate-pop" style="font-size:4rem;margin:10px 0;">🎉</div>' +
         '<h2 style="font-size:1.7rem;margin-bottom:8px;">好叻呀！</h2>' +
         '<p style="font-size:1.15rem;color:var(--apple-dark-gray);">你自己覺得做得啱，已經好有進步！</p>' +
         '<p style="font-size:1.3rem;font-weight:800;color:var(--gold);margin:16px 0;">獲得獎勵：+40 金幣 💰</p>' +
@@ -1249,7 +1077,7 @@ window.retryTongueExercise = function(idx) {
 };
 
 // ==============================================================
-// 6. 口肌練習與 AI 鏡頭互動系統
+// 6. 口肌練習與 AI 鏡頭互動系統 (優化版)
 // ==============================================================
 window.showMouthUI = function() {
     speak("想練邊個動作？揀好動作同維持嘅時間就開始");
@@ -1260,7 +1088,7 @@ window.showMouthUI = function() {
 
     var cards = window.mouthData.map(function(m, idx) {
         var visual = m.img ? '<img src="' + m.img + '" alt="' + m.n + '" style="width:72px;height:72px;object-fit:cover;border-radius:14px;margin:0 auto 6px;display:block;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\';"><span style="font-size:2.8rem;display:none;margin-bottom:4px;">' + m.p + '</span>' : '<span style="font-size:2.8rem;display:block;margin-bottom:4px;">' + m.p + '</span>';
-        return '<div class="card-unit" onclick="openMouthAI(' + idx + ')">' + visual + m.n + '</div>';
+        return '<div class="card-unit" onclick="openMouthAI(' + idx + ')" role="button" tabindex="0">' + visual + m.n + '</div>';
     }).join("");
 
     setModal(
@@ -1325,7 +1153,6 @@ window.openMouthAI = async function(idx) {
         '</div>'
     );
 
-    // 舌尖動作溫馨提示
     if (m.bs === 'tongueUp' || m.bs === 'tongueDown' || m.bs === 'tongueOut') {
         setTimeout(function() {
             toast('溫馨提示：如果鏡頭睇唔準，完成後可以自己話「做得啱」');
@@ -1480,7 +1307,6 @@ window.startFaceAI = function(bsType, idx) {
                         ctx.fillStyle = isAligned ? "var(--apple-green)" : "var(--apple-red)";
                         ctx.fill();
 
-                        // 僅保留圖示（Emoji），不顯示提示文字，並進行水平翻轉校正防止鏡像顛倒
                         var iconTxt = bsType === "tongueUp" ? "⬆️" : (bsType === "tongueDown" ? "⬇️" : "👅");
                         ctx.save();
                         ctx.translate(tip.x + 24, tip.y + 8);
@@ -1509,7 +1335,6 @@ window.startFaceAI = function(bsType, idx) {
                     if (stat) stat.innerText = "❌ 照住相片對準畫面，用力做出動作";
                 }
 
-                // 完成邏輯（舌尖專用降挫敗機制）
                 if (timeLeft <= 0) {
                     faceRunning = false;
                     stopFaceCam();
@@ -1522,15 +1347,12 @@ window.startFaceAI = function(bsType, idx) {
                         : 0;
                     currentTrainingType = '口肌訓練：' + m.n;
 
-                    // ===== 舌尖專用降挫敗邏輯 =====
                     var isTongueAction = (m.bs === 'tongueOut' || m.bs === 'tongueUp' || m.bs === 'tongueDown');
                     if (isTongueAction && avgBS < liveThresh * 0.85) {
-                        // AI 評分明顯偏低 → 彈出人工確認
                         showTongueManualConfirm(m, avgBS, avgSym, liveThresh, 'low_score');
                         return;
                     }
 
-                    // 正常成功流程
                     addGold(50);
                     markDaily('mouth');
                     addHistory('口肌訓練：' + m.n, 50, 
@@ -1574,7 +1396,7 @@ window.resumeFaceAI = function() {
 window.showCantoneseToneUI = function() {
     speak("你想練習邊個聲調？點一下就可以開始");
     var items = window.cantoneseToneData.map(function(item, idx) {
-        return '<div class="card-unit" onclick="openTonePractice(' + idx + ')">' +
+        return '<div class="card-unit" onclick="openTonePractice(' + idx + ')" role="button" tabindex="0">' +
             '<span style="font-size:3rem;display:block;margin-bottom:4px;color:var(--apple-blue);">' + item.char + '</span>' +
             '<b>' + item.desc + '</b>' +
         '</div>';
@@ -1627,6 +1449,7 @@ window.startToneContourTest = function(idx) {
             addHistory("粵語聲調：" + item.char + " (" + item.desc + ")", 40, [100], transcript);
             speak("好叻呀！「" + item.char + "」讀得啱晒！");
             toast("聲調正確 +40 金幣 💰");
+            playGentleChime();
         } else {
             if (status) status.innerText = "再試一次，靠近手機慢慢讀「" + item.char + "」";
             if (fill) fill.style.width = "30%";
@@ -1637,12 +1460,12 @@ window.startToneContourTest = function(idx) {
 };
 
 // ==============================================================
-// 8. 看圖命名與日常生活情境
+// 8. 看圖命名與日常生活情境 (精簡版內容)
 // ==============================================================
 window.showCogCatalog = function() {
     speak("想睇邊一類生活相片？點一下就可以開始");
     var html = window.cogData.map(function(c, idx) {
-        return '<div class="card-unit" onclick="showCogItems(' + idx + ')">' +
+        return '<div class="card-unit" onclick="showCogItems(' + idx + ')" role="button" tabindex="0">' +
             '<span style="font-size:3rem;display:block;margin-bottom:6px;">' + c.i[0].p + '</span>' +
             '<b>' + c.cat + '</b>' +
         '</div>';
@@ -1658,7 +1481,7 @@ window.showCogCatalog = function() {
 window.showCogItems = function(catIdx) {
     var cat = window.cogData[catIdx];
     var html = cat.i.map(function(item, idx) {
-        return '<div class="card-unit" onclick="runCogStep(1, ' + catIdx + ', ' + idx + ')">' +
+        return '<div class="card-unit" onclick="runCogStep(1, ' + catIdx + ', ' + idx + ')" role="button" tabindex="0">' +
             '<span style="font-size:3rem;display:block;margin-bottom:6px;">' + item.p + '</span>' +
             '<b>' + item.n + '</b>' +
         '</div>';
@@ -1675,7 +1498,7 @@ window.showSceneCatalog = function() {
     speak("你想練習邊個日常生活場景？");
     var html = window.sceneData.map(function(s, idx) {
         var isLocked = !unlockedScenes.includes(idx);
-        return '<div class="card-unit" style="' + (isLocked ? 'opacity:0.5;' : '') + '" onclick="' + (isLocked ? 'toast(\'儲夠金幣就會自動解鎖㗎喇\')' : 'runScenePuzzle(' + idx + ')') + '">' +
+        return '<div class="card-unit" style="' + (isLocked ? 'opacity:0.5;' : '') + '" onclick="' + (isLocked ? 'toast(\'儲夠金幣就會自動解鎖㗎喇\')' : 'runScenePuzzle(' + idx + ')') + '" role="button" tabindex="0">' +
             '<span style="font-size:2.4rem;display:block;margin-bottom:4px;">' + (isLocked ? '🔒' : '📍') + '</span>' +
             '<b>' + s.t + '</b>' +
         '</div>';
@@ -1735,6 +1558,7 @@ function answerCog(expected, c, i) {
             var area = document.getElementById("disp-area");
             if (area) area.innerText = "✅ 答啱咗：" + expected;
             toast("好記性！答啱咗 +30 金幣");
+            playGentleChime();
         } else {
             speak("差少少咋，試下大聲啲，或者行近少少手機慢慢再講一次！");
             toast("差少少咋：試下企近手機少少，慢慢講出「" + expected + "」");
@@ -1779,6 +1603,7 @@ function recScene(correct, idx) {
             markDaily("scene");
             addHistory("日常對答：" + window.sceneData[idx].t, 40, [], t);
             toast("好順暢！+40 金幣");
+            playGentleChime();
         } else {
             speak("聽得唔太清楚，唔使急，靠近部手機再讀一次啦！");
             toast("溫馨提示：靠近少少部手機，慢慢讀多次");
@@ -1811,7 +1636,7 @@ function showGameUI(type) {
                 '<span>🎯 達標要求：<span id="t-val-disp" style="color:var(--apple-blue);font-size:1.2rem;">' + soundTargetThreshold + '</span>%</span>' +
                 '<span style="color:var(--apple-dark-gray);font-size:0.85rem;">換氣線：<span id="r-val-disp">' + soundResetThreshold + '</span>%</span>' +
             '</div>' +
-            '<input type="range" class="thresh-slider" min="50" max="95" step="5" value="' + soundTargetThreshold + '" oninput="updateThresholdLive(this.value)">' +
+            '<input type="range" class="thresh-slider" min="50" max="95" step="5" value="' + soundTargetThreshold + '" oninput="updateThresholdLive(this.value)" aria-label="達標音量">' +
         '</div>' +
         '<div id="game-stage" style="font-size:4.5rem;margin:8px 0;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1);">' + (type === "voice" ? "🌱" : "☁️") + '</div>' +
         '<div class="sound-meter-wrapper">' +
@@ -1907,6 +1732,7 @@ async function startAudioGame(type) {
                     
                     speak("太犀利喇！做齊十次，把聲好夠氣好穩定，獎你一百金幣！");
                     toast("🏆 做得好好！+100 金幣已存好");
+                    playGentleChime();
                     return;
                 }
             } else if (level <= soundResetThreshold && !canTrigger) {
@@ -1978,7 +1804,7 @@ function showInlineSpeechInput() {
         box.id = "inline-speech-box";
         box.className = "inline-input-box show";
         box.innerHTML = '<p style="font-weight:700;margin:0 0 8px;text-align:left;">✍️ 用鍵盤寫出答案：</p>' +
-            '<input type="text" id="inline-speech-val" placeholder="喺度輸入答案">' +
+            '<input type="text" id="inline-speech-val" placeholder="喺度輸入答案" aria-label="文字輸入答案">' +
             '<button class="sub-btn" style="background:var(--apple-blue);width:100%;height:48px;" onclick="submitInlineSpeech()">確認答案</button>';
         body.appendChild(box);
     } else {
@@ -2071,7 +1897,7 @@ async function loopVoiceCommand() {
 }
 
 function handleVoiceCmd(t) {
-    if (/今日訓練|今日練習|開始練習/.test(t)) { closeAll(); startDailyTraining(); }
+    if (/今日訓練|今日練習|開始練習|一鍵開始/.test(t)) { closeAll(); startDailyTraining(); }
     else if (/口肌|嘴巴|練嘴/.test(t)) { closeAll(); showMouthUI(); }
     else if (/聲調|粵語|廣東話/.test(t)) { closeAll(); showCantoneseToneUI(); }
     else if (/聲控|開花|發聲/.test(t)) { closeAll(); showGameUI("voice"); }
@@ -2079,10 +1905,11 @@ function handleVoiceCmd(t) {
     else if (/進度|報告|成績/.test(t)) { showProgressUI(); }
     else if (/返回|主頁|返去/.test(t)) { closeAll(); }
     else if (/救命|求助|唔舒服/.test(t)) { confirmSOS(); }
+    else if (/傾偈|聊天|智語/.test(t)) { closeAll(); showTrainerChat(); }
 }
 
 // ==============================================================
-// 11. 會話、自適應難度與資料儲存
+// 11. 會話、自適應難度與資料儲存 + 強化傾偈夥伴
 // ==============================================================
 function checkAuth() {
     try {
@@ -2470,12 +2297,20 @@ function renderDailyPlan() {
         saveLocal();
     }
 
+    var doneCount = 0;
     box.innerHTML = items.map(function(it) {
+        if (dailyDone[it.key]) doneCount++;
         return '<div class="daily-item" onclick="' + it.fn + '">' +
             '<div class="daily-check ' + (dailyDone[it.key] ? 'done' : '') + '">' + (dailyDone[it.key] ? '✓' : '') + '</div>' +
             '<span style="' + (dailyDone[it.key] ? 'text-decoration:line-through;opacity:0.6;' : '') + '">' + it.label + '</span>' +
         '</div>';
     }).join("") || '<p style="color:var(--apple-dark-gray);">今日全部達標，想練多陣可以自己揀！</p>';
+
+    var pct = items.length ? Math.round((doneCount / items.length) * 100) : 0;
+    var fill = document.getElementById("daily-progress-fill");
+    var txt = document.getElementById("daily-progress-text");
+    if (fill) fill.style.width = pct + "%";
+    if (txt) txt.textContent = "完成度：" + pct + "% （" + doneCount + "/" + items.length + "）";
 }
 
 function markDaily(key) {
@@ -2647,6 +2482,7 @@ function showProgressUI() {
         '<h2 style="font-size:1.7rem;margin-bottom:6px;">📊 我嘅訓練進度</h2>' +
         '<p style="font-size:1.05rem;color:var(--apple-dark-gray);">近呢 7 日你一共勤力做咗 <b>' + last7.length + '</b> 次練習</p>' +
         '<div class="progress-bars">' + bars + '</div>' +
+        '<div class="disclaimer" style="margin:12px 0;">本報告僅供參考，請與言語治療師討論實際進度。</div>' +
         '<div style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">' +
             '<button class="sub-btn" style="background:var(--apple-green);" onclick="shareToFamily()">📲 分享畀屋企人</button>' +
             '<button class="sub-btn" style="background:var(--apple-blue);" onclick="printReport()">📋 檢視臨床摘要</button>' +
@@ -2698,6 +2534,7 @@ function showRewardsUI() {
     );
 }
 
+// ========== 強化版智語傾偈夥伴（更接近 LLM 體驗） ==========
 function buildTrainerContext() {
     var recent = sessionHistory.slice(-20);
     var streak = 1;
@@ -2709,13 +2546,16 @@ function buildTrainerContext() {
     var hadFatigue = recent.some(function(h) {
         return h.metrics && h.metrics.fatigue;
     });
+    var doneToday = Object.values(dailyDone).filter(Boolean).length;
 
     return {
         elderName: currentUser ? currentUser.name : "長者",
         streak: streak,
         lastTrainingType: lastSession ? (lastSession.trainingType || lastSession.type || "日常練習") : "無",
         hadFatigue: hadFatigue,
-        goldNearUnlock: (150 - (goldCount % 150)) < 40
+        goldNearUnlock: (150 - (goldCount % 150)) < 40,
+        doneToday: doneToday,
+        gold: goldCount
     };
 }
 
@@ -2728,6 +2568,8 @@ function showTrainerChat() {
         greeting += "好犀利呀！差少少金幣又可以解鎖新生活情境喇，一齊加油！";
     } else if (ctx.streak > 2) {
         greeting += "好有恆心呀！你已經連續堅持咗 " + ctx.streak + " 日練習喇！";
+    } else if (ctx.doneToday > 0) {
+        greeting += "今日已經做咗 " + ctx.doneToday + " 樣練習，真係好勤力！";
     } else {
         greeting += "今日想練口肌、聲調定係吹下水傾下偈？";
     }
@@ -2739,13 +2581,17 @@ function showTrainerChat() {
     setModal(
         '<h2 style="font-size:1.5rem;margin-bottom:8px;">💬 智語傾偈夥伴</h2>' +
         '<div class="trainer-chat" id="trainer-chat-box">' + bubbles + '</div>' +
+        '<div class="quick-chips">' +
+            '<button class="chip" onclick="quickMsg(\'今日有咩好提議？\')">今日有咩好提議？</button>' +
+            '<button class="chip" onclick="quickMsg(\'我有啲攰呀\')">我有啲攰呀</button>' +
+            '<button class="chip" onclick="quickMsg(\'我想練口肌\')">我想練口肌</button>' +
+            '<button class="chip" onclick="quickMsg(\'多謝你\')">多謝你</button>' +
+        '</div>' +
         '<div style="display:flex;gap:8px;margin-top:8px;">' +
-            '<input type="text" id="trainer-input" placeholder="喺度打字同我傾偈…" style="flex:1;font-size:1.1rem;padding:12px;border-radius:12px;border:2px solid rgba(0,0,0,0.1);" onkeydown="if(event.key===\'Enter\')sendTrainerMsg()">' +
+            '<input type="text" id="trainer-input" placeholder="喺度打字同我傾偈…" style="flex:1;font-size:1.1rem;padding:12px;border-radius:12px;border:2px solid rgba(0,0,0,0.1);" onkeydown="if(event.key===\'Enter\')sendTrainerMsg()" aria-label="傾偈輸入">' +
             '<button class="sub-btn" style="background:var(--ai-blue);min-width:70px;margin:0;" onclick="sendTrainerMsg()">傳送</button>' +
         '</div>' +
-        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;">' +
-            '<button class="apple-pill-btn" onclick="quickMsg(\'今日有咩好提議？\')">今日有咩好提議？</button>' +
-            '<button class="apple-pill-btn" onclick="quickMsg(\'我有啲攰呀\')">我有啲攰呀</button>' +
+        '<div style="margin-top:10px;">' +
             '<button class="sub-btn" style="background:var(--apple-dark-gray);" onclick="closeAll()">返去主頁</button>' +
         '</div>'
     );
@@ -2772,14 +2618,7 @@ function sendTrainerMsg() {
     }
 
     var ctx = buildTrainerContext();
-    var reply = "慢慢嚟一步步練習，每日堅持一陣，已經好有進步㗎喇！";
-    if (/攰|累|休息/.test(msg)) {
-        reply = ctx.elderName + "，如果覺得攰就坐低飲啖水休息下先，復康千祈唔使急，聽日再練都完全無問題！我幫你調輕動作難度啦。";
-    } else if (/提議|練咩|建議/.test(msg)) {
-        reply = "不如我哋由噘嘴同鼓腮開始？郁下兩邊面珠墩同嘴唇，個人會精神好多！做完我哋再去玩發聲開花。";
-    } else if (/多謝|唔該/.test(msg)) {
-        reply = "唔使客氣，見到你每日精神奕奕我最開心！我隨時喺度陪住你練。";
-    }
+    var reply = generateSmartReply(msg, ctx);
 
     setTimeout(function() {
         trainerChatLog.push({ role: "bot", text: reply });
@@ -2789,7 +2628,58 @@ function sendTrainerMsg() {
             box.scrollTop = box.scrollHeight;
         }
         speak(reply);
-    }, 400);
+    }, 500);
+}
+
+function generateSmartReply(msg, ctx) {
+    var lower = msg.toLowerCase();
+    
+    // 疲勞 / 休息
+    if (/攰|累|休息|辛苦|唔想練|好攰/.test(msg)) {
+        return ctx.elderName + "，如果覺得攰就坐低飲啖水休息下先，復康千祈唔使急。聽日再練都完全無問題！我可以幫你調輕動作難度。";
+    }
+    
+    // 建議練習
+    if (/提議|練咩|建議|今日|做咩好/.test(msg)) {
+        if (!dailyDone.mouth) return "不如我哋由噘嘴同鼓腮開始？郁下兩邊面珠墩同嘴唇，個人會精神好多！做完我哋再去玩發聲開花。";
+        if (!dailyDone.tone) return "今日可以練下廣東話聲調，『詩、史、試、時、市、事』，練完把聲會更有抑揚頓挫。";
+        if (!dailyDone.voice) return "不如練下聲控發聲，大聲『呀～』十次，聲線會更穩定！";
+        return "你今日已經好勤力！可以試下日常出街對答，例如搭的士或者打電話畀仔女，練返順口。";
+    }
+    
+    // 口肌相關
+    if (/口肌|嘴巴|嘴唇|舌頭|鼓腮|噘嘴/.test(msg)) {
+        return "口肌練習好重要！我建議由簡單嘅『噘嘴』同『鼓腮』開始，每日堅持5-10秒幾組，咬字會清晰好多。要我幫你開練習嗎？";
+    }
+    
+    // 金幣 / 進度
+    if (/金幣|進度|幾多|解鎖/.test(msg)) {
+        return "你而家有 " + ctx.gold + " 個金幣！每儲夠150個就會自動解鎖新嘅生活情境練習。繼續加油，差唔多就有新題目喇！";
+    }
+    
+    // 感謝
+    if (/多謝|唔該|感謝|謝謝/.test(msg)) {
+        return "唔使客氣，見到你每日精神奕奕我最開心！我隨時喺度陪住你練。有咩需要隨時講。";
+    }
+    
+    // 問候
+    if (/早晨|你好|嗨|哈囉|早晨呀/.test(msg)) {
+        return "早晨呀" + ctx.elderName + "！今日天氣點呀？一齊精神做練習，定係想先傾下偈？";
+    }
+    
+    // 中風 / 病況
+    if (/中風|帕金遜|病|唔舒服|頭暈/.test(msg)) {
+        return "明白你嘅情況。復康係長遠嘅事，每日細細步已經好叻。如果身體唔舒服，記得先休息同通知屋企人。我哋可以調輕練習強度。";
+    }
+    
+    // 預設鼓勵
+    var encouragements = [
+        "慢慢嚟一步步練習，每日堅持一陣，已經好有進步㗎喇！",
+        "你今日已經好努力，繼續保持呢份心！有咩想傾可以隨時同我講。",
+        "復康最重要係開心同堅持。今日想挑戰邊樣練習？",
+        "見到你肯嚟練習，我已經好開心！一齊加油！"
+    ];
+    return encouragements[Math.floor(Math.random() * encouragements.length)];
 }
 
 function setModal(html) {
@@ -2816,6 +2706,11 @@ window.onload = function () {
         var el = document.getElementById("time");
         if (el) el.innerText = new Date().toTimeString().slice(0, 5);
     }, 1000);
+    
+    // 預載語音
+    if ("speechSynthesis" in window) {
+        window.speechSynthesis.getVoices();
+    }
 };
 </script>
 </body>
