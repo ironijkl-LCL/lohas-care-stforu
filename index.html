@@ -1381,7 +1381,7 @@ window.retryTongueExercise = function(idx) {
 };
 
 // ==============================================================
-// 6. 口肌練習與 AI 鏡頭互動系統
+// 6. 口肌練習與 AI 鏡頭互動系統 (真實時間差精準倒數版)
 // ==============================================================
 window.showMouthUI = function() {
     speak("想練邊個動作？揀好動作同維持嘅時間就開始");
@@ -1491,6 +1491,7 @@ window.startFaceAI = function(bsType, idx) {
     var m = window.mouthData[idx];
     var timeLeft = (facePauseSnapshot && facePauseSnapshot.idx === idx) ? facePauseSnapshot.timeLeft : targetVal;
     var holdAccum = 0;
+    var lastTickTime = performance.now();
     var smoothedScore = 0;
 
     if (!facePauseSnapshot || facePauseSnapshot.idx !== idx) {
@@ -1531,7 +1532,12 @@ window.startFaceAI = function(bsType, idx) {
 
     var loop = function() {
         if (!faceRunning) return;
-        if (facePaused) { faceAnimId = requestAnimationFrame(loop); return; }
+        var now = performance.now();
+        if (facePaused) {
+            lastTickTime = now;
+            faceAnimId = requestAnimationFrame(loop);
+            return;
+        }
 
         if (video && video.readyState >= 2) {
             if (canvas && (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight)) {
@@ -1539,8 +1545,10 @@ window.startFaceAI = function(bsType, idx) {
                 canvas.height = video.videoHeight;
             }
             if (faceLandmarker && video.currentTime !== lastVideoTime) {
+                var deltaSec = Math.min(0.25, (now - lastTickTime) / 1000);
+                lastTickTime = now;
                 lastVideoTime = video.currentTime;
-                var result = faceLandmarker.detectForVideo(video, performance.now());
+                var result = faceLandmarker.detectForVideo(video, now);
                 var rawScore = getUnifiedMouthScore(result, bsType, canvas.width, canvas.height);
                 
                 var sym = (result && result.faceLandmarks && result.faceLandmarks.length) 
@@ -1633,7 +1641,7 @@ window.startFaceAI = function(bsType, idx) {
                 }
 
                 if (score >= liveThresh) {
-                    holdAccum += 1 / 30;
+                    holdAccum += deltaSec;
                     if (holdAccum >= 1) {
                         holdAccum -= 1;
                         timeLeft--;
